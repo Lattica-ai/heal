@@ -28,10 +28,6 @@ void validate_inputs(
     k = a->dims[2];
 
     if (p->dimensions != 1 || p->dims.size() != 1 || p->dims[0] != k) {
-        std::cout << "k: " << k << std::endl;
-        std::cout << "p->dims[0]: " << p->dims[0] << std::endl;
-        std::cout << "p->dimensions: " << p->dimensions << std::endl;
-        std::cout << "p->dims.size(): " << p->dims.size() << std::endl;
         throw std::invalid_argument("Input vector 'p' must have dimensions [k].");
     }
     if (perm->dimensions != 1 || perm->dims.size() != 1 || perm->dims[0] != m) {
