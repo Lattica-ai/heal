@@ -1,0 +1,40 @@
+name: C/C++ CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: sudo apt update && sudo apt install -y cmake g++ make
+
+      - name: Create build directory
+        run: mkdir -p build
+
+      - name: Configure CMake
+        run: |
+          cd build
+          cmake ..
+        shell: bash
+
+      - name: Build project
+        run: |
+          cd build
+          make -j$(nproc)
+        shell: bash
+
+      - name: Run tests
+        run: |
+          cd build
+          ctest --output-on-failure
+        shell: bash
