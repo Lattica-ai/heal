@@ -1,3 +1,5 @@
+include(FetchContent)
+
 # Specify the library source files
 set(SOURCES
     device_memory_impl.cpp
@@ -27,6 +29,12 @@ target_link_libraries(example_impl PUBLIC OpenMP::OpenMP_CXX)
 
 
 # Find pybind11
+FetchContent_Declare(
+  pybind11
+  GIT_REPOSITORY https://github.com/pybind/pybind11.git
+)
+
+FetchContent_MakeAvailable(pybind11)
 find_package(pybind11 REQUIRED)
 
 # Create Python module
