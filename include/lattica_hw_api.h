@@ -2,12 +2,12 @@
 #define LATTICA_HARDWARE_API_H
 
 // ============= Memory management =============== //
-#include "nested_vector.h"  // Host data format
 #include "device_memory.h"  // Device data format
+#include "memory_virtual_ops.h"     // Memory operations
+#include "contiguous.h"      // Contiguous memory
 
 // ============= Modular arithmetic ============== //
-#include "modsum.h"
-#include "modmul.h"
+#include "modop.h"
 #include "axis_modsum.h"
 
 // ============ Special-purpose ops ============== //
