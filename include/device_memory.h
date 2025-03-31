@@ -1,53 +1,43 @@
-#ifndef DEVICEMEMORY_H
-#define DEVICEMEMORY_H
+#ifndef DeviceTensor_H
+#define DeviceTensor_H
 
 #include <vector>
 #include <memory>
-
-#include "nested_vector.h"
+#include <torch/torch.h>
 
 /**
- * @brief A structure to manage up to 4D vectors for hardware memory.
- * @tparam T The data type of the vector elements.
+ * @brief Abstract device-side tensor for hardware-accelerated memory.
  */
 template <typename T>
-struct DeviceMemory {
-    void print();
-    void reshape(const std::vector<size_t>& new_dims);
+struct DeviceTensor {
+    void reshape(const std::vector<int64_t>& new_dims);
+    void print() const;
+    void print_metadata() const;
 };
 
 namespace lattica_hw_api {
 
-    /**
-     * Allocates hardware memory for a vector of up to 4D.
-     * @tparam T The data type of the vector elements.
-     * @param dims Vector of dimensions (size <= 4).
-     * @return A shared pointer to the allocated DeviceMemory.
-     */
-    template <typename T>
-    std::shared_ptr<DeviceMemory<T>> allocate_on_hardware(const std::vector<size_t>& dims);
+/**
+ * @brief Allocate a new device tensor on hardware.
+ * @param dims Shape of the tensor.
+ */
+template <typename T>
+std::shared_ptr<DeviceTensor<T>> allocate_on_hardware(const std::vector<int64_t>& dims);
 
-    /**
-     * Move data from the CPU to hardware memory.
-     * Supports 1D to 4D vectors.
-     * @tparam T The data type of the vector elements.
-     * @tparam Dim The dimension of the vector (1D to 4D).
-     * @param cpu_data A nested vector representing the vector data.
-     * @return A shared pointer to the allocated DeviceMemory.
-     */
-    template <typename T, size_t Dim>
-    std::shared_ptr<DeviceMemory<T>> move_to_hardware(const NestedVectorType<T, Dim>& cpu_data);
+/**
+ * @brief Upload a PyTorch tensor to device memory.
+ * @param tensor A contiguous torch::Tensor of type T.
+ */
+template <typename T>
+std::shared_ptr<DeviceTensor<T>> host_to_device(const torch::Tensor& tensor);
 
-    /**
-     * Moves a vector from hardware memory back to CPU.
-     * @tparam T The data type of the vector elements.
-     * @tparam N The dimension of the vector (1D to 4D).
-     * @param hw_memory A shared pointer to the DeviceMemory.
-     * @return A vector containing the data.
-     */
-    template <typename T, size_t N>
-    NestedVectorType<T, N> move_from_hardware(const std::shared_ptr<DeviceMemory<T>>& hw_memory);
+/**
+ * @brief Download a device tensor back into a torch::Tensor.
+ * @param memory A shared pointer to the device tensor.
+ */
+template <typename T>
+torch::Tensor device_to_host(const std::shared_ptr<DeviceTensor<T>>& memory);
 
-}
+} // namespace lattica_hw_api
 
-#endif // DEVICEMEMORY_H
+#endif // DeviceTensor_H
