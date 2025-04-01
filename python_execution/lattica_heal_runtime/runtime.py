@@ -64,7 +64,7 @@ def _run_op(device_t_eng, memory_refs, op, verify):
             print(f"End of segment")
             return
         case ExecutionTranscriptOpType.DEVICE_OP:
-            # print(f"Running device instruction: {op[1].name}")
+            print(f"Running device instruction: {op[1].name}")
             _run_device_instruction(device_t_eng, memory_refs, op[1], verify)
             return
         case ExecutionTranscriptOpType.FREE_DEVICE_TENSOR:
@@ -80,16 +80,12 @@ def run_transcript(device_t_eng, transcript, verify=False):
     print("\n\n######### Running transcript... #########")
     memory_refs: dict[str, DeviceTensorPointer] = {}
 
-    # Synchronize and start timer
-    torch.cuda.synchronize()
     start = time.time()
 
     for i, op in enumerate(transcript):
         # print(f"Running operation {i}")
         _run_op(device_t_eng, memory_refs, op, verify)
 
-    # Synchronize and end timer
-    torch.cuda.synchronize()
     end = time.time()
 
     print(f"Elapsed time: {end - start:.6f} seconds")
