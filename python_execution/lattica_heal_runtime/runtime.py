@@ -2,7 +2,7 @@ import time
 
 import torch
 
-from datatypes import (
+from lattica_heal_runtime.datatypes import (
     HostTensor, DeviceTensorPointer,
     DeviceOp, ExecutionTranscriptOpType, DeviceOpArgType
 )

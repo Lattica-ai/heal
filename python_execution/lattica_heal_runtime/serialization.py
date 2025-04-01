@@ -3,7 +3,7 @@ import json
 import numpy as np
 import torch
 
-from datatypes import (
+from lattica_heal_runtime.datatypes import (
     DeviceTensorPointer, HostTensor,
     DeviceOpArg, DeviceOp, FreeDeviceTensor,
     ExecutionTranscript, ExecutionTranscriptOpType, DeviceOpArgType

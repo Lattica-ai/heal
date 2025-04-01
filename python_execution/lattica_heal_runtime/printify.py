@@ -1,4 +1,4 @@
-from datatypes import DeviceOpArgType, ExecutionTranscriptOpType
+from lattica_heal_runtime.datatypes import DeviceOpArgType, ExecutionTranscriptOpType
 
 
 def _print_arg(arg, indent):

@@ -5,7 +5,7 @@ import torch
 # Add the build directory to sys.path
 import sys
 import os
-build_dir = os.path.join(os.path.dirname(__file__), "../build/example_impl")
+build_dir = os.path.join(os.path.dirname(__file__), "../../build/example_impl")
 sys.path.insert(0, build_dir)
 
 import lattica_hw as lhw
