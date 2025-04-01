@@ -11,7 +11,7 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
     container:
-      image: pytorch/pytorch:2.1.0-cpu  # or latest
+      image: pytorch/pytorch:2.6.0-cuda11.8-cudnn9-devel
 
     steps:
       - name: Checkout repository
