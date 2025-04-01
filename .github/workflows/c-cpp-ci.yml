@@ -15,10 +15,19 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install dependencies
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install Python dependencies (CPU-only)
         run: |
-          sudo apt-get update
-          sudo apt-get install -y pybind11-dev
+          python -m pip install --upgrade pip
+          pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+          pip install pybind11
+
+      - name: Install other dependencies
+        run: |
           sudo apt update
           sudo apt install -y cmake g++ make libgtest-dev
           # Google Test requires manual compilation
