@@ -43,7 +43,7 @@ jobs:
       - name: Configure CMake
         run: |
           cd build
-          cmake ..
+          cmake .. -Dpybind11_DIR=$(python3 -m pybind11 --cmakedir)
         shell: bash
 
       - name: Build project
