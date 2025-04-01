@@ -29,12 +29,7 @@ jobs:
       - name: Install other dependencies
         run: |
           sudo apt update
-          sudo apt install -y cmake g++ make libgtest-dev
-          # Google Test requires manual compilation
-          cd /usr/src/gtest
-          sudo cmake .
-          sudo make
-          sudo cp lib/*.a /usr/lib
+          sudo apt install -y cmake g++ make
         shell: bash
 
       - name: Create build directory
