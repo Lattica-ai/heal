@@ -1,37 +1,38 @@
 #include "gtest/gtest.h"
 #include "lattica_hw_api.h"
+#include <torch/torch.h>
 
 using namespace lattica_hw_api;
-using IntVec1D = NestedVectorType<int32_t, 1>;
 
-// Define macros for move_to_hardware and allocate_on_hardware
-#define TO_HW(vec) move_to_hardware<int32_t, 1>(vec)
-#define ALLOC_HW(shape) allocate_on_hardware<int32_t>(shape)
+TEST(DecompReconstructTests, DecomposeAndReconstruct_Torch) {
+    torch::Tensor a_cpu = torch::tensor({51, 29, 63}, torch::dtype(torch::kInt32)); // [3]
+    int64_t power = 6;
+    int64_t base_bits = 1;
 
-TEST(DecompReconstructTests, DecomposeAndReconstruct) {
-    IntVec1D a_cpu = {51, 29, 63}; // [3]
-    size_t power = 6;
-    size_t base_bits = 1;
-
-    auto a_hw = TO_HW(a_cpu);
-    auto a_digits_hw = ALLOC_HW((std::vector<size_t>{a_cpu.size(), power}));
+    auto a_hw = host_to_device<int32_t>(a_cpu);
+    auto a_digits_hw = allocate_on_hardware<int32_t>({3, power});
 
     g_decomposition(a_hw, a_digits_hw, power, base_bits);
 
-    auto basis_hw = TO_HW(IntVec1D({1, 2, 4, 8, 16, 32}));
-    auto p6_hw = TO_HW(IntVec1D(6, 1024));
+    auto basis_hw = host_to_device<int32_t>(
+        torch::tensor({1, 2, 4, 8, 16, 32}, torch::dtype(torch::kInt32)));
+    auto p6_hw = host_to_device<int32_t>(
+        torch::tensor({1024, 1024, 1024, 1024, 1024, 1024}, torch::dtype(torch::kInt32)));
 
-    // Perform modular multiplication inplace
-    modmul_v2(a_digits_hw, basis_hw, p6_hw, a_digits_hw);
+    // Perform modular multiplication in-place
+    modmul_ttt(a_digits_hw, basis_hw, p6_hw, a_digits_hw);
 
-    // Reshape with a redundant dimension to obey the axis_modsum API
-    a_digits_hw->reshape({a_cpu.size(), power, 1});
+    // Reshape to [3, 6, 1] to match axis_modsum API
+    a_digits_hw->reshape({3, power, 1});
 
-    auto a_recon_hw = ALLOC_HW((std::vector<size_t>{a_cpu.size(), 1}));
-    auto p1_hw = TO_HW(IntVec1D(1, 1024));
+    // Reconstruct
+    auto a_recon_hw = allocate_on_hardware<int32_t>({3, 1});
+    auto p1_hw = host_to_device<int32_t>(torch::tensor({1024}, torch::dtype(torch::kInt32)));
 
-    axis_modsum(a_digits_hw, p1_hw, a_recon_hw);
+    axis_modsum(a_digits_hw, p1_hw, a_recon_hw, 1);
+    a_recon_hw->reshape({3});
 
-    IntVec1D reconstruction_cpu = move_from_hardware<int32_t, 1>(a_recon_hw);
-    ASSERT_EQ(reconstruction_cpu, a_cpu) << "Reconstruction failed.";
+    torch::Tensor recon_cpu = device_to_host<int32_t>(a_recon_hw);
+
+    ASSERT_TRUE(torch::equal(recon_cpu, a_cpu)) << "Reconstruction failed.";
 }

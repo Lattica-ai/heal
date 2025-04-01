@@ -26,17 +26,6 @@ jobs:
           pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
           pip install pybind11
 
-      - name: Install other dependencies
-        run: |
-          sudo apt update
-          sudo apt install -y cmake g++ make libgtest-dev
-          # Google Test requires manual compilation
-          cd /usr/src/gtest
-          sudo cmake .
-          sudo make
-          sudo cp lib/*.a /usr/lib
-        shell: bash
-
       - name: Create build directory
         run: mkdir -p build
 
@@ -57,3 +46,10 @@ jobs:
           cd build
           ctest --output-on-failure
         shell: bash
+
+      - name: Run example_run_transcript.py
+        run: |
+          pip install -e python_execution
+          set -e
+          echo "Running Python script..."
+          python example_run_transcript.py

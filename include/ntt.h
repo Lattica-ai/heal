@@ -10,33 +10,37 @@
  * multiplication and other applications.
  *
  * Expected Input Sizes:
- * - Input vector `a` must have dimensions `[l, m, k]`.
- * - Input vector `p` must have dimensions `[k]`.
- * - Permutation array `perm` must have dimensions `[m]`.
- * - Twiddle factors `twiddles` must have dimensions `[m, k]`.
- * - Modular inverses of m `m_inv` must have dimensions `[k]`.
- * - Result vector `result` must have dimensions `[l, m, k]` (output).
+ * - Input tensor `a` must have shape `[l, m, r, k]` where:
+ *     - `l` is the left batch dimension.
+ *     - `m` is the transform length (must be a power of 2).
+ *     - `r` is the right batch dimension.
+ *     - `k` is the number of independent moduli.
+ * - Modulus tensor `p` must have shape `[k]`.
+ * - Permutation tensor `perm` must have shape `[m]`.
+ * - Twiddle factors `twiddles` must have shape `[k, m]`.
+ * - Modular inverses of `m`, `m_inv`, must have shape `[k]`.
+ * - Output tensor `result` must have shape `[l, m, r, k]`.
  */
 
 namespace lattica_hw_api {
 
     template <typename T>
     void ntt(
-        const std::shared_ptr<DeviceMemory<T>>& a,        // [l, m, k]
-        const std::shared_ptr<DeviceMemory<T>>& p,        // [k]
-        const std::shared_ptr<DeviceMemory<T>>& perm,     // [m]
-        const std::shared_ptr<DeviceMemory<T>>& twiddles, // [m, k]
-        std::shared_ptr<DeviceMemory<T>>& result          // [l, m, k] (output)
+        const std::shared_ptr<DeviceTensor<T>>& a,        // [l, m, r, k]
+        const std::shared_ptr<DeviceTensor<T>>& p,        // [k]
+        const std::shared_ptr<DeviceTensor<T>>& perm,     // [m]
+        const std::shared_ptr<DeviceTensor<T>>& twiddles, // [k, m]
+        std::shared_ptr<DeviceTensor<T>>& result          // [l, m, r, k] (output)
     );
 
     template <typename T>
     void intt(
-        const std::shared_ptr<DeviceMemory<T>>& a,             // [l, m, k]
-        const std::shared_ptr<DeviceMemory<T>>& p,             // [k]
-        const std::shared_ptr<DeviceMemory<T>>& perm,          // [m]
-        const std::shared_ptr<DeviceMemory<T>>& inv_twiddles,  // [m, k]
-        const std::shared_ptr<DeviceMemory<T>>& m_inv,         // [k]
-        std::shared_ptr<DeviceMemory<T>>& result               // [l, m, k] (output)
+        const std::shared_ptr<DeviceTensor<T>>& a,             // [l, m, r, k]
+        const std::shared_ptr<DeviceTensor<T>>& p,             // [k]
+        const std::shared_ptr<DeviceTensor<T>>& perm,          // [m]
+        const std::shared_ptr<DeviceTensor<T>>& inv_twiddles,  // [k, m]
+        const std::shared_ptr<DeviceTensor<T>>& m_inv,         // [k]
+        std::shared_ptr<DeviceTensor<T>>& result               // [l, m, r, k] (output)
     );
 
 }
