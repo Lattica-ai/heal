@@ -1,8 +1,17 @@
 # Enable testing
 enable_testing()
 
-# Find GoogleTest package
-find_package(GTest REQUIRED)
+# Fetch GoogleTest package
+include(FetchContent)
+# Pull GoogleTest (release-1.12.1 is stable and safe)
+FetchContent_Declare(
+  googletest
+  URL https://github.com/google/googletest/archive/refs/tags/release-1.12.1.zip
+)
+# For MSVC builds; safe to leave in
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+# Make it available for subdirectories
+FetchContent_MakeAvailable(googletest)
 
 # Include directories
 include_directories(${GTEST_INCLUDE_DIRS} ${PROJECT_SOURCE_DIR}/include)
@@ -43,7 +52,7 @@ foreach(i RANGE 0 ${NUM_TESTS})
 
     # Create the executable for the test
     add_executable(${TEST_NAME} ${TEST_SOURCE})
-    target_link_libraries(${TEST_NAME} example_impl GTest::GTest GTest::Main)
+    target_link_libraries(${TEST_NAME} example_impl GTest::gtest GTest::gtest_main)
 
     # Add the test to CTest
     add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})
