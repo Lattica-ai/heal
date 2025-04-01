@@ -27,13 +27,13 @@ def _set_num_threads(num_threads=32):
 
 
 
-# Execute the transcript with 4 threads
-_set_num_threads(4)
-runtime.run_transcript(
-    device_dispatcher,     # Dispatcher to C++ functions
-    transcript.transcript, # Set of operations to run
-    verify=True            # Verify execution results against expected results
-)
+# # Execute the transcript with 4 threads
+# _set_num_threads(4)
+# runtime.run_transcript(
+#     device_dispatcher,     # Dispatcher to C++ functions
+#     transcript.transcript, # Set of operations to run
+#     verify=True            # Verify execution results against expected results
+# )
 
 
 # Execute the transcript with 32 threads
