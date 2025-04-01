@@ -1,4 +1,4 @@
-from lattica_hw_api.example_impl.py_wrapper import PythonToCppDispatcher
+from py_wrapper import PythonToCppDispatcher
 from printify import print_transcript
 import ctypes
 
