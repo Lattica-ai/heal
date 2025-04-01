@@ -6,4 +6,8 @@ setup(
     author="LatticaAI Inc.",
     author_email="support@lattica.ai",
     packages=find_packages(),
+    install_requires=[
+        "torch",
+    ],
+    python_requires=">=3.7",
 )
