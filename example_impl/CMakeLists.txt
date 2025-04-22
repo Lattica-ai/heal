@@ -8,6 +8,7 @@ set(SOURCES
     permute_impl.cpp
     memory_virtual_ops_impl.cpp
     contiguous_impl.cpp
+    compute_ops_impl.cpp
 )
 
 # Create a static library for the Example Implementation

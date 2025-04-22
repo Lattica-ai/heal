@@ -204,14 +204,17 @@ torch::Tensor device_to_host(const std::shared_ptr<DeviceTensor<T>>& memory) {
 // Explicit instantiations
 template std::shared_ptr<DeviceTensor<int32_t>> allocate_on_hardware<int32_t>(const std::vector<int64_t>&);
 template std::shared_ptr<DeviceTensor<int64_t>> allocate_on_hardware<int64_t>(const std::vector<int64_t>&);
+template std::shared_ptr<DeviceTensor<float>> allocate_on_hardware<float>(const std::vector<int64_t>&);
 template std::shared_ptr<DeviceTensor<double>> allocate_on_hardware<double>(const std::vector<int64_t>&);
 
 template std::shared_ptr<DeviceTensor<int32_t>> host_to_device<int32_t>(const torch::Tensor&);
 template std::shared_ptr<DeviceTensor<int64_t>> host_to_device<int64_t>(const torch::Tensor&);
+template std::shared_ptr<DeviceTensor<float>> host_to_device<float>(const torch::Tensor&);
 template std::shared_ptr<DeviceTensor<double>> host_to_device<double>(const torch::Tensor&);
 
 template torch::Tensor device_to_host<int32_t>(const std::shared_ptr<DeviceTensor<int32_t>>&);
 template torch::Tensor device_to_host<int64_t>(const std::shared_ptr<DeviceTensor<int64_t>>&);
+template torch::Tensor device_to_host<float>(const std::shared_ptr<DeviceTensor<float>>&);
 template torch::Tensor device_to_host<double>(const std::shared_ptr<DeviceTensor<double>>&);
 
 } // namespace lattica_hw_api
