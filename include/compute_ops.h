@@ -30,7 +30,14 @@ namespace lattica_hw_api {
         std::shared_ptr<DeviceTensor<T>>&                 result
     );
 
-
+    template <typename T>
+    void apply_g_decomp(
+        const std::shared_ptr<DeviceTensor<T>>& a,
+        int32_t                             g_exp,
+        int32_t                             g_base_bits,
+        std::shared_ptr<DeviceTensor<T>>&   result
+    );
+    
 } // namespace lattica_hw_api
 
 #endif // COMPUTE_OPS_H

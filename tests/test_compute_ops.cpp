@@ -5,6 +5,15 @@
 using namespace lattica_hw_api;
 typedef IndexType idx_t;
 
+
+/****************************************************************************************
+ ****************************************************************************************
+ ****                                                                                ****
+ ****                            TAKE_ALONG_AXIS TESTS                                ****
+ ****                                                                                ****
+ ****************************************************************************************
+ ****************************************************************************************/
+
 /************************************************************************************************
  * Basic functionality
  ***********************************************************************************************/
@@ -393,3 +402,226 @@ TEST(TakeAlongAxisTests, DoubleType) {
     auto out = device_to_host<double>(hw_out);
     ASSERT_TRUE(torch::allclose(out, expected));
 }
+
+/****************************************************************************************
+ ****************************************************************************************
+ ****                                                                                ****
+ ****                            APPLY_G_DECOMP TESTS                                ****
+ ****                                                                                ****
+ ****************************************************************************************
+ ****************************************************************************************/
+
+/************************************************************************************************
+ * Basic functionality
+ ***********************************************************************************************/
+
+// Basic 1D integer decomposition
+TEST(ApplyGDecompTests, Basic1D) {
+  auto t_cpu   = torch::tensor({5,6,7}, torch::kInt32);
+  int32_t g_exp       = 2;
+  int32_t g_base_bits = 1;  // base = 2
+  auto expected = torch::tensor({{1,0},{0,1},{1,1}}, torch::kInt32);
+
+  auto hw_t   = host_to_device<int32_t>(t_cpu);
+  auto hw_out = allocate_on_hardware<int32_t>({3,2});
+  apply_g_decomp<int32_t>(hw_t, g_exp, g_base_bits, hw_out);
+  auto out    = device_to_host<int32_t>(hw_out);
+
+  ASSERT_TRUE(torch::equal(out, expected))
+      << "\nout:      " << out
+      << "\nexpected: " << expected;
+}
+
+// Scalar input decomposition
+TEST(ApplyGDecompTests, ScalarInput) {
+  auto t_cpu   = torch::tensor(42, torch::kInt64);
+  int32_t g_exp       = 3;
+  int32_t g_base_bits = 3;  // base = 8
+  auto expected = torch::tensor({2,5,0}, torch::kInt64);
+
+  auto hw_t   = host_to_device<int64_t>(t_cpu);
+  auto hw_out = allocate_on_hardware<int64_t>({3});
+  apply_g_decomp<int64_t>(hw_t, g_exp, g_base_bits, hw_out);
+  auto out    = device_to_host<int64_t>(hw_out);
+
+  ASSERT_TRUE(torch::equal(out, expected))
+      << "\nout:      " << out
+      << "\nexpected: " << expected;
+}
+
+// 2D test with base-4 decomposition
+TEST(ApplyGDecompTests, TwoDim_Base4) {
+  auto t_cpu = torch::tensor({
+      {13, 7, 0},
+      { 1,15, 8}
+  }, torch::kInt32);
+  int32_t g_exp       = 2;
+  int32_t g_base_bits = 2;  // base = 4
+
+  auto expected = torch::tensor({
+    {{1,3},{3,1},{0,0}},
+    {{1,0},{3,3},{0,2}}
+  }, torch::kInt32);
+
+  auto hw_t   = host_to_device<int32_t>(t_cpu);
+  auto hw_out = allocate_on_hardware<int32_t>({2,3,g_exp});
+  apply_g_decomp<int32_t>(hw_t, g_exp, g_base_bits, hw_out);
+  auto out    = device_to_host<int32_t>(hw_out);
+
+  ASSERT_TRUE(torch::equal(out, expected))
+      << "\nout:      " << out
+      << "\nexpected: " << expected;
+}
+
+// 3D test with binary decomposition
+TEST(ApplyGDecompTests, ThreeDim_Binary) {
+  auto t_cpu = torch::tensor({
+    {{2,5}},
+    {{7,3}}
+  }, torch::kInt64);
+  int32_t g_exp       = 3;
+  int32_t g_base_bits = 1;  // base = 2
+
+  auto expected = torch::tensor({
+    {{{0,1,0},{1,0,1}}},
+    {{{1,1,1},{1,1,0}}}
+  }, torch::kInt64);
+
+  auto hw_t   = host_to_device<int64_t>(t_cpu);
+  auto hw_out = allocate_on_hardware<int64_t>({2,1,2,g_exp});
+  apply_g_decomp<int64_t>(hw_t, g_exp, g_base_bits, hw_out);
+  auto out    = device_to_host<int64_t>(hw_out);
+
+  ASSERT_TRUE(torch::equal(out, expected))
+      << "\nout:      " << out
+      << "\nexpected: " << expected;
+}
+
+// Full bit-width reconstruction test
+TEST(ApplyGDecompTests, FullBitWidthReconstruction) {
+  // force each hex literal into a signed 32-bit int
+  auto t_cpu = torch::tensor(std::vector<int32_t>{
+      static_cast<int32_t>(0x12345678),
+      static_cast<int32_t>(0xDEADBEEF),
+      static_cast<int32_t>(0x0F0F0F0F),
+      static_cast<int32_t>(0x80000000)
+  }, torch::kInt32);
+
+  int32_t g_exp       = 8;
+  int32_t g_base_bits = 4;  // base = 16, covers 32 bits
+
+  auto hw_t   = host_to_device<int32_t>(t_cpu);
+  auto hw_out = allocate_on_hardware<int32_t>({4, g_exp});
+  apply_g_decomp<int32_t>(hw_t, g_exp, g_base_bits, hw_out);
+  auto out    = device_to_host<int32_t>(hw_out);
+
+  for (int i = 0; i < 4; ++i) {
+      int32_t orig = t_cpu[i].item<int32_t>();
+      int64_t rec = 0;
+      for (int j = 0; j < g_exp; ++j) {
+          int32_t d = out.index({i,j}).item<int32_t>();
+          rec |= (int64_t(d) << (j * g_base_bits));
+      }
+      ASSERT_EQ(static_cast<int32_t>(rec), orig)
+          << "reconstruction failed at index " << i;
+  }
+}
+
+/************************************************************************************************
+ * Error conditions
+ ***********************************************************************************************/
+
+// Parameter validation: non-positive g_exp
+TEST(ApplyGDecompTests, Throws_OnNonPositiveGExp) {
+  auto t      = host_to_device<int32_t>(torch::tensor({3,5}, torch::kInt32));
+  auto result = allocate_on_hardware<int32_t>({2,2});
+  EXPECT_THROW(apply_g_decomp<int32_t>(t, /*g_exp=*/0, /*g_base_bits=*/1, result),
+               std::invalid_argument);
+  EXPECT_THROW(apply_g_decomp<int32_t>(t, /*g_exp=*/-1, /*g_base_bits=*/1, result),
+               std::invalid_argument);
+}
+
+// Parameter validation: non-positive g_base_bits
+TEST(ApplyGDecompTests, Throws_OnNonPositiveBaseBits) {
+  auto t      = host_to_device<int64_t>(torch::tensor({7,8}, torch::kInt64));
+  auto result = allocate_on_hardware<int64_t>({2,2});
+  EXPECT_THROW(apply_g_decomp<int64_t>(t, /*g_exp=*/2, /*g_base_bits=*/0, result),
+               std::invalid_argument);
+  EXPECT_THROW(apply_g_decomp<int64_t>(t, /*g_exp=*/2, /*g_base_bits=*/-3, result),
+               std::invalid_argument);
+}
+
+// Parameter validation: g_base_bits too large for type
+TEST(ApplyGDecompTests, Throws_OnBaseBitsTooLarge) {
+  auto t32   = host_to_device<int32_t>(torch::tensor({1,2,3}, torch::kInt32));
+  auto bad32 = allocate_on_hardware<int32_t>({3,33});
+  EXPECT_THROW(apply_g_decomp<int32_t>(t32, /*g_exp=*/33, /*g_base_bits=*/33, bad32),
+               std::invalid_argument);
+
+  auto t64   = host_to_device<int64_t>(torch::tensor({1,2}, torch::kInt64));
+  auto bad64 = allocate_on_hardware<int64_t>({2,65});
+  EXPECT_THROW(apply_g_decomp<int64_t>(t64, /*g_exp=*/65, /*g_base_bits=*/65, bad64),
+               std::invalid_argument);
+}
+
+// Shape validation: result rank must be input rank + 1
+TEST(ApplyGDecompTests, Throws_OnWrongResultRank) {
+  auto t   = host_to_device<int32_t>(torch::tensor({1,2,3}, torch::kInt32));
+  auto bad = allocate_on_hardware<int32_t>({3});  // rank=1 instead of 2
+  EXPECT_THROW(apply_g_decomp<int32_t>(t, /*g_exp=*/2, /*g_base_bits=*/1, bad),
+               std::invalid_argument);
+}
+
+// Shape validation: trailing dim must equal g_exp
+TEST(ApplyGDecompTests, Throws_OnTrailingDimNotEqualGExp) {
+  auto t   = host_to_device<int64_t>(torch::tensor({4,5}, torch::kInt64));
+  auto bad = allocate_on_hardware<int64_t>({2,3});  // g_exp=2, trailing size=3
+  EXPECT_THROW(apply_g_decomp<int64_t>(t, /*g_exp=*/2, /*g_base_bits=*/1, bad),
+               std::invalid_argument);
+}
+
+// Shape validation: non-trailing dims must match input dims
+TEST(ApplyGDecompTests, Throws_OnDimMismatch) {
+  auto t   = host_to_device<int32_t>(torch::tensor({1,2,3}, torch::kInt32));
+  auto bad = allocate_on_hardware<int32_t>({2,2});  // first dim 2 vs 3
+  EXPECT_THROW(apply_g_decomp<int32_t>(t, /*g_exp=*/2, /*g_base_bits=*/1, bad),
+               std::invalid_argument);
+}
+
+/************************************************************************************************
+ * Edge & corner cases
+ ***********************************************************************************************/
+
+// Empty input produces empty output of correct shape
+TEST(ApplyGDecompTests, EmptyInputProducesEmpty) {
+  auto t_cpu   = torch::empty({0,5}, torch::kInt32);
+  int32_t g_exp       = 3;
+  int32_t g_base_bits = 2;
+  auto hw_t   = host_to_device<int32_t>(t_cpu);
+  auto hw_out = allocate_on_hardware<int32_t>({0,5,g_exp});
+  apply_g_decomp<int32_t>(hw_t, g_exp, g_base_bits, hw_out);
+  auto out    = device_to_host<int32_t>(hw_out);
+
+  ASSERT_EQ(out.numel(), 0);
+  ASSERT_EQ(out.sizes(), (std::vector<int64_t>{0,5,g_exp}));
+}
+
+// Negative inputs get their two's-complement low bits
+TEST(ApplyGDecompTests, NegativeValuesBinary) {
+  // -5 = …11111011₂ → bits [1,1,0,1]  (LSB first)
+  // -2 = …11111110₂ → bits [0,1,1,1]
+  auto t_cpu   = torch::tensor({-5, -2}, torch::kInt32);
+  int32_t g_exp       = 4;
+  int32_t g_base_bits = 1;  // binary
+  auto expected = torch::tensor({{1,1,0,1},{0,1,1,1}}, torch::kInt32);
+
+  auto hw_t    = host_to_device<int32_t>(t_cpu);
+  auto hw_out  = allocate_on_hardware<int32_t>({2, g_exp});
+  apply_g_decomp<int32_t>(hw_t, g_exp, g_base_bits, hw_out);
+  auto out     = device_to_host<int32_t>(hw_out);
+
+  ASSERT_TRUE(torch::equal(out, expected))
+      << "\nout:      " << out
+      << "\nexpected: " << expected;
+}
+
