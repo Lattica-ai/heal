@@ -1,4 +1,4 @@
-#include "gtest/gtest.h"
+#include "test_helpers.h"
 #include "lattica_hw_api.h"
 #include <torch/torch.h>
 
@@ -193,7 +193,7 @@ TEST(TakeAlongAxisTests, ElevenDim_VariedShape_Axis7) {
  ***********************************************************************************************/
 
 // Mismatch in a *non*-axis dimension should throw
-TEST(TakeAlongAxisTests, Throws_OnShapeMismatchNonAxis) {
+VALIDATION_TEST(TakeAlongAxisTests, Throws_OnShapeMismatchNonAxis) {
     auto t   = torch::randint(0, 10, {2, 3}, torch::kInt32);
     // dim 0 is 2 in `t`, but 1 in `idx`
     auto idx = torch::randint(0, 2, {1, 3}, torch::kInt64);
@@ -210,7 +210,7 @@ TEST(TakeAlongAxisTests, Throws_OnShapeMismatchNonAxis) {
 
 
 // Rank‑mismatch between input and idx
-TEST(TakeAlongAxisTests, Throws_OnRankMismatch) {
+VALIDATION_TEST(TakeAlongAxisTests, Throws_OnRankMismatch) {
     auto t   = torch::arange(4, torch::kInt32);       // rank=1
     auto idx = torch::randint(0,4,{2,2}, torch::kInt64);// rank=2
     auto hw_t   = host_to_device<int32_t>(t);
@@ -226,7 +226,7 @@ TEST(TakeAlongAxisTests, Throws_OnRankMismatch) {
 }
 
 // Axis too large or too negative for a multi‑dim tensor
-TEST(TakeAlongAxisTests, Throws_OnAxisOutOfRange_MultiDim) {
+VALIDATION_TEST(TakeAlongAxisTests, Throws_OnAxisOutOfRange_MultiDim) {
     auto t   = torch::randint(0,10,{3,3}, torch::kInt64);
     auto idx = torch::randint(0,3, {3,3}, torch::kInt64);
     auto hw_t   = host_to_device<int64_t>(t);
@@ -246,7 +246,7 @@ TEST(TakeAlongAxisTests, Throws_OnAxisOutOfRange_MultiDim) {
 }
 
 // Axis too large or too negative for a scalar
-TEST(TakeAlongAxisTests, Throws_OnAxisOutOfRange_ZeroDim) {
+VALIDATION_TEST(TakeAlongAxisTests, Throws_OnAxisOutOfRange_ZeroDim) {
     auto t   = torch::tensor(7, torch::kInt32);
     auto idx = torch::tensor(0, torch::kInt64);
     auto hw_t   = host_to_device<int32_t>(t);
@@ -264,7 +264,7 @@ TEST(TakeAlongAxisTests, Throws_OnAxisOutOfRange_ZeroDim) {
 }
 
 // Out‑of‑bounds indices along the gather axis
-TEST(TakeAlongAxisTests, Throws_OnIndexOutOfBounds) {
+VALIDATION_TEST(TakeAlongAxisTests, Throws_OnIndexOutOfBounds) {
     auto t   = torch::randn({4}, torch::kFloat);
     auto idx = torch::tensor({0,4,1}, torch::kInt64);
     auto hw_t   = host_to_device<float>(t);
@@ -277,8 +277,8 @@ TEST(TakeAlongAxisTests, Throws_OnIndexOutOfBounds) {
     );
 }
 
-// Broadcastable (but unsupported) → mismatch on non‑axis should throw
-TEST(TakeAlongAxisTests, Throws_OnBroadcastableIdx) {
+// Broadcastable → mismatch on non‑axis should throw
+VALIDATION_TEST(TakeAlongAxisTests, Throws_OnBroadcastableIdx) {
     auto t   = torch::randn({2,3,4}, torch::kFloat);
     // idx is {2,1,4}; non‑axis dim 1 is 1 vs input’s 3
     auto idx = torch::randint(0, 4, {2, 1, 4}, torch::kInt64);
@@ -532,7 +532,7 @@ TEST(ApplyGDecompTests, FullBitWidthReconstruction) {
  ***********************************************************************************************/
 
 // Parameter validation: non-positive g_exp
-TEST(ApplyGDecompTests, Throws_OnNonPositiveGExp) {
+VALIDATION_TEST(ApplyGDecompTests, Throws_OnNonPositiveGExp) {
   auto t      = host_to_device<int32_t>(torch::tensor({3,5}, torch::kInt32));
   auto result = allocate_on_hardware<int32_t>({2,2});
   EXPECT_THROW(apply_g_decomp<int32_t>(t, /*g_exp=*/0, /*g_base_bits=*/1, result),
@@ -542,7 +542,7 @@ TEST(ApplyGDecompTests, Throws_OnNonPositiveGExp) {
 }
 
 // Parameter validation: non-positive g_base_bits
-TEST(ApplyGDecompTests, Throws_OnNonPositiveBaseBits) {
+VALIDATION_TEST(ApplyGDecompTests, Throws_OnNonPositiveBaseBits) {
   auto t      = host_to_device<int64_t>(torch::tensor({7,8}, torch::kInt64));
   auto result = allocate_on_hardware<int64_t>({2,2});
   EXPECT_THROW(apply_g_decomp<int64_t>(t, /*g_exp=*/2, /*g_base_bits=*/0, result),
@@ -552,7 +552,7 @@ TEST(ApplyGDecompTests, Throws_OnNonPositiveBaseBits) {
 }
 
 // Parameter validation: g_base_bits too large for type
-TEST(ApplyGDecompTests, Throws_OnBaseBitsTooLarge) {
+VALIDATION_TEST(ApplyGDecompTests, Throws_OnBaseBitsTooLarge) {
   auto t32   = host_to_device<int32_t>(torch::tensor({1,2,3}, torch::kInt32));
   auto bad32 = allocate_on_hardware<int32_t>({3,33});
   EXPECT_THROW(apply_g_decomp<int32_t>(t32, /*g_exp=*/33, /*g_base_bits=*/33, bad32),
@@ -565,7 +565,7 @@ TEST(ApplyGDecompTests, Throws_OnBaseBitsTooLarge) {
 }
 
 // Shape validation: result rank must be input rank + 1
-TEST(ApplyGDecompTests, Throws_OnWrongResultRank) {
+VALIDATION_TEST(ApplyGDecompTests, Throws_OnWrongResultRank) {
   auto t   = host_to_device<int32_t>(torch::tensor({1,2,3}, torch::kInt32));
   auto bad = allocate_on_hardware<int32_t>({3});  // rank=1 instead of 2
   EXPECT_THROW(apply_g_decomp<int32_t>(t, /*g_exp=*/2, /*g_base_bits=*/1, bad),
@@ -573,7 +573,7 @@ TEST(ApplyGDecompTests, Throws_OnWrongResultRank) {
 }
 
 // Shape validation: trailing dim must equal g_exp
-TEST(ApplyGDecompTests, Throws_OnTrailingDimNotEqualGExp) {
+VALIDATION_TEST(ApplyGDecompTests, Throws_OnTrailingDimNotEqualGExp) {
   auto t   = host_to_device<int64_t>(torch::tensor({4,5}, torch::kInt64));
   auto bad = allocate_on_hardware<int64_t>({2,3});  // g_exp=2, trailing size=3
   EXPECT_THROW(apply_g_decomp<int64_t>(t, /*g_exp=*/2, /*g_base_bits=*/1, bad),
@@ -581,7 +581,7 @@ TEST(ApplyGDecompTests, Throws_OnTrailingDimNotEqualGExp) {
 }
 
 // Shape validation: non-trailing dims must match input dims
-TEST(ApplyGDecompTests, Throws_OnDimMismatch) {
+VALIDATION_TEST(ApplyGDecompTests, Throws_OnDimMismatch) {
   auto t   = host_to_device<int32_t>(torch::tensor({1,2,3}, torch::kInt32));
   auto bad = allocate_on_hardware<int32_t>({2,2});  // first dim 2 vs 3
   EXPECT_THROW(apply_g_decomp<int32_t>(t, /*g_exp=*/2, /*g_base_bits=*/1, bad),
