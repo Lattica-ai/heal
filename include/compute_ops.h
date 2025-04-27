@@ -37,7 +37,19 @@ namespace lattica_hw_api {
         int32_t                             g_base_bits,
         std::shared_ptr<DeviceTensor<T>>&   result
     );
-    
+
+    template <typename T>
+    void abs(
+        const std::shared_ptr<DeviceTensor<T>>& a,
+        std::shared_ptr<DeviceTensor<T>>&       result
+    );
+
+    template <typename T>
+    void set_const_val(
+        const std::shared_ptr<DeviceTensor<T>>& a,
+        T                                       val
+    );
+
 } // namespace lattica_hw_api
 
 #endif // COMPUTE_OPS_H

@@ -427,9 +427,7 @@ TEST(ApplyGDecompTests, Basic1D) {
   apply_g_decomp<int32_t>(hw_t, g_exp, g_base_bits, hw_out);
   auto out    = device_to_host<int32_t>(hw_out);
 
-  ASSERT_TRUE(torch::equal(out, expected))
-      << "\nout:      " << out
-      << "\nexpected: " << expected;
+  ASSERT_TRUE(torch::equal(out, expected));
 }
 
 // Scalar input decomposition
@@ -444,9 +442,7 @@ TEST(ApplyGDecompTests, ScalarInput) {
   apply_g_decomp<int64_t>(hw_t, g_exp, g_base_bits, hw_out);
   auto out    = device_to_host<int64_t>(hw_out);
 
-  ASSERT_TRUE(torch::equal(out, expected))
-      << "\nout:      " << out
-      << "\nexpected: " << expected;
+  ASSERT_TRUE(torch::equal(out, expected));
 }
 
 // 2D test with base-4 decomposition
@@ -468,9 +464,7 @@ TEST(ApplyGDecompTests, TwoDim_Base4) {
   apply_g_decomp<int32_t>(hw_t, g_exp, g_base_bits, hw_out);
   auto out    = device_to_host<int32_t>(hw_out);
 
-  ASSERT_TRUE(torch::equal(out, expected))
-      << "\nout:      " << out
-      << "\nexpected: " << expected;
+  ASSERT_TRUE(torch::equal(out, expected));
 }
 
 // 3D test with binary decomposition
@@ -492,9 +486,7 @@ TEST(ApplyGDecompTests, ThreeDim_Binary) {
   apply_g_decomp<int64_t>(hw_t, g_exp, g_base_bits, hw_out);
   auto out    = device_to_host<int64_t>(hw_out);
 
-  ASSERT_TRUE(torch::equal(out, expected))
-      << "\nout:      " << out
-      << "\nexpected: " << expected;
+  ASSERT_TRUE(torch::equal(out, expected));
 }
 
 // Full bit-width reconstruction test
@@ -620,8 +612,202 @@ TEST(ApplyGDecompTests, NegativeValuesBinary) {
   apply_g_decomp<int32_t>(hw_t, g_exp, g_base_bits, hw_out);
   auto out     = device_to_host<int32_t>(hw_out);
 
-  ASSERT_TRUE(torch::equal(out, expected))
-      << "\nout:      " << out
-      << "\nexpected: " << expected;
+  ASSERT_TRUE(torch::equal(out, expected));
 }
 
+/***************************************************************************************
+****************************************************************************************
+****                                                                                ****
+****                              ABS FUNCTION TESTS                                ****
+****                                                                                ****
+****************************************************************************************
+****************************************************************************************/
+
+/************************************************************************************************
+ * Basic functionality
+ ***********************************************************************************************/
+
+// 1D integer abs
+TEST(AbsTests, Basic1DInt) {
+  auto t_cpu   = torch::tensor({-5, 0, 7, -2}, torch::kInt32);
+  auto expected = torch::tensor({5, 0, 7, 2}, torch::kInt32);
+
+  auto hw_t   = host_to_device<int32_t>(t_cpu);
+  auto hw_out = allocate_on_hardware<int32_t>({4});
+  abs<int32_t>(hw_t, hw_out);
+  auto out    = device_to_host<int32_t>(hw_out);
+
+  ASSERT_TRUE(torch::equal(out, expected));
+}
+
+// 1D floating‐point abs
+TEST(AbsTests, Basic1DFloat) {
+  auto t_cpu   = torch::tensor({-3.5f, 0.0f, 2.25f, -0.125f}, torch::kFloat32);
+  auto expected = torch::tensor({3.5f, 0.0f, 2.25f, 0.125f}, torch::kFloat32);
+
+  auto hw_t   = host_to_device<float>(t_cpu);
+  auto hw_out = allocate_on_hardware<float>({4});
+  abs<float>(hw_t, hw_out);
+  auto out    = device_to_host<float>(hw_out);
+
+  ASSERT_TRUE(torch::allclose(out, expected));
+}
+
+// Scalar integer input
+TEST(AbsTests, ScalarInt) {
+  auto t_cpu   = torch::tensor(-42, torch::kInt64);
+  auto expected = torch::tensor(42, torch::kInt64);
+
+  auto hw_t   = host_to_device<int64_t>(t_cpu);
+  auto hw_out = allocate_on_hardware<int64_t>({});
+  abs<int64_t>(hw_t, hw_out);
+  auto out    = device_to_host<int64_t>(hw_out);
+
+  ASSERT_EQ(out.item<int64_t>(), expected.item<int64_t>());
+}
+
+// 2D mixed‐sign double
+TEST(AbsTests, TwoDDouble) {
+  auto t_cpu = torch::tensor({
+      {-1.0,  2.5,  0.0},
+      { 3.141, -4.2, -0.001}
+  }, torch::kFloat64);
+  auto expected = torch::tensor({
+      {1.0,  2.5,   0.0},
+      {3.141, 4.2,  0.001}
+  }, torch::kFloat64);
+
+  auto hw_t   = host_to_device<double>(t_cpu);
+  auto hw_out = allocate_on_hardware<double>({2,3});
+  abs<double>(hw_t, hw_out);
+  auto out    = device_to_host<double>(hw_out);
+
+  ASSERT_TRUE(torch::allclose(out, expected, /*rtol=*/1e-7, /*atol=*/1e-8));
+}
+
+/************************************************************************************************
+* Error conditions
+***********************************************************************************************/
+
+// Shape mismatch: dims must match exactly
+VALIDATION_TEST(AbsTests, Throws_OnShapeMismatch) {
+  auto t    = host_to_device<int32_t>(torch::tensor({1,2,3}, torch::kInt32));
+  auto bad  = allocate_on_hardware<int32_t>({2});  // wrong size
+  EXPECT_THROW(abs<int32_t>(t, bad), std::invalid_argument);
+}
+
+/************************************************************************************************
+* Edge & corner cases
+***********************************************************************************************/
+
+// Empty tensor yields empty result of same shape
+TEST(AbsTests, EmptyInputProducesEmpty) {
+  auto t_cpu   = torch::empty({0,5}, torch::kInt32);
+  auto hw_t    = host_to_device<int32_t>(t_cpu);
+  auto hw_out  = allocate_on_hardware<int32_t>({0,5});
+  abs<int32_t>(hw_t, hw_out);
+  auto out     = device_to_host<int32_t>(hw_out);
+
+  ASSERT_EQ(out.numel(), 0);
+  ASSERT_EQ(out.sizes(), (std::vector<int64_t>{0,5}));
+}
+
+/***************************************************************************************
+****************************************************************************************
+****                                                                                ****
+****                        SET_CONST_VAL FUNCTION TESTS                            ****
+****                                                                                ****
+****************************************************************************************
+****************************************************************************************/
+
+/************************************************************************************************
+ * Basic functionality
+ ***********************************************************************************************/
+
+TEST(SetConstValTests, Basic1DInt32) {
+  // start with some arbitrary data
+  auto t_cpu    = torch::tensor({1, 2, -3, 42}, torch::kInt32);
+  auto hw_t     = host_to_device<int32_t>(t_cpu);
+
+  // set every element to 7
+  set_const_val<int32_t>(hw_t, 7);
+  auto out      = device_to_host<int32_t>(hw_t);
+  auto expected = torch::full({4}, 7, torch::kInt32);
+
+  ASSERT_TRUE(torch::equal(out, expected));
+}
+
+TEST(SetConstValTests, Basic1DFloat) {
+  auto t_cpu    = torch::tensor({0.1f, -2.5f, 3.14f}, torch::kFloat32);
+  auto hw_t     = host_to_device<float>(t_cpu);
+
+  set_const_val<float>(hw_t, -1.25f);
+  auto out      = device_to_host<float>(hw_t);
+  auto expected = torch::full({3}, -1.25f, torch::kFloat32);
+
+  ASSERT_TRUE(torch::allclose(out, expected));
+}
+
+TEST(SetConstValTests, ScalarInt64) {
+  // zero‐dimensional tensor
+  auto t_cpu = torch::tensor(123, torch::kInt64);
+  auto hw_t  = host_to_device<int64_t>(t_cpu);
+
+  set_const_val<int64_t>(hw_t, -999LL);
+  auto out   = device_to_host<int64_t>(hw_t);
+
+  ASSERT_EQ(out.item<int64_t>(), -999LL);
+}
+
+TEST(SetConstValTests, TwoDDouble) {
+  // 2×3 tensor, random initial contents
+  auto t_cpu    = torch::rand({2, 3}, torch::kFloat64);
+  auto hw_t     = host_to_device<double>(t_cpu);
+
+  set_const_val<double>(hw_t, 0.0);
+  auto out      = device_to_host<double>(hw_t);
+  auto expected = torch::zeros({2, 3}, torch::kFloat64);
+
+  ASSERT_TRUE(torch::allclose(out, expected, /*rtol=*/1e-7, /*atol=*/1e-8));
+}
+
+/************************************************************************************************
+* Error conditions
+***********************************************************************************************/
+
+VALIDATION_TEST(SetConstValTests, Throws_OnNullTensor) {
+  std::shared_ptr<DeviceTensor<int32_t>> null_ptr;
+  EXPECT_THROW(
+    set_const_val<int32_t>(null_ptr, 5),
+    std::invalid_argument
+  );
+}
+
+/************************************************************************************************
+* Edge & corner cases
+***********************************************************************************************/
+
+TEST(SetConstValTests, EmptyTensor) {
+  // shape {0,5} → zero elements
+  auto t_cpu = torch::empty({0, 5}, torch::kInt32);
+  auto hw_t  = host_to_device<int32_t>(t_cpu);
+
+  set_const_val<int32_t>(hw_t, 42);
+  auto out   = device_to_host<int32_t>(hw_t);
+
+  ASSERT_EQ(out.numel(), 0);
+  ASSERT_EQ(out.sizes(), (std::vector<int64_t>{0, 5}));
+}
+
+TEST(SetConstValTests, LargeTensor) {
+  // stress test: 100K elements
+  const int N = 100000;
+  auto t_cpu    = torch::arange(0, N, torch::kInt32);
+  auto hw_t     = host_to_device<int32_t>(t_cpu);
+
+  set_const_val<int32_t>(hw_t, 123);
+  auto out      = device_to_host<int32_t>(hw_t);
+  auto expected = torch::full({N}, 123, torch::kInt32);
+
+  ASSERT_TRUE(torch::equal(out, expected));
+}

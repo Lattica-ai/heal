@@ -9,6 +9,7 @@
 // Explicit template instantiations
 template struct DeviceTensor<int32_t>;
 template struct DeviceTensor<int64_t>;
+template struct DeviceTensor<float>;
 template struct DeviceTensor<double>;
 
 template <typename T>

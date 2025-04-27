@@ -177,6 +177,77 @@ namespace lattica_hw_api {
     }
 
 
+    template <typename T>
+    void abs(
+        const std::shared_ptr<DeviceTensor<T>>& a,
+        std::shared_ptr<DeviceTensor<T>>&       result
+    ) {
+        // dims must match exactly
+        if (a->dims != result->dims) {
+            throw std::invalid_argument(
+                "abs: tensor dims do not match"
+            );
+        }
+
+        // compute total element count
+        const auto& dims = a->dims;
+        const size_t rank = dims.size();
+        size_t numel = 1;
+        for (int64_t d : dims) {
+            numel *= static_cast<size_t>(d);
+        }
+
+        // buffer for multi‐dimensional index
+        std::vector<int64_t> idx(rank);
+
+        // iterate every element by converting linear index → multi‐index
+        for (size_t lin = 0; lin < numel; ++lin) {
+            size_t tmp = lin;
+            // decode in row‐major order
+            for (size_t i = rank; i-- > 0; ) {
+                idx[i] = static_cast<int64_t>(tmp % static_cast<size_t>(dims[i]));
+                tmp /= static_cast<size_t>(dims[i]);
+            }
+            // apply abs via element access
+            result->at(idx) = std::abs(a->at(idx));
+        }
+    }
+
+
+    template <typename T>
+    void set_const_val(
+        const std::shared_ptr<DeviceTensor<T>>& a,
+        T                                       val
+    ) {
+        // must have a valid tensor
+        if (!a) {
+            throw std::invalid_argument("set_const_val: input tensor is null");
+        }
+
+        // compute total element count
+        const auto& dims = a->dims;
+        const size_t rank = dims.size();
+        size_t numel = 1;
+        for (int64_t d : dims) {
+            numel *= static_cast<size_t>(d);
+        }
+
+        // buffer for multi‐dimensional index
+        std::vector<int64_t> idx(rank);
+
+        // iterate every element by converting linear index → multi‐index
+        for (size_t lin = 0; lin < numel; ++lin) {
+            size_t tmp = lin;
+            // decode in row‐major order
+            for (size_t i = rank; i-- > 0; ) {
+                idx[i] = static_cast<int64_t>(tmp % static_cast<size_t>(dims[i]));
+                tmp  /= static_cast<size_t>(dims[i]);
+            }
+            // set to constant
+            a->at(idx) = val;
+        }
+    }
+
 // ────────────────────────────────────────────────────
 // explicit instantiations for take_along_axis
 template void take_along_axis<int32_t>(
@@ -218,5 +289,30 @@ template void apply_g_decomp<int64_t>(
     int32_t,
     std::shared_ptr<DeviceTensor<int64_t>>&
 );
+
+// ────────────────────────────────────────────────────
+// explicit instantiations for abs
+template void abs<int32_t>(
+    const std::shared_ptr<DeviceTensor<int32_t>>&,
+    std::shared_ptr<DeviceTensor<int32_t>>&
+);
+template void abs<int64_t>(
+    const std::shared_ptr<DeviceTensor<int64_t>>&,
+    std::shared_ptr<DeviceTensor<int64_t>>&
+);
+template void abs<float>(
+    const std::shared_ptr<DeviceTensor<float>>&,
+    std::shared_ptr<DeviceTensor<float>>&
+);
+template void abs<double>(
+    const std::shared_ptr<DeviceTensor<double>>&,
+    std::shared_ptr<DeviceTensor<double>>&
+);
+
+// explicit instantiation for set_const_val
+template void set_const_val<int32_t>(const std::shared_ptr<DeviceTensor<int32_t>>&, int32_t);
+template void set_const_val<int64_t>(const std::shared_ptr<DeviceTensor<int64_t>>&, int64_t);
+template void set_const_val<float  >(const std::shared_ptr<DeviceTensor<float  >>&, float  );
+template void set_const_val<double >(const std::shared_ptr<DeviceTensor<double >>&, double );
 
 } // namespace lattica_hw_api
