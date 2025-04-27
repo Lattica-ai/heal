@@ -1,19 +1,20 @@
 #include "device_memory_impl.h"
 #include "compute_ops.h"
+#include "utils.h"
 #include <stdexcept>
 
 namespace lattica_hw_api {
 
     template <typename T>
     void take_along_axis(
-        const std::shared_ptr<DeviceTensor<T>>& a,
+        const std::shared_ptr<DeviceTensor<T>>&        input,
         const std::shared_ptr<DeviceTensor<IndexType>>& indices,
-        IndexType axis,
-        std::shared_ptr<DeviceTensor<T>>& result
+        IndexType                                      axis,
+        std::shared_ptr<DeviceTensor<T>>&              output
     ) {
-        const size_t rank = a->dims.size();
+        const size_t rank = input->dims.size();
 
-        // 1) Normalize & validate axis
+        // Normalize & validate axis
         if (axis < -static_cast<IndexType>(rank) || axis >= static_cast<IndexType>(rank)) {
             throw std::out_of_range("Axis out of range");
         }
@@ -21,90 +22,71 @@ namespace lattica_hw_api {
             axis += static_cast<IndexType>(rank);
         }
 
-        // 2) Rank‐match check
+        // Rank‐match check
         if (indices->dims.size() != rank) {
             throw std::invalid_argument("Indices tensor rank must match input rank");
         }
 
-        // 3) Shape‐check on non‐axis dims
+        // Shape‐check on non‐axis dims
         for (size_t i = 0; i < rank; ++i) {
-            if (i != static_cast<size_t>(axis) && a->dims[i] != indices->dims[i]) {
+            if (i != static_cast<size_t>(axis) && input->dims[i] != indices->dims[i]) {
                 throw std::invalid_argument("Shape mismatch at non-axis dimension");
             }
         }
 
-        // 4) Compute number of output elements from indices shape
-        int64_t total = 1;
-        for (size_t i = 0; i < rank; ++i) {
-            total *= indices->dims[i];
-        }
+        // Compute number of output elements from indices shape
+        size_t num_elements = device_tensor_utils::numel(indices->dims);
 
-        // 5) Build row‑major strides for unraveling an index into the indices‑shape
-        std::vector<int64_t> out_strides(rank);
-        int64_t s = 1;
-        for (int i = static_cast<int>(rank) - 1; i >= 0; --i) {
-            out_strides[i] = s;
-            s *= indices->dims[i];
-        }
+        // Grab raw pointers
+        T*         input_data = static_cast<T*>(input->data.get());
+        IndexType* idx_data   = static_cast<IndexType*>(indices->data.get());
+        T*         out_data   = static_cast<T*>(output->data.get());
 
-        // 6) Pointers into your flat buffers
-        T*          a_data    = static_cast<T*>(a->data.get());
-        IndexType*  idx_data  = static_cast<IndexType*>(indices->data.get());
-        T*          out_data  = static_cast<T*>(result->data.get());
+        // Prepare index buffers
+        std::vector<int64_t> out_index(rank), src_index(rank);
 
-        std::vector<int64_t> idx_full(rank), idx_src(rank);
+        // Iterate over every output element by flat index
+        for (size_t flat_idx = 0; flat_idx < num_elements; ++flat_idx) {
+            // Get multi‐dimensional index into indices tensor
+            out_index = device_tensor_utils::unravel_index(flat_idx, indices->dims);
 
-        // 7) Iterate over every output element in flat (1D) index space
-        for (int64_t flat = 0; flat < total; ++flat) {
-            int64_t rem = flat;
-
-            // 8) Convert the flat output index into a multi-dimensional index (row-major unraveling)
-            //    This gives us the coordinate in the `indices` tensor that we're currently evaluating.
-            for (size_t i = 0; i < rank; ++i) {
-                idx_full[i] = rem / out_strides[i];  // compute index in dimension i
-                rem %= out_strides[i];
-            }
-
-            // 9) Fetch the “select” index from the indices buffer at this multi-dimensional coordinate
+            // Compute offset into the indices buffer
             int64_t idx_offset = 0;
             for (size_t i = 0; i < rank; ++i) {
-                idx_offset += idx_full[i] * indices->strides[i];
+                idx_offset += out_index[i] * indices->strides[i];
             }
-            IndexType sel = idx_data[idx_offset];
+            IndexType selected_idx = idx_data[idx_offset];
 
-            // 10) Handle negative indices (Python-style)
-            if (sel < 0) {
-                sel += static_cast<IndexType>(a->dims[axis]);
+            // Python‐style negative indexing
+            if (selected_idx < 0) {
+                selected_idx += static_cast<IndexType>(input->dims[axis]);
             }
-            if (sel < 0 || sel >= static_cast<IndexType>(a->dims[axis])) {
+            if (selected_idx < 0 || selected_idx >= static_cast<IndexType>(input->dims[axis])) {
                 throw std::out_of_range("Index out of range");
             }
 
-            // 11) Build the source coordinate in `a` by copying idx_full and
-            //     replacing the value along the `axis` dimension with `sel`
-            for (size_t i = 0; i < rank; ++i) {
-                idx_src[i] = idx_full[i];
-            }
-            idx_src[axis] = sel;
+            // Build the source coordinate
+            src_index = out_index;
+            src_index[axis] = selected_idx;
 
-            // 12) Compute the flattened offset in `a` corresponding to this coordinate
+            // Flatten that source coordinate
             int64_t src_offset = 0;
             for (size_t i = 0; i < rank; ++i) {
-                src_offset += idx_src[i] * a->strides[i];
+                src_offset += src_index[i] * input->strides[i];
             }
 
-            // 13) Write the gathered value into the result tensor at position `flat`
-            out_data[flat] = a_data[src_offset];
+            // Gather the value
+            out_data[flat_idx] = input_data[src_offset];
         }
     }
 
 
     template <typename T>
     void apply_g_decomp(
-        const std::shared_ptr<DeviceTensor<T>>& a,
+        const std::shared_ptr<DeviceTensor<T>>& input,
         int32_t                                g_exp,
         int32_t                                g_base_bits,
-        std::shared_ptr<DeviceTensor<T>>&      result
+        std::shared_ptr<DeviceTensor<T>>&      output
     ) {
         // Validate parameters
         if (g_exp <= 0) {
@@ -113,6 +95,7 @@ namespace lattica_hw_api {
         if (g_base_bits <= 0) {
             throw std::invalid_argument("apply_g_decomp: g_base_bits must be positive");
         }
+
         // Ensure base bits fit in type T
         int32_t max_bits = static_cast<int32_t>(8 * sizeof(T));
         if (g_base_bits > max_bits) {
@@ -120,58 +103,54 @@ namespace lattica_hw_api {
                 "apply_g_decomp: g_base_bits must not exceed the bit width of the element type");
         }
 
-        // Validate shapes: result dims = a.dims + [g_exp]
-        const auto& in_dims  = a->dims;
-        const auto& out_dims = result->dims;
+        // Validate shapes: output dims = input.dims + [g_exp]
+        const auto& in_dims  = input->dims;
+        const auto& out_dims = output->dims;
         if (out_dims.size() != in_dims.size() + 1) {
-            throw std::invalid_argument("apply_g_decomp: result must have one extra trailing dimension");
+            throw std::invalid_argument("apply_g_decomp: output must have one extra trailing dimension");
         }
+
         // The size of the extra trailing dimension must match g_exp
         if (out_dims.back() != g_exp) {
             throw std::invalid_argument(
                 "apply_g_decomp: the size of the extra trailing dimension must equal g_exp");
         }
+
         // All preceding dims must match the input dims
         for (size_t i = 0; i < in_dims.size(); ++i) {
             if (out_dims[i] != in_dims[i]) {
-                throw std::invalid_argument("apply_g_decomp: result dimensions must match input dimensions");
+                throw std::invalid_argument("apply_g_decomp: output dimensions must match input dimensions");
             }
         }
 
         // Compute base = 2^g_base_bits
         T base = static_cast<T>(1) << g_base_bits;
 
-        // Prepare index vector for input
-        std::vector<int64_t> in_idx(in_dims.size(), 0);
-
         // Compute total number of elements
-        int64_t total_elems = 1;
-        for (auto d : in_dims) {
-            total_elems *= d;
-        }
+        size_t num_elements = device_tensor_utils::numel(in_dims);
 
-        for (int64_t linear = 0; linear < total_elems; ++linear) {
+        // Prepare index vector for input
+        std::vector<int64_t> in_index(in_dims.size());
+
+        // Iterate over every input element by flat index
+        for (size_t flat_idx = 0; flat_idx < num_elements; ++flat_idx) {
             // Convert linear index to multi-dimensional input index
-            int64_t rem = linear;
-            for (int i = static_cast<int>(in_dims.size()) - 1; i >= 0; --i) {
-                in_idx[i] = rem % in_dims[i];
-                rem /= in_dims[i];
-            }
+            in_index = device_tensor_utils::unravel_index(flat_idx, in_dims);
 
             // Read input value
-            T x = a->at(in_idx);
+            T value = input->at(in_index);
 
             // For each decomposition level
-            for (int32_t j = 0; j < g_exp; ++j) {
-                // Compute the j-th digit via bit-shift and mask
-                T digit = (x >> (j * g_base_bits)) & (base - 1);
+            for (int32_t level = 0; level < g_exp; ++level) {
+                // Compute the digit via bit-shift and mask
+                T digit = (value >> (level * g_base_bits)) & (base - 1);
 
-                // Build output index: in_idx + [j] as trailing dimension
-                std::vector<int64_t> out_idx = in_idx;
-                out_idx.push_back(j);
+                // Build output index: in_index + [level] as trailing dimension
+                std::vector<int64_t> out_index = in_index;
+                out_index.push_back(level);
 
                 // Write digit
-                result->at(out_idx) = digit;
+                output->at(out_index) = digit;
             }
         }
     }
@@ -179,72 +158,58 @@ namespace lattica_hw_api {
 
     template <typename T>
     void abs(
-        const std::shared_ptr<DeviceTensor<T>>& a,
-        std::shared_ptr<DeviceTensor<T>>&       result
+        const std::shared_ptr<DeviceTensor<T>>& input,
+        std::shared_ptr<DeviceTensor<T>>&       output
     ) {
-        // dims must match exactly
-        if (a->dims != result->dims) {
-            throw std::invalid_argument(
-                "abs: tensor dims do not match"
-            );
+        const auto& dims = input->dims;
+
+        // Validate dimensions match exactly
+        if (dims != output->dims) {
+            throw std::invalid_argument("abs: tensor dimensions do not match");
         }
 
-        // compute total element count
-        const auto& dims = a->dims;
-        const size_t rank = dims.size();
-        size_t numel = 1;
-        for (int64_t d : dims) {
-            numel *= static_cast<size_t>(d);
-        }
+        // Compute total element count
+        size_t num_elements = device_tensor_utils::numel(dims);
 
-        // buffer for multi‐dimensional index
-        std::vector<int64_t> idx(rank);
+        // Prepare buffer for multi‐dimensional index
+        std::vector<int64_t> index(dims.size());
 
-        // iterate every element by converting linear index → multi‐index
-        for (size_t lin = 0; lin < numel; ++lin) {
-            size_t tmp = lin;
-            // decode in row‐major order
-            for (size_t i = rank; i-- > 0; ) {
-                idx[i] = static_cast<int64_t>(tmp % static_cast<size_t>(dims[i]));
-                tmp /= static_cast<size_t>(dims[i]);
-            }
-            // apply abs via element access
-            result->at(idx) = std::abs(a->at(idx));
+        // Iterate over every element by flat index
+        for (size_t flat_idx = 0; flat_idx < num_elements; ++flat_idx) {
+            // Convert linear index to multi-dimensional index
+            index = device_tensor_utils::unravel_index(flat_idx, dims);
+
+            // Apply abs via element access
+            output->at(index) = std::abs(input->at(index));
         }
     }
 
 
     template <typename T>
     void set_const_val(
-        const std::shared_ptr<DeviceTensor<T>>& a,
-        T                                       val
+        const std::shared_ptr<DeviceTensor<T>>& tensor,
+        T                                       value
     ) {
-        // must have a valid tensor
-        if (!a) {
+        // Validate input tensor
+        if (!tensor) {
             throw std::invalid_argument("set_const_val: input tensor is null");
         }
 
-        // compute total element count
-        const auto& dims = a->dims;
-        const size_t rank = dims.size();
-        size_t numel = 1;
-        for (int64_t d : dims) {
-            numel *= static_cast<size_t>(d);
-        }
+        const auto& dims = tensor->dims;
 
-        // buffer for multi‐dimensional index
-        std::vector<int64_t> idx(rank);
+        // Compute total element count
+        size_t num_elements = device_tensor_utils::numel(dims);
 
-        // iterate every element by converting linear index → multi‐index
-        for (size_t lin = 0; lin < numel; ++lin) {
-            size_t tmp = lin;
-            // decode in row‐major order
-            for (size_t i = rank; i-- > 0; ) {
-                idx[i] = static_cast<int64_t>(tmp % static_cast<size_t>(dims[i]));
-                tmp  /= static_cast<size_t>(dims[i]);
-            }
-            // set to constant
-            a->at(idx) = val;
+        // Prepare buffer for multi‐dimensional index
+        std::vector<int64_t> index(dims.size());
+
+        // Iterate over every element by flat index
+        for (size_t flat_idx = 0; flat_idx < num_elements; ++flat_idx) {
+            // Convert linear index to multi-dimensional index
+            index = device_tensor_utils::unravel_index(flat_idx, dims);
+
+            // Set element to constant value
+            tensor->at(index) = value;
         }
     }
 
