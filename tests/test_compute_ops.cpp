@@ -9,7 +9,7 @@ typedef IndexType idx_t;
 /****************************************************************************************
  ****************************************************************************************
  ****                                                                                ****
- ****                            TAKE_ALONG_AXIS TESTS                                ****
+ ****                            TAKE_ALONG_AXIS TESTS                               ****
  ****                                                                                ****
  ****************************************************************************************
  ****************************************************************************************/
@@ -77,66 +77,119 @@ TEST(TakeAlongAxisTests, TwoDim_Axis1_Float) {
     ASSERT_TRUE(torch::allclose(out, expected));
 }
 
-// Scalar input + scalar idx → should throw out_of_range (torch errors on rank 0)
-TEST(TakeAlongAxisTests, ScalarInputAndScalarIdx_Throws) {
-    auto t   = torch::tensor(42, torch::kInt32);
-    auto idx = torch::tensor(0,  torch::kInt64);
-
-    auto hw_t   = host_to_device<int32_t>(t);
-    auto hw_idx = host_to_device<idx_t>(idx);
-    auto hw_out = allocate_on_hardware<int32_t>({});  // shape = {}
-
-    EXPECT_THROW(
-      take_along_axis<int32_t>(hw_t, hw_idx, 0, hw_out),
-      std::out_of_range
-    );
-}
-
 // Full‑identity on a 3D tensor
 TEST(TakeAlongAxisTests, IdentityIndex_3D) {
-    auto t   = torch::randint(-5,5,{2,2,2}, torch::kInt32);
-    auto idx = torch::zeros_like(t, torch::kInt64);
-    for (int i = 0; i < 2; ++i)
-      for (int j = 0; j < 2; ++j)
-        for (int k = 0; k < 2; ++k)
-          idx.index_put_({i,j,k}, k);
+    // manually specify input tensor
+    auto t = torch::tensor({
+        {{-1, 2},
+        {3, -4}},
+        {{5, -6},
+        {-7, 8}}
+    }, torch::kInt32);  // shape = (2,2,2)
 
-    auto expected = torch::take_along_dim(t, idx, 2);
+    // manually specify the index tensor
+    auto idx = torch::tensor({
+        {{0, 1},
+        {0, 1}},
+        {{0, 1},
+        {0, 1}}
+    }, torch::kInt64);  // same shape, indexing along last dim=2
+
+    // expected output using take_along_dim
+    auto expected = torch::take_along_dim(t, idx, /*dim=*/2);
+
+    // upload to device
     auto hw_t   = host_to_device<int32_t>(t);
     auto hw_idx = host_to_device<idx_t>(idx);
     auto hw_out = allocate_on_hardware<int32_t>({
-      idx.size(0), idx.size(1), idx.size(2)
+        idx.size(0), idx.size(1), idx.size(2)
     });
 
-    take_along_axis<int32_t>(hw_t, hw_idx, 2, hw_out);
-    auto out = device_to_host<int32_t>(hw_out);
-    ASSERT_TRUE(torch::equal(out, expected));
-}
-
-// 4‑D gather along axis 2 (random data)
-TEST(TakeAlongAxisTests, FourDim_Axis2_Random) {
-    // shape = {2,3,4,5}
-    auto t = torch::randint(-10, 10, {2,3,4,5}, torch::kInt32);
-    // choose axis=2, so idx.shape = {2,3,6,5}
-    auto idx = torch::randint(0, 4, {2,3,6,5}, torch::kInt64);
-
-    auto expected = torch::take_along_dim(t, idx, 2);
-
-    auto hw_t   = host_to_device<int32_t>(t);
-    auto hw_idx = host_to_device<idx_t>(idx);
-    auto hw_out = allocate_on_hardware<int32_t>({
-      idx.size(0), idx.size(1), idx.size(2), idx.size(3)
-    });
-
+    // perform operation
     take_along_axis<int32_t>(hw_t, hw_idx, /*axis=*/2, hw_out);
     auto out = device_to_host<int32_t>(hw_out);
+
     ASSERT_TRUE(torch::equal(out, expected));
 }
 
-// 4‑D identity index along axis 0
-TEST(TakeAlongAxisTests, FourDim_Axis0_Identity) {
-    // shape = {3,2,3,2}
-    auto t = torch::randint(0, 20, {3,2,3,2}, torch::kInt64);
+
+// 4‑D gather along axis 2 with fixed indices
+TEST(TakeAlongAxisTests, FourDim_Axis2_Fixed) {
+  // manually specify input tensor
+  auto t = torch::tensor({
+      { // batch 0
+          { {  1,  2,  3,  4,  5 },   // 0th along axis=2
+            {  6,  7,  8,  9, 10 },   // 1st
+            { 11, 12, 13, 14, 15 },   // 2nd
+            { 16, 17, 18, 19, 20 } }, // 3rd
+
+          { { 21, 22, 23, 24, 25 },
+            { 26, 27, 28, 29, 30 },
+            { 31, 32, 33, 34, 35 },
+            { 36, 37, 38, 39, 40 } },
+
+          { { 41, 42, 43, 44, 45 },
+            { 46, 47, 48, 49, 50 },
+            { 51, 52, 53, 54, 55 },
+            { 56, 57, 58, 59, 60 } }
+      },
+      { // batch 1
+          { { 61, 62, 63, 64, 65 },
+            { 66, 67, 68, 69, 70 },
+            { 71, 72, 73, 74, 75 },
+            { 76, 77, 78, 79, 80 } },
+
+          { { 81, 82, 83, 84, 85 },
+            { 86, 87, 88, 89, 90 },
+            { 91, 92, 93, 94, 95 },
+            { 96, 97, 98, 99,100 } },
+
+          { {101,102,103,104,105},
+            {106,107,108,109,110},
+            {111,112,113,114,115},
+            {116,117,118,119,120} }
+      }
+  }, torch::kInt32); // shape {2,3,4,5}
+
+  // specify indices: idx.shape = {2,3,6,5}
+  // pick indices 0,1,2,3 (valid for axis=2 size=4)
+  auto idx = torch::tensor({
+      { // batch 0
+          { {0,1,2,3,0}, {1,2,3,0,1}, {2,3,0,1,2}, {3,0,1,2,3}, {0,1,2,3,0}, {1,2,3,0,1} },
+          { {2,1,0,3,2}, {3,2,1,0,3}, {0,3,2,1,0}, {1,0,3,2,1}, {2,1,0,3,2}, {3,2,1,0,3} },
+          { {1,2,3,0,1}, {2,3,0,1,2}, {3,0,1,2,3}, {0,1,2,3,0}, {1,2,3,0,1}, {2,3,0,1,2} }
+      },
+      { // batch 1
+          { {3,2,1,0,3}, {2,1,0,3,2}, {1,0,3,2,1}, {0,3,2,1,0}, {3,2,1,0,3}, {2,1,0,3,2} },
+          { {0,1,2,3,0}, {1,2,3,0,1}, {2,3,0,1,2}, {3,0,1,2,3}, {0,1,2,3,0}, {1,2,3,0,1} },
+          { {2,1,0,3,2}, {3,2,1,0,3}, {0,3,2,1,0}, {1,0,3,2,1}, {2,1,0,3,2}, {3,2,1,0,3} }
+      }
+  }, torch::kInt64);
+
+  auto expected = torch::take_along_dim(t, idx, /*dim=*/2);
+
+  auto hw_t   = host_to_device<int32_t>(t);
+  auto hw_idx = host_to_device<idx_t>(idx);
+  auto hw_out = allocate_on_hardware<int32_t>({
+    idx.size(0), idx.size(1), idx.size(2), idx.size(3)
+  });
+
+  take_along_axis<int32_t>(hw_t, hw_idx, /*axis=*/2, hw_out);
+  auto out = device_to_host<int32_t>(hw_out);
+
+  ASSERT_TRUE(torch::equal(out, expected));
+}
+
+
+// 4-D identity index along axis 0 (deterministic)
+TEST(TakeAlongAxisTests, IdentityGather4D_Axis0) {
+    // shape = {3,2,3,2}, values = 0,1,2,…,35
+    auto t = torch::arange(
+        /*start=*/0,
+        /*end=*/3*2*3*2,
+        torch::kInt64
+    ).reshape({3,2,3,2});
+
     // idx picks itself along dim=0: idx.shape = same as t
     auto idx = torch::zeros_like(t, torch::kInt64);
     for (int i0 = 0; i0 < 3; ++i0)
@@ -146,6 +199,7 @@ TEST(TakeAlongAxisTests, FourDim_Axis0_Identity) {
       idx.index_put_({i0,i1,i2,i3}, i0);
     }
 
+    // since idx is identity along axis 0, expected == t
     auto expected = torch::take_along_dim(t, idx, /*axis=*/0);
 
     auto hw_t   = host_to_device<int64_t>(t);
@@ -156,143 +210,55 @@ TEST(TakeAlongAxisTests, FourDim_Axis0_Identity) {
 
     take_along_axis<int64_t>(hw_t, hw_idx, 0, hw_out);
     auto out = device_to_host<int64_t>(hw_out);
+
     ASSERT_TRUE(torch::equal(out, expected));
 }
 
 // 11‑D gather along axis 7 with varied dimension sizes
 TEST(TakeAlongAxisTests, ElevenDim_VariedShape_Axis7) {
-    // input shape:  {1,2,3,2,3,2,3,5,2,3,2}
-    // we’ll gather along dim=7, so idx_shape[7]=3
-    auto a_shape = std::vector<int64_t>{1,2,3,2,3,2,3,5,2,3,2};
-    auto idx_shape = a_shape;
-    idx_shape[7] = 3;
+  // input shape:  {1,2,3,2,3,2,3,5,2,3,2}
+  // we’ll gather along dim=7, so idx_shape[7]=3
+  auto a_shape = std::vector<int64_t>{1,2,3,2,3,2,3,5,2,3,2};
+  auto idx_shape = a_shape;
+  idx_shape[7] = 3;
 
-    // random input and indices
-    auto t   = torch::randint(-100, 100, a_shape,    torch::kInt32);
-    auto idx = torch::randint(0, a_shape[7], idx_shape, torch::kInt64);
-    auto expected = torch::take_along_dim(t, idx, /*dim=*/7);
+  // first calculate number of elements
+  int64_t numel = 1;
+  for (auto d : a_shape) {
+      numel *= d;
+  }
 
-    // upload
-    auto hw_t   = host_to_device<int32_t>(t);
-    auto hw_idx = host_to_device<idx_t>(idx);
+  // then call arange properly
+  auto t = torch::arange(0, numel, torch::TensorOptions().dtype(torch::kInt32))
+              .reshape(a_shape);
 
-    // allocate output with exactly the idx shape
-    auto hw_out = allocate_on_hardware<int32_t>({
-        1,2,3,2,3,2,3,3,2,3,2
-    });
 
-    // run and compare
-    take_along_axis<int32_t>(hw_t, hw_idx, /*axis=*/7, hw_out);
-    auto out = device_to_host<int32_t>(hw_out);
+  // manually create indices tensor
+  auto idx = torch::empty(idx_shape, torch::kInt64);
 
-    ASSERT_TRUE(torch::equal(out, expected));
+  // simple predictable indices: cycle through 0,1,2,3,4
+  for (int64_t i = 0; i < idx.numel(); ++i) {
+      idx.view(-1)[i] = i % a_shape[7];  // valid indices into dim=7 (size 5)
+  }
+
+  // expected result: gather along dim=7
+  auto expected = torch::take_along_dim(t, idx, /*dim=*/7);
+
+  // upload
+  auto hw_t   = host_to_device<int32_t>(t);
+  auto hw_idx = host_to_device<idx_t>(idx);
+
+  // allocate output with exactly the idx shape
+  auto hw_out = allocate_on_hardware<int32_t>({
+      1,2,3,2,3,2,3,3,2,3,2
+  });
+
+  // run and compare
+  take_along_axis<int32_t>(hw_t, hw_idx, /*axis=*/7, hw_out);
+  auto out = device_to_host<int32_t>(hw_out);
+
+  ASSERT_TRUE(torch::equal(out, expected));
 }
-
-/************************************************************************************************
- * Error conditions
- ***********************************************************************************************/
-
-// Mismatch in a *non*-axis dimension should throw
-VALIDATION_TEST(TakeAlongAxisTests, Throws_OnShapeMismatchNonAxis) {
-    auto t   = torch::randint(0, 10, {2, 3}, torch::kInt32);
-    // dim 0 is 2 in `t`, but 1 in `idx`
-    auto idx = torch::randint(0, 2, {1, 3}, torch::kInt64);
-
-    auto hw_t   = host_to_device<int32_t>(t);
-    auto hw_idx = host_to_device<idx_t>(idx);
-    auto hw_out = allocate_on_hardware<int32_t>({ idx.size(0), idx.size(1) });
-
-    EXPECT_THROW(
-      take_along_axis<int32_t>(hw_t, hw_idx, /*axis=*/1, hw_out),
-      std::invalid_argument
-    );
-}
-
-
-// Rank‑mismatch between input and idx
-VALIDATION_TEST(TakeAlongAxisTests, Throws_OnRankMismatch) {
-    auto t   = torch::arange(4, torch::kInt32);       // rank=1
-    auto idx = torch::randint(0,4,{2,2}, torch::kInt64);// rank=2
-    auto hw_t   = host_to_device<int32_t>(t);
-    auto hw_idx = host_to_device<idx_t>(idx);
-    auto hw_out = allocate_on_hardware<int32_t>({
-      idx.size(0), idx.size(1)
-    });
-
-    EXPECT_THROW(
-      take_along_axis<int32_t>(hw_t, hw_idx, 0, hw_out),
-      std::invalid_argument
-    );
-}
-
-// Axis too large or too negative for a multi‑dim tensor
-VALIDATION_TEST(TakeAlongAxisTests, Throws_OnAxisOutOfRange_MultiDim) {
-    auto t   = torch::randint(0,10,{3,3}, torch::kInt64);
-    auto idx = torch::randint(0,3, {3,3}, torch::kInt64);
-    auto hw_t   = host_to_device<int64_t>(t);
-    auto hw_idx = host_to_device<idx_t>(idx);
-    auto hw_out = allocate_on_hardware<int64_t>({
-      idx.size(0), idx.size(1)
-    });
-
-    EXPECT_THROW(
-      take_along_axis<int64_t>(hw_t, hw_idx, 2, hw_out),
-      std::out_of_range
-    );
-    EXPECT_THROW(
-      take_along_axis<int64_t>(hw_t, hw_idx, -3, hw_out),
-      std::out_of_range
-    );
-}
-
-// Axis too large or too negative for a scalar
-VALIDATION_TEST(TakeAlongAxisTests, Throws_OnAxisOutOfRange_ZeroDim) {
-    auto t   = torch::tensor(7, torch::kInt32);
-    auto idx = torch::tensor(0, torch::kInt64);
-    auto hw_t   = host_to_device<int32_t>(t);
-    auto hw_idx = host_to_device<idx_t>(idx);
-    auto hw_out = allocate_on_hardware<int32_t>({});  // scalar
-
-    EXPECT_THROW(
-      take_along_axis<int32_t>(hw_t, hw_idx, 1, hw_out),
-      std::out_of_range
-    );
-    EXPECT_THROW(
-      take_along_axis<int32_t>(hw_t, hw_idx, -2, hw_out),
-      std::out_of_range
-    );
-}
-
-// Out‑of‑bounds indices along the gather axis
-VALIDATION_TEST(TakeAlongAxisTests, Throws_OnIndexOutOfBounds) {
-    auto t   = torch::randn({4}, torch::kFloat);
-    auto idx = torch::tensor({0,4,1}, torch::kInt64);
-    auto hw_t   = host_to_device<float>(t);
-    auto hw_idx = host_to_device<idx_t>(idx);
-    auto hw_out = allocate_on_hardware<float>({ idx.size(0) });
-
-    EXPECT_THROW(
-      take_along_axis<float>(hw_t, hw_idx, 0, hw_out),
-      std::out_of_range
-    );
-}
-
-// Broadcastable → mismatch on non‑axis should throw
-VALIDATION_TEST(TakeAlongAxisTests, Throws_OnBroadcastableIdx) {
-    auto t   = torch::randn({2,3,4}, torch::kFloat);
-    // idx is {2,1,4}; non‑axis dim 1 is 1 vs input’s 3
-    auto idx = torch::randint(0, 4, {2, 1, 4}, torch::kInt64);
-
-    auto hw_t   = host_to_device<float>(t);
-    auto hw_idx = host_to_device<idx_t>(idx);
-    auto hw_out = allocate_on_hardware<float>({ idx.size(0), idx.size(1), idx.size(2) });
-
-    EXPECT_THROW(
-      take_along_axis<float>(hw_t, hw_idx, /*axis=*/2, hw_out),
-      std::invalid_argument
-    );
-}
-
 
 /************************************************************************************************
  * Edge & corner cases
@@ -401,6 +367,126 @@ TEST(TakeAlongAxisTests, DoubleType) {
     take_along_axis<double>(hw_t, hw_idx, 1, hw_out);
     auto out = device_to_host<double>(hw_out);
     ASSERT_TRUE(torch::allclose(out, expected));
+}
+
+/************************************************************************************************
+ * Error conditions
+ ***********************************************************************************************/
+
+// Scalar input + scalar idx → should throw out_of_range (torch errors on rank 0)
+VALIDATION_TEST(TakeAlongAxisTests, ScalarInputAndScalarIdx_Throws) {
+  auto t   = torch::tensor(42, torch::kInt32);
+  auto idx = torch::tensor(0,  torch::kInt64);
+
+  auto hw_t   = host_to_device<int32_t>(t);
+  auto hw_idx = host_to_device<idx_t>(idx);
+  auto hw_out = allocate_on_hardware<int32_t>({});  // shape = {}
+
+  EXPECT_THROW(
+    take_along_axis<int32_t>(hw_t, hw_idx, 0, hw_out),
+    std::out_of_range
+  );
+}
+
+// Mismatch in a *non*-axis dimension should throw
+VALIDATION_TEST(TakeAlongAxisTests, Throws_OnShapeMismatchNonAxis) {
+    auto t   = torch::randint(0, 10, {2, 3}, torch::kInt32);
+    // dim 0 is 2 in `t`, but 1 in `idx`
+    auto idx = torch::randint(0, 2, {1, 3}, torch::kInt64);
+
+    auto hw_t   = host_to_device<int32_t>(t);
+    auto hw_idx = host_to_device<idx_t>(idx);
+    auto hw_out = allocate_on_hardware<int32_t>({ idx.size(0), idx.size(1) });
+
+    EXPECT_THROW(
+      take_along_axis<int32_t>(hw_t, hw_idx, /*axis=*/1, hw_out),
+      std::invalid_argument
+    );
+}
+
+
+// Rank‑mismatch between input and idx
+VALIDATION_TEST(TakeAlongAxisTests, Throws_OnRankMismatch) {
+    auto t   = torch::arange(4, torch::kInt32);       // rank=1
+    auto idx = torch::randint(0,4,{2,2}, torch::kInt64);// rank=2
+    auto hw_t   = host_to_device<int32_t>(t);
+    auto hw_idx = host_to_device<idx_t>(idx);
+    auto hw_out = allocate_on_hardware<int32_t>({
+      idx.size(0), idx.size(1)
+    });
+
+    EXPECT_THROW(
+      take_along_axis<int32_t>(hw_t, hw_idx, 0, hw_out),
+      std::invalid_argument
+    );
+}
+
+// Axis too large or too negative for a multi‑dim tensor
+VALIDATION_TEST(TakeAlongAxisTests, Throws_OnAxisOutOfRange_MultiDim) {
+    auto t   = torch::randint(0,10,{3,3}, torch::kInt64);
+    auto idx = torch::randint(0,3, {3,3}, torch::kInt64);
+    auto hw_t   = host_to_device<int64_t>(t);
+    auto hw_idx = host_to_device<idx_t>(idx);
+    auto hw_out = allocate_on_hardware<int64_t>({
+      idx.size(0), idx.size(1)
+    });
+
+    EXPECT_THROW(
+      take_along_axis<int64_t>(hw_t, hw_idx, 2, hw_out),
+      std::out_of_range
+    );
+    EXPECT_THROW(
+      take_along_axis<int64_t>(hw_t, hw_idx, -3, hw_out),
+      std::out_of_range
+    );
+}
+
+// Axis too large or too negative for a scalar
+VALIDATION_TEST(TakeAlongAxisTests, Throws_OnAxisOutOfRange_ZeroDim) {
+    auto t   = torch::tensor(7, torch::kInt32);
+    auto idx = torch::tensor(0, torch::kInt64);
+    auto hw_t   = host_to_device<int32_t>(t);
+    auto hw_idx = host_to_device<idx_t>(idx);
+    auto hw_out = allocate_on_hardware<int32_t>({});  // scalar
+
+    EXPECT_THROW(
+      take_along_axis<int32_t>(hw_t, hw_idx, 1, hw_out),
+      std::out_of_range
+    );
+    EXPECT_THROW(
+      take_along_axis<int32_t>(hw_t, hw_idx, -2, hw_out),
+      std::out_of_range
+    );
+}
+
+// Out‑of‑bounds indices along the gather axis
+VALIDATION_TEST(TakeAlongAxisTests, Throws_OnIndexOutOfBounds) {
+    auto t   = torch::randn({4}, torch::kFloat);
+    auto idx = torch::tensor({0,4,1}, torch::kInt64);
+    auto hw_t   = host_to_device<float>(t);
+    auto hw_idx = host_to_device<idx_t>(idx);
+    auto hw_out = allocate_on_hardware<float>({ idx.size(0) });
+
+    EXPECT_THROW(
+      take_along_axis<float>(hw_t, hw_idx, 0, hw_out),
+      std::out_of_range
+    );
+}
+
+// Broadcastable → mismatch on non‑axis should throw
+VALIDATION_TEST(TakeAlongAxisTests, Throws_OnBroadcastableIdx) {
+    auto t   = torch::randn({2,3,4}, torch::kFloat);
+    // idx is {2,1,4}; non‑axis dim 1 is 1 vs input’s 3
+    auto idx = torch::randint(0, 4, {2, 1, 4}, torch::kInt64);
+
+    auto hw_t   = host_to_device<float>(t);
+    auto hw_idx = host_to_device<idx_t>(idx);
+    auto hw_out = allocate_on_hardware<float>({ idx.size(0), idx.size(1), idx.size(2) });
+
+    EXPECT_THROW(
+      take_along_axis<float>(hw_t, hw_idx, /*axis=*/2, hw_out),
+      std::invalid_argument
+    );
 }
 
 /****************************************************************************************
@@ -520,6 +606,41 @@ TEST(ApplyGDecompTests, FullBitWidthReconstruction) {
 }
 
 /************************************************************************************************
+ * Edge & corner cases
+ ***********************************************************************************************/
+
+// Empty input produces empty output of correct shape
+TEST(ApplyGDecompTests, EmptyInputProducesEmpty) {
+  auto t_cpu   = torch::empty({0,5}, torch::kInt32);
+  int32_t g_exp       = 3;
+  int32_t g_base_bits = 2;
+  auto hw_t   = host_to_device<int32_t>(t_cpu);
+  auto hw_out = allocate_on_hardware<int32_t>({0,5,g_exp});
+  apply_g_decomp<int32_t>(hw_t, g_exp, g_base_bits, hw_out);
+  auto out    = device_to_host<int32_t>(hw_out);
+
+  ASSERT_EQ(out.numel(), 0);
+  ASSERT_EQ(out.sizes(), (std::vector<int64_t>{0,5,g_exp}));
+}
+
+// Negative inputs get their two's-complement low bits
+TEST(ApplyGDecompTests, NegativeValuesBinary) {
+  // -5 = …11111011₂ → bits [1,1,0,1]  (LSB first)
+  // -2 = …11111110₂ → bits [0,1,1,1]
+  auto t_cpu   = torch::tensor({-5, -2}, torch::kInt32);
+  int32_t g_exp       = 4;
+  int32_t g_base_bits = 1;  // binary
+  auto expected = torch::tensor({{1,1,0,1},{0,1,1,1}}, torch::kInt32);
+
+  auto hw_t    = host_to_device<int32_t>(t_cpu);
+  auto hw_out  = allocate_on_hardware<int32_t>({2, g_exp});
+  apply_g_decomp<int32_t>(hw_t, g_exp, g_base_bits, hw_out);
+  auto out     = device_to_host<int32_t>(hw_out);
+
+  ASSERT_TRUE(torch::equal(out, expected));
+}
+
+/************************************************************************************************
  * Error conditions
  ***********************************************************************************************/
 
@@ -580,40 +701,6 @@ VALIDATION_TEST(ApplyGDecompTests, Throws_OnDimMismatch) {
                std::invalid_argument);
 }
 
-/************************************************************************************************
- * Edge & corner cases
- ***********************************************************************************************/
-
-// Empty input produces empty output of correct shape
-TEST(ApplyGDecompTests, EmptyInputProducesEmpty) {
-  auto t_cpu   = torch::empty({0,5}, torch::kInt32);
-  int32_t g_exp       = 3;
-  int32_t g_base_bits = 2;
-  auto hw_t   = host_to_device<int32_t>(t_cpu);
-  auto hw_out = allocate_on_hardware<int32_t>({0,5,g_exp});
-  apply_g_decomp<int32_t>(hw_t, g_exp, g_base_bits, hw_out);
-  auto out    = device_to_host<int32_t>(hw_out);
-
-  ASSERT_EQ(out.numel(), 0);
-  ASSERT_EQ(out.sizes(), (std::vector<int64_t>{0,5,g_exp}));
-}
-
-// Negative inputs get their two's-complement low bits
-TEST(ApplyGDecompTests, NegativeValuesBinary) {
-  // -5 = …11111011₂ → bits [1,1,0,1]  (LSB first)
-  // -2 = …11111110₂ → bits [0,1,1,1]
-  auto t_cpu   = torch::tensor({-5, -2}, torch::kInt32);
-  int32_t g_exp       = 4;
-  int32_t g_base_bits = 1;  // binary
-  auto expected = torch::tensor({{1,1,0,1},{0,1,1,1}}, torch::kInt32);
-
-  auto hw_t    = host_to_device<int32_t>(t_cpu);
-  auto hw_out  = allocate_on_hardware<int32_t>({2, g_exp});
-  apply_g_decomp<int32_t>(hw_t, g_exp, g_base_bits, hw_out);
-  auto out     = device_to_host<int32_t>(hw_out);
-
-  ASSERT_TRUE(torch::equal(out, expected));
-}
 
 /***************************************************************************************
 ****************************************************************************************
@@ -686,17 +773,6 @@ TEST(AbsTests, TwoDDouble) {
 }
 
 /************************************************************************************************
-* Error conditions
-***********************************************************************************************/
-
-// Shape mismatch: dims must match exactly
-VALIDATION_TEST(AbsTests, Throws_OnShapeMismatch) {
-  auto t    = host_to_device<int32_t>(torch::tensor({1,2,3}, torch::kInt32));
-  auto bad  = allocate_on_hardware<int32_t>({2});  // wrong size
-  EXPECT_THROW(abs<int32_t>(t, bad), std::invalid_argument);
-}
-
-/************************************************************************************************
 * Edge & corner cases
 ***********************************************************************************************/
 
@@ -710,6 +786,17 @@ TEST(AbsTests, EmptyInputProducesEmpty) {
 
   ASSERT_EQ(out.numel(), 0);
   ASSERT_EQ(out.sizes(), (std::vector<int64_t>{0,5}));
+}
+
+/************************************************************************************************
+* Error conditions
+***********************************************************************************************/
+
+// Shape mismatch: dims must match exactly
+VALIDATION_TEST(AbsTests, Throws_OnShapeMismatch) {
+  auto t    = host_to_device<int32_t>(torch::tensor({1,2,3}, torch::kInt32));
+  auto bad  = allocate_on_hardware<int32_t>({2});  // wrong size
+  EXPECT_THROW(abs<int32_t>(t, bad), std::invalid_argument);
 }
 
 /***************************************************************************************
@@ -772,18 +859,6 @@ TEST(SetConstValTests, TwoDDouble) {
 }
 
 /************************************************************************************************
-* Error conditions
-***********************************************************************************************/
-
-VALIDATION_TEST(SetConstValTests, Throws_OnNullTensor) {
-  std::shared_ptr<DeviceTensor<int32_t>> null_ptr;
-  EXPECT_THROW(
-    set_const_val<int32_t>(null_ptr, 5),
-    std::invalid_argument
-  );
-}
-
-/************************************************************************************************
 * Edge & corner cases
 ***********************************************************************************************/
 
@@ -810,4 +885,16 @@ TEST(SetConstValTests, LargeTensor) {
   auto expected = torch::full({N}, 123, torch::kInt32);
 
   ASSERT_TRUE(torch::equal(out, expected));
+}
+
+/************************************************************************************************
+* Error conditions
+***********************************************************************************************/
+
+VALIDATION_TEST(SetConstValTests, Throws_OnNullTensor) {
+  std::shared_ptr<DeviceTensor<int32_t>> null_ptr;
+  EXPECT_THROW(
+    set_const_val<int32_t>(null_ptr, 5),
+    std::invalid_argument
+  );
 }
