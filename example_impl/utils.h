@@ -24,4 +24,16 @@ namespace device_tensor_utils {
         return idx;
     }
 
+    // returns: strides for row-major layout
+    inline std::vector<int64_t> compute_strides(const std::vector<int64_t>& dims) {
+        size_t rank = dims.size();
+        std::vector<int64_t> strides(rank);
+        int64_t stride = 1;
+        for (int64_t i = rank - 1; i >= 0; --i) {
+            strides[i] = stride;
+            stride *= dims[i];
+        }
+        return strides;
+    }
+
 }  // namespace device_tensor_utils

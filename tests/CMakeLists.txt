@@ -34,6 +34,7 @@ set(TEST_SOURCES
     test_memory_ops.cpp
     test_contiguous.cpp
     test_compute_ops.cpp
+    test_device_memory.cpp
 )
 
 set(TEST_NAMES
@@ -48,6 +49,7 @@ set(TEST_NAMES
     MemoryOpsTests
     ContiguousTests
     ComputeOpsTests
+    DeviceMemoryTests
 )
 
 # Loop through the test sources and add executables and tests
@@ -55,16 +57,22 @@ list(LENGTH TEST_SOURCES NUM_TESTS)
 math(EXPR NUM_TESTS "${NUM_TESTS} - 1")
 foreach(i RANGE 0 ${NUM_TESTS})
     list(GET TEST_SOURCES ${i} TEST_SOURCE)
-    list(GET TEST_NAMES ${i} TEST_NAME)
+    list(GET TEST_NAMES   ${i} TEST_NAME)
 
-    # Create the executable for the test
     add_executable(${TEST_NAME} ${TEST_SOURCE})
-    target_link_libraries(${TEST_NAME} example_impl GTest::gtest GTest::gtest_main)
+    target_link_libraries(${TEST_NAME}
+      example_impl
+      GTest::gtest
+      GTest::gtest_main
+    )
+
+    if("${TEST_NAME}" STREQUAL "DeviceMemoryTests")
+      target_link_options(${TEST_NAME} PRIVATE "-Wl,--wrap=malloc")
+    endif()
 
     target_compile_definitions(${TEST_NAME} PRIVATE
       $<$<BOOL:${ENABLE_VALIDATION_TESTS}>:ENABLE_VALIDATION_TESTS>
     )
 
-    # Add the test to CTest
     add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})
 endforeach()

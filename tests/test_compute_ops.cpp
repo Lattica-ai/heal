@@ -27,7 +27,7 @@ TEST(TakeAlongAxisTests, Basic1D) {
     auto hw_t   = host_to_device<int32_t>(t);
     auto hw_idx = host_to_device<idx_t>(idx);
     // allocate output of shape {idx.size(0)}
-    auto hw_out = allocate_on_hardware<int32_t>({ idx.size(0) });
+    auto hw_out = empty<int32_t>({ idx.size(0) });
 
     take_along_axis<int32_t>(hw_t, hw_idx, 0, hw_out);
     auto out = device_to_host<int32_t>(hw_out);
@@ -47,7 +47,7 @@ TEST(TakeAlongAxisTests, TwoDim_Axis0) {
     auto hw_t    = host_to_device<int64_t>(t);
     auto hw_idx  = host_to_device<idx_t>(idx);
     // allocate output of shape {idx.size(0), idx.size(1)}
-    auto hw_out  = allocate_on_hardware<int64_t>({
+    auto hw_out  = empty<int64_t>({
       idx.size(0), idx.size(1)
     });
 
@@ -68,7 +68,7 @@ TEST(TakeAlongAxisTests, TwoDim_Axis1_Float) {
 
     auto hw_t   = host_to_device<float>(t);
     auto hw_idx = host_to_device<idx_t>(idx);
-    auto hw_out = allocate_on_hardware<float>({
+    auto hw_out = empty<float>({
       idx.size(0), idx.size(1)
     });
 
@@ -101,7 +101,7 @@ TEST(TakeAlongAxisTests, IdentityIndex_3D) {
     // upload to device
     auto hw_t   = host_to_device<int32_t>(t);
     auto hw_idx = host_to_device<idx_t>(idx);
-    auto hw_out = allocate_on_hardware<int32_t>({
+    auto hw_out = empty<int32_t>({
         idx.size(0), idx.size(1), idx.size(2)
     });
 
@@ -170,7 +170,7 @@ TEST(TakeAlongAxisTests, FourDim_Axis2_Fixed) {
 
   auto hw_t   = host_to_device<int32_t>(t);
   auto hw_idx = host_to_device<idx_t>(idx);
-  auto hw_out = allocate_on_hardware<int32_t>({
+  auto hw_out = empty<int32_t>({
     idx.size(0), idx.size(1), idx.size(2), idx.size(3)
   });
 
@@ -181,7 +181,7 @@ TEST(TakeAlongAxisTests, FourDim_Axis2_Fixed) {
 }
 
 
-// 4-D identity index along axis 0 (deterministic)
+// 4-D identity index along axis 0
 TEST(TakeAlongAxisTests, IdentityGather4D_Axis0) {
     // shape = {3,2,3,2}, values = 0,1,2,…,35
     auto t = torch::arange(
@@ -191,7 +191,7 @@ TEST(TakeAlongAxisTests, IdentityGather4D_Axis0) {
     ).reshape({3,2,3,2});
 
     // idx picks itself along dim=0: idx.shape = same as t
-    auto idx = torch::zeros_like(t, torch::kInt64);
+    auto idx = torch::empty_like(t, torch::kInt64);
     for (int i0 = 0; i0 < 3; ++i0)
     for (int i1 = 0; i1 < 2; ++i1)
     for (int i2 = 0; i2 < 3; ++i2)
@@ -204,7 +204,7 @@ TEST(TakeAlongAxisTests, IdentityGather4D_Axis0) {
 
     auto hw_t   = host_to_device<int64_t>(t);
     auto hw_idx = host_to_device<idx_t>(idx);
-    auto hw_out = allocate_on_hardware<int64_t>({
+    auto hw_out = empty<int64_t>({
       idx.size(0), idx.size(1), idx.size(2), idx.size(3)
     });
 
@@ -249,7 +249,7 @@ TEST(TakeAlongAxisTests, ElevenDim_VariedShape_Axis7) {
   auto hw_idx = host_to_device<idx_t>(idx);
 
   // allocate output with exactly the idx shape
-  auto hw_out = allocate_on_hardware<int32_t>({
+  auto hw_out = empty<int32_t>({
       1,2,3,2,3,2,3,3,2,3,2
   });
 
@@ -272,7 +272,7 @@ TEST(TakeAlongAxisTests, NegativeIndicesMapping) {
 
     auto hw_t   = host_to_device<int32_t>(t);
     auto hw_idx = host_to_device<idx_t>(idx);
-    auto hw_out = allocate_on_hardware<int32_t>({ idx.size(0) });
+    auto hw_out = empty<int32_t>({ idx.size(0) });
 
     take_along_axis<int32_t>(hw_t, hw_idx, 0, hw_out);
     auto out = device_to_host<int32_t>(hw_out);
@@ -287,7 +287,7 @@ TEST(TakeAlongAxisTests, NegativeAxisAsLastDim) {
 
     auto hw_t   = host_to_device<int64_t>(t);
     auto hw_idx = host_to_device<idx_t>(idx);
-    auto hw_out = allocate_on_hardware<int64_t>({
+    auto hw_out = empty<int64_t>({
       idx.size(0), idx.size(1)
     });
 
@@ -304,7 +304,7 @@ TEST(TakeAlongAxisTests, EmptyDimProducesEmpty) {
 
     auto hw_t   = host_to_device<int32_t>(t);
     auto hw_idx = host_to_device<idx_t>(idx);
-    auto hw_out = allocate_on_hardware<int32_t>({
+    auto hw_out = empty<int32_t>({
       idx.size(0), idx.size(1)
     });
 
@@ -323,7 +323,7 @@ TEST(TakeAlongAxisTests, Works_OnNonContiguousInput) {
 
     auto hw_t   = host_to_device<int64_t>(t);
     auto hw_idx = host_to_device<idx_t>(idx);
-    auto hw_out = allocate_on_hardware<int64_t>({
+    auto hw_out = empty<int64_t>({
       idx.size(0), idx.size(1)
     });
 
@@ -341,7 +341,7 @@ TEST(TakeAlongAxisTests, LargeTensorStress) {
 
     auto hw_t   = host_to_device<int32_t>(t);
     auto hw_idx = host_to_device<idx_t>(idx);
-    auto hw_out = allocate_on_hardware<int32_t>({ idx.size(0) });
+    auto hw_out = zeros<int32_t>({ idx.size(0) });
 
     take_along_axis<int32_t>(hw_t, hw_idx, 0, hw_out);
     auto out = device_to_host<int32_t>(hw_out);
@@ -360,7 +360,7 @@ TEST(TakeAlongAxisTests, DoubleType) {
 
     auto hw_t   = host_to_device<double>(t);
     auto hw_idx = host_to_device<idx_t>(idx);
-    auto hw_out = allocate_on_hardware<double>({
+    auto hw_out = empty<double>({
       idx.size(0), idx.size(1)
     });
 
@@ -380,7 +380,7 @@ VALIDATION_TEST(TakeAlongAxisTests, ScalarInputAndScalarIdx_Throws) {
 
   auto hw_t   = host_to_device<int32_t>(t);
   auto hw_idx = host_to_device<idx_t>(idx);
-  auto hw_out = allocate_on_hardware<int32_t>({});  // shape = {}
+  auto hw_out = zeros<int32_t>({});  // shape = {}
 
   EXPECT_THROW(
     take_along_axis<int32_t>(hw_t, hw_idx, 0, hw_out),
@@ -396,7 +396,7 @@ VALIDATION_TEST(TakeAlongAxisTests, Throws_OnShapeMismatchNonAxis) {
 
     auto hw_t   = host_to_device<int32_t>(t);
     auto hw_idx = host_to_device<idx_t>(idx);
-    auto hw_out = allocate_on_hardware<int32_t>({ idx.size(0), idx.size(1) });
+    auto hw_out = zeros<int32_t>({ idx.size(0), idx.size(1) });
 
     EXPECT_THROW(
       take_along_axis<int32_t>(hw_t, hw_idx, /*axis=*/1, hw_out),
@@ -411,7 +411,7 @@ VALIDATION_TEST(TakeAlongAxisTests, Throws_OnRankMismatch) {
     auto idx = torch::randint(0,4,{2,2}, torch::kInt64);// rank=2
     auto hw_t   = host_to_device<int32_t>(t);
     auto hw_idx = host_to_device<idx_t>(idx);
-    auto hw_out = allocate_on_hardware<int32_t>({
+    auto hw_out = empty<int32_t>({
       idx.size(0), idx.size(1)
     });
 
@@ -427,7 +427,7 @@ VALIDATION_TEST(TakeAlongAxisTests, Throws_OnAxisOutOfRange_MultiDim) {
     auto idx = torch::randint(0,3, {3,3}, torch::kInt64);
     auto hw_t   = host_to_device<int64_t>(t);
     auto hw_idx = host_to_device<idx_t>(idx);
-    auto hw_out = allocate_on_hardware<int64_t>({
+    auto hw_out = empty<int64_t>({
       idx.size(0), idx.size(1)
     });
 
@@ -447,7 +447,7 @@ VALIDATION_TEST(TakeAlongAxisTests, Throws_OnAxisOutOfRange_ZeroDim) {
     auto idx = torch::tensor(0, torch::kInt64);
     auto hw_t   = host_to_device<int32_t>(t);
     auto hw_idx = host_to_device<idx_t>(idx);
-    auto hw_out = allocate_on_hardware<int32_t>({});  // scalar
+    auto hw_out = empty<int32_t>({});  // scalar
 
     EXPECT_THROW(
       take_along_axis<int32_t>(hw_t, hw_idx, 1, hw_out),
@@ -465,7 +465,7 @@ VALIDATION_TEST(TakeAlongAxisTests, Throws_OnIndexOutOfBounds) {
     auto idx = torch::tensor({0,4,1}, torch::kInt64);
     auto hw_t   = host_to_device<float>(t);
     auto hw_idx = host_to_device<idx_t>(idx);
-    auto hw_out = allocate_on_hardware<float>({ idx.size(0) });
+    auto hw_out = empty<float>({ idx.size(0) });
 
     EXPECT_THROW(
       take_along_axis<float>(hw_t, hw_idx, 0, hw_out),
@@ -481,7 +481,7 @@ VALIDATION_TEST(TakeAlongAxisTests, Throws_OnBroadcastableIdx) {
 
     auto hw_t   = host_to_device<float>(t);
     auto hw_idx = host_to_device<idx_t>(idx);
-    auto hw_out = allocate_on_hardware<float>({ idx.size(0), idx.size(1), idx.size(2) });
+    auto hw_out = empty<float>({ idx.size(0), idx.size(1), idx.size(2) });
 
     EXPECT_THROW(
       take_along_axis<float>(hw_t, hw_idx, /*axis=*/2, hw_out),
@@ -509,7 +509,7 @@ TEST(ApplyGDecompTests, Basic1D) {
   auto expected = torch::tensor({{1,0},{0,1},{1,1}}, torch::kInt32);
 
   auto hw_t   = host_to_device<int32_t>(t_cpu);
-  auto hw_out = allocate_on_hardware<int32_t>({3,2});
+  auto hw_out = zeros<int32_t>({3,2});
   apply_g_decomp<int32_t>(hw_t, g_exp, g_base_bits, hw_out);
   auto out    = device_to_host<int32_t>(hw_out);
 
@@ -524,7 +524,7 @@ TEST(ApplyGDecompTests, ScalarInput) {
   auto expected = torch::tensor({2,5,0}, torch::kInt64);
 
   auto hw_t   = host_to_device<int64_t>(t_cpu);
-  auto hw_out = allocate_on_hardware<int64_t>({3});
+  auto hw_out = zeros<int64_t>({3});
   apply_g_decomp<int64_t>(hw_t, g_exp, g_base_bits, hw_out);
   auto out    = device_to_host<int64_t>(hw_out);
 
@@ -546,7 +546,7 @@ TEST(ApplyGDecompTests, TwoDim_Base4) {
   }, torch::kInt32);
 
   auto hw_t   = host_to_device<int32_t>(t_cpu);
-  auto hw_out = allocate_on_hardware<int32_t>({2,3,g_exp});
+  auto hw_out = zeros<int32_t>({2,3,g_exp});
   apply_g_decomp<int32_t>(hw_t, g_exp, g_base_bits, hw_out);
   auto out    = device_to_host<int32_t>(hw_out);
 
@@ -568,7 +568,7 @@ TEST(ApplyGDecompTests, ThreeDim_Binary) {
   }, torch::kInt64);
 
   auto hw_t   = host_to_device<int64_t>(t_cpu);
-  auto hw_out = allocate_on_hardware<int64_t>({2,1,2,g_exp});
+  auto hw_out = zeros<int64_t>({2,1,2,g_exp});
   apply_g_decomp<int64_t>(hw_t, g_exp, g_base_bits, hw_out);
   auto out    = device_to_host<int64_t>(hw_out);
 
@@ -589,7 +589,7 @@ TEST(ApplyGDecompTests, FullBitWidthReconstruction) {
   int32_t g_base_bits = 4;  // base = 16, covers 32 bits
 
   auto hw_t   = host_to_device<int32_t>(t_cpu);
-  auto hw_out = allocate_on_hardware<int32_t>({4, g_exp});
+  auto hw_out = zeros<int32_t>({4, g_exp});
   apply_g_decomp<int32_t>(hw_t, g_exp, g_base_bits, hw_out);
   auto out    = device_to_host<int32_t>(hw_out);
 
@@ -615,7 +615,7 @@ TEST(ApplyGDecompTests, EmptyInputProducesEmpty) {
   int32_t g_exp       = 3;
   int32_t g_base_bits = 2;
   auto hw_t   = host_to_device<int32_t>(t_cpu);
-  auto hw_out = allocate_on_hardware<int32_t>({0,5,g_exp});
+  auto hw_out = zeros<int32_t>({0,5,g_exp});
   apply_g_decomp<int32_t>(hw_t, g_exp, g_base_bits, hw_out);
   auto out    = device_to_host<int32_t>(hw_out);
 
@@ -633,7 +633,7 @@ TEST(ApplyGDecompTests, NegativeValuesBinary) {
   auto expected = torch::tensor({{1,1,0,1},{0,1,1,1}}, torch::kInt32);
 
   auto hw_t    = host_to_device<int32_t>(t_cpu);
-  auto hw_out  = allocate_on_hardware<int32_t>({2, g_exp});
+  auto hw_out  = zeros<int32_t>({2, g_exp});
   apply_g_decomp<int32_t>(hw_t, g_exp, g_base_bits, hw_out);
   auto out     = device_to_host<int32_t>(hw_out);
 
@@ -647,7 +647,7 @@ TEST(ApplyGDecompTests, NegativeValuesBinary) {
 // Parameter validation: non-positive g_exp
 VALIDATION_TEST(ApplyGDecompTests, Throws_OnNonPositiveGExp) {
   auto t      = host_to_device<int32_t>(torch::tensor({3,5}, torch::kInt32));
-  auto result = allocate_on_hardware<int32_t>({2,2});
+  auto result = zeros<int32_t>({2,2});
   EXPECT_THROW(apply_g_decomp<int32_t>(t, /*g_exp=*/0, /*g_base_bits=*/1, result),
                std::invalid_argument);
   EXPECT_THROW(apply_g_decomp<int32_t>(t, /*g_exp=*/-1, /*g_base_bits=*/1, result),
@@ -657,7 +657,7 @@ VALIDATION_TEST(ApplyGDecompTests, Throws_OnNonPositiveGExp) {
 // Parameter validation: non-positive g_base_bits
 VALIDATION_TEST(ApplyGDecompTests, Throws_OnNonPositiveBaseBits) {
   auto t      = host_to_device<int64_t>(torch::tensor({7,8}, torch::kInt64));
-  auto result = allocate_on_hardware<int64_t>({2,2});
+  auto result = zeros<int64_t>({2,2});
   EXPECT_THROW(apply_g_decomp<int64_t>(t, /*g_exp=*/2, /*g_base_bits=*/0, result),
                std::invalid_argument);
   EXPECT_THROW(apply_g_decomp<int64_t>(t, /*g_exp=*/2, /*g_base_bits=*/-3, result),
@@ -667,12 +667,12 @@ VALIDATION_TEST(ApplyGDecompTests, Throws_OnNonPositiveBaseBits) {
 // Parameter validation: g_base_bits too large for type
 VALIDATION_TEST(ApplyGDecompTests, Throws_OnBaseBitsTooLarge) {
   auto t32   = host_to_device<int32_t>(torch::tensor({1,2,3}, torch::kInt32));
-  auto bad32 = allocate_on_hardware<int32_t>({3,33});
+  auto bad32 = zeros<int32_t>({3,33});
   EXPECT_THROW(apply_g_decomp<int32_t>(t32, /*g_exp=*/33, /*g_base_bits=*/33, bad32),
                std::invalid_argument);
 
   auto t64   = host_to_device<int64_t>(torch::tensor({1,2}, torch::kInt64));
-  auto bad64 = allocate_on_hardware<int64_t>({2,65});
+  auto bad64 = zeros<int64_t>({2,65});
   EXPECT_THROW(apply_g_decomp<int64_t>(t64, /*g_exp=*/65, /*g_base_bits=*/65, bad64),
                std::invalid_argument);
 }
@@ -680,7 +680,7 @@ VALIDATION_TEST(ApplyGDecompTests, Throws_OnBaseBitsTooLarge) {
 // Shape validation: result rank must be input rank + 1
 VALIDATION_TEST(ApplyGDecompTests, Throws_OnWrongResultRank) {
   auto t   = host_to_device<int32_t>(torch::tensor({1,2,3}, torch::kInt32));
-  auto bad = allocate_on_hardware<int32_t>({3});  // rank=1 instead of 2
+  auto bad = zeros<int32_t>({3});  // rank=1 instead of 2
   EXPECT_THROW(apply_g_decomp<int32_t>(t, /*g_exp=*/2, /*g_base_bits=*/1, bad),
                std::invalid_argument);
 }
@@ -688,7 +688,7 @@ VALIDATION_TEST(ApplyGDecompTests, Throws_OnWrongResultRank) {
 // Shape validation: trailing dim must equal g_exp
 VALIDATION_TEST(ApplyGDecompTests, Throws_OnTrailingDimNotEqualGExp) {
   auto t   = host_to_device<int64_t>(torch::tensor({4,5}, torch::kInt64));
-  auto bad = allocate_on_hardware<int64_t>({2,3});  // g_exp=2, trailing size=3
+  auto bad = zeros<int64_t>({2,3});  // g_exp=2, trailing size=3
   EXPECT_THROW(apply_g_decomp<int64_t>(t, /*g_exp=*/2, /*g_base_bits=*/1, bad),
                std::invalid_argument);
 }
@@ -696,7 +696,7 @@ VALIDATION_TEST(ApplyGDecompTests, Throws_OnTrailingDimNotEqualGExp) {
 // Shape validation: non-trailing dims must match input dims
 VALIDATION_TEST(ApplyGDecompTests, Throws_OnDimMismatch) {
   auto t   = host_to_device<int32_t>(torch::tensor({1,2,3}, torch::kInt32));
-  auto bad = allocate_on_hardware<int32_t>({2,2});  // first dim 2 vs 3
+  auto bad = zeros<int32_t>({2,2});  // first dim 2 vs 3
   EXPECT_THROW(apply_g_decomp<int32_t>(t, /*g_exp=*/2, /*g_base_bits=*/1, bad),
                std::invalid_argument);
 }
@@ -720,7 +720,7 @@ TEST(AbsTests, Basic1DInt) {
   auto expected = torch::tensor({5, 0, 7, 2}, torch::kInt32);
 
   auto hw_t   = host_to_device<int32_t>(t_cpu);
-  auto hw_out = allocate_on_hardware<int32_t>({4});
+  auto hw_out = zeros<int32_t>({4});
   abs<int32_t>(hw_t, hw_out);
   auto out    = device_to_host<int32_t>(hw_out);
 
@@ -733,7 +733,7 @@ TEST(AbsTests, Basic1DFloat) {
   auto expected = torch::tensor({3.5f, 0.0f, 2.25f, 0.125f}, torch::kFloat32);
 
   auto hw_t   = host_to_device<float>(t_cpu);
-  auto hw_out = allocate_on_hardware<float>({4});
+  auto hw_out = zeros<float>({4});
   abs<float>(hw_t, hw_out);
   auto out    = device_to_host<float>(hw_out);
 
@@ -746,7 +746,7 @@ TEST(AbsTests, ScalarInt) {
   auto expected = torch::tensor(42, torch::kInt64);
 
   auto hw_t   = host_to_device<int64_t>(t_cpu);
-  auto hw_out = allocate_on_hardware<int64_t>({});
+  auto hw_out = zeros<int64_t>({});
   abs<int64_t>(hw_t, hw_out);
   auto out    = device_to_host<int64_t>(hw_out);
 
@@ -765,7 +765,7 @@ TEST(AbsTests, TwoDDouble) {
   }, torch::kFloat64);
 
   auto hw_t   = host_to_device<double>(t_cpu);
-  auto hw_out = allocate_on_hardware<double>({2,3});
+  auto hw_out = zeros<double>({2,3});
   abs<double>(hw_t, hw_out);
   auto out    = device_to_host<double>(hw_out);
 
@@ -780,7 +780,7 @@ TEST(AbsTests, TwoDDouble) {
 TEST(AbsTests, EmptyInputProducesEmpty) {
   auto t_cpu   = torch::empty({0,5}, torch::kInt32);
   auto hw_t    = host_to_device<int32_t>(t_cpu);
-  auto hw_out  = allocate_on_hardware<int32_t>({0,5});
+  auto hw_out  = zeros<int32_t>({0,5});
   abs<int32_t>(hw_t, hw_out);
   auto out     = device_to_host<int32_t>(hw_out);
 
@@ -795,7 +795,7 @@ TEST(AbsTests, EmptyInputProducesEmpty) {
 // Shape mismatch: dims must match exactly
 VALIDATION_TEST(AbsTests, Throws_OnShapeMismatch) {
   auto t    = host_to_device<int32_t>(torch::tensor({1,2,3}, torch::kInt32));
-  auto bad  = allocate_on_hardware<int32_t>({2});  // wrong size
+  auto bad  = zeros<int32_t>({2});  // wrong size
   EXPECT_THROW(abs<int32_t>(t, bad), std::invalid_argument);
 }
 

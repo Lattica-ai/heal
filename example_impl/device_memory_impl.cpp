@@ -1,4 +1,5 @@
 #include "device_memory_impl.h"
+#include "utils.h"
 #include <iostream>
 #include <numeric>
 #include <cstring>
@@ -165,17 +166,37 @@ void DeviceTensor<T>::print_metadata() const {
 }
 
 namespace lattica_hw_api {
+inline void validate_dims(const std::vector<int64_t>& dims) {
+    for (size_t i = 0; i < dims.size(); ++i) {
+        if (dims[i] < 0) {
+            throw std::invalid_argument(
+                "validate_dims: dimension at index " + std::to_string(i)
+                + " is negative (" + std::to_string(dims[i]) + ")");
+        }
+    }
+}
 
 template <typename T>
-std::shared_ptr<DeviceTensor<T>> allocate_on_hardware(const std::vector<int64_t>& dims) {
-    int64_t total_elems = std::accumulate(dims.begin(), dims.end(), int64_t(1), std::multiplies<int64_t>());
-    void* buffer = calloc(total_elems, sizeof(T));
-    std::vector<int64_t> strides(dims.size());
-    int64_t stride = 1;
-    for (int i = dims.size() - 1; i >= 0; --i) {
-        strides[i] = stride;
-        stride *= dims[i];
+std::shared_ptr<DeviceTensor<T>> empty(const std::vector<int64_t>& dims) {
+    validate_dims(dims);
+    int64_t total_elems = device_tensor_utils::numel(dims);
+    void* buffer = malloc(total_elems * sizeof(T));
+    if (!buffer) {
+        throw std::bad_alloc();
     }
+    std::vector<int64_t> strides = device_tensor_utils::compute_strides(dims);
+    return std::make_shared<DeviceTensor<T>>(dims, strides, buffer);
+}
+
+template <typename T>
+std::shared_ptr<DeviceTensor<T>> zeros(const std::vector<int64_t>& dims) {
+    validate_dims(dims);
+    int64_t total_elems = device_tensor_utils::numel(dims);
+    void* buffer = calloc(total_elems, sizeof(T));
+    if (!buffer) {
+        throw std::bad_alloc();
+    }
+    std::vector<int64_t> strides = device_tensor_utils::compute_strides(dims);
     return std::make_shared<DeviceTensor<T>>(dims, strides, buffer);
 }
 
@@ -203,10 +224,16 @@ torch::Tensor device_to_host(const std::shared_ptr<DeviceTensor<T>>& memory) {
 }
 
 // Explicit instantiations
-template std::shared_ptr<DeviceTensor<int32_t>> allocate_on_hardware<int32_t>(const std::vector<int64_t>&);
-template std::shared_ptr<DeviceTensor<int64_t>> allocate_on_hardware<int64_t>(const std::vector<int64_t>&);
-template std::shared_ptr<DeviceTensor<float>> allocate_on_hardware<float>(const std::vector<int64_t>&);
-template std::shared_ptr<DeviceTensor<double>> allocate_on_hardware<double>(const std::vector<int64_t>&);
+
+template std::shared_ptr<DeviceTensor<int32_t>> empty<int32_t>(const std::vector<int64_t>&);
+template std::shared_ptr<DeviceTensor<int64_t>> empty<int64_t>(const std::vector<int64_t>&);
+template std::shared_ptr<DeviceTensor<float>> empty<float>(const std::vector<int64_t>&);
+template std::shared_ptr<DeviceTensor<double>> empty<double>(const std::vector<int64_t>&);
+
+template std::shared_ptr<DeviceTensor<int32_t>> zeros<int32_t>(const std::vector<int64_t>&);
+template std::shared_ptr<DeviceTensor<int64_t>> zeros<int64_t>(const std::vector<int64_t>&);
+template std::shared_ptr<DeviceTensor<float>> zeros<float>(const std::vector<int64_t>&);
+template std::shared_ptr<DeviceTensor<double>> zeros<double>(const std::vector<int64_t>&);
 
 template std::shared_ptr<DeviceTensor<int32_t>> host_to_device<int32_t>(const torch::Tensor&);
 template std::shared_ptr<DeviceTensor<int64_t>> host_to_device<int64_t>(const torch::Tensor&);

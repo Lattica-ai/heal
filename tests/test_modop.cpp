@@ -27,7 +27,7 @@ void run_modop_ttt(
     auto a_hw = host_to_device<int32_t>(a);
     auto b_hw = host_to_device<int32_t>(b);
     auto p_hw = host_to_device<int32_t>(p);
-    auto result_hw = allocate_on_hardware<int32_t>(result_shape);
+    auto result_hw = zeros<int32_t>(result_shape);
 
     kernel(a_hw, b_hw, p_hw, result_hw);
     auto result = device_to_host<int32_t>(result_hw);
@@ -48,7 +48,7 @@ void run_modop_tensor_scalar(
 {
     auto a_hw = host_to_device<int32_t>(a);
     auto b_hw = host_to_device<int32_t>(b);
-    auto result_hw = allocate_on_hardware<int32_t>(result_shape);
+    auto result_hw = zeros<int32_t>(result_shape);
 
     kernel(a_hw, b_hw, p_scalar, result_hw);
     auto result = device_to_host<int32_t>(result_hw);
@@ -69,7 +69,7 @@ void run_modop_scalar_tensor(
 {
     auto a_hw = host_to_device<int32_t>(a);
     auto p_hw = host_to_device<int32_t>(p);
-    auto result_hw = allocate_on_hardware<int32_t>(result_shape);
+    auto result_hw = zeros<int32_t>(result_shape);
 
     kernel(a_hw, b_scalar, p_hw, result_hw);
     auto result = device_to_host<int32_t>(result_hw);
@@ -89,7 +89,7 @@ void run_modop_scalar_scalar(
     const std::string& fail_message)
 {
     auto a_hw = host_to_device<int32_t>(a);
-    auto result_hw = allocate_on_hardware<int32_t>(result_shape);
+    auto result_hw = zeros<int32_t>(result_shape);
 
     kernel(a_hw, b_scalar, p_scalar, result_hw);
     auto result = device_to_host<int32_t>(result_hw);
@@ -194,7 +194,7 @@ TEST(ModOpEdgeCases, IncompatibleShapes) {
     auto a_hw = host_to_device<int32_t>(a);
     auto b_hw = host_to_device<int32_t>(b);
     auto p_hw = host_to_device<int32_t>(p);
-    auto result_hw = allocate_on_hardware<int32_t>({2, 3});
+    auto result_hw = zeros<int32_t>({2, 3});
     EXPECT_THROW(modsum_ttt<int32_t>(a_hw, b_hw, p_hw, result_hw), std::invalid_argument);
 }
 
@@ -205,6 +205,6 @@ TEST(ModOpEdgeCases, IncorrectPShape) {
     auto a_hw = host_to_device<int32_t>(a);
     auto b_hw = host_to_device<int32_t>(b);
     auto p_hw = host_to_device<int32_t>(p);
-    auto result_hw = allocate_on_hardware<int32_t>({2, 3});
+    auto result_hw = zeros<int32_t>({2, 3});
     EXPECT_THROW(modsum_ttt<int32_t>(a_hw, b_hw, p_hw, result_hw), std::invalid_argument);
 }
