@@ -8,18 +8,18 @@ namespace lattica_hw_api {
     template <typename T>
     void take_along_axis(
         const std::shared_ptr<DeviceTensor<T>>&        input,
-        const std::shared_ptr<DeviceTensor<IndexType>>& indices,
-        IndexType                                      axis,
+        const std::shared_ptr<DeviceTensor<int64_t>>& indices,
+        int64_t                                      axis,
         std::shared_ptr<DeviceTensor<T>>&              output
     ) {
         const size_t rank = input->dims.size();
 
         // Normalize & validate axis
-        if (axis < -static_cast<IndexType>(rank) || axis >= static_cast<IndexType>(rank)) {
+        if (axis < -static_cast<int64_t>(rank) || axis >= static_cast<int64_t>(rank)) {
             throw std::out_of_range("Axis out of range");
         }
         if (axis < 0) {
-            axis += static_cast<IndexType>(rank);
+            axis += static_cast<int64_t>(rank);
         }
 
         // Rank‐match check
@@ -39,7 +39,7 @@ namespace lattica_hw_api {
 
         // Grab raw pointers
         T*         input_data = static_cast<T*>(input->data.get());
-        IndexType* idx_data   = static_cast<IndexType*>(indices->data.get());
+        int64_t*   idx_data   = static_cast<int64_t*>(indices->data.get());
         T*         out_data   = static_cast<T*>(output->data.get());
 
         // Prepare index buffers
@@ -55,13 +55,13 @@ namespace lattica_hw_api {
             for (size_t i = 0; i < rank; ++i) {
                 idx_offset += out_index[i] * indices->strides[i];
             }
-            IndexType selected_idx = idx_data[idx_offset];
+            int64_t selected_idx = idx_data[idx_offset];
 
             // Python‐style negative indexing
             if (selected_idx < 0) {
-                selected_idx += static_cast<IndexType>(input->dims[axis]);
+                selected_idx += static_cast<int64_t>(input->dims[axis]);
             }
-            if (selected_idx < 0 || selected_idx >= static_cast<IndexType>(input->dims[axis])) {
+            if (selected_idx < 0 || selected_idx >= static_cast<int64_t>(input->dims[axis])) {
                 throw std::out_of_range("Index out of range");
             }
 

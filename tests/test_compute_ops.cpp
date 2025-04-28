@@ -3,8 +3,6 @@
 #include <torch/torch.h>
 
 using namespace lattica_hw_api;
-typedef IndexType idx_t;
-
 
 /****************************************************************************************
  ****************************************************************************************
@@ -25,7 +23,7 @@ TEST(TakeAlongAxisTests, Basic1D) {
     auto expected = torch::take_along_dim(t, idx, 0);
 
     auto hw_t   = host_to_device<int32_t>(t);
-    auto hw_idx = host_to_device<idx_t>(idx);
+    auto hw_idx = host_to_device<int64_t>(idx);
     // allocate output of shape {idx.size(0)}
     auto hw_out = empty<int32_t>({ idx.size(0) });
 
@@ -45,7 +43,7 @@ TEST(TakeAlongAxisTests, TwoDim_Axis0) {
     auto expected = torch::take_along_dim(t, idx, 0);
 
     auto hw_t    = host_to_device<int64_t>(t);
-    auto hw_idx  = host_to_device<idx_t>(idx);
+    auto hw_idx  = host_to_device<int64_t>(idx);
     // allocate output of shape {idx.size(0), idx.size(1)}
     auto hw_out  = empty<int64_t>({
       idx.size(0), idx.size(1)
@@ -67,7 +65,7 @@ TEST(TakeAlongAxisTests, TwoDim_Axis1_Float) {
     auto expected = torch::take_along_dim(t, idx, 1);
 
     auto hw_t   = host_to_device<float>(t);
-    auto hw_idx = host_to_device<idx_t>(idx);
+    auto hw_idx = host_to_device<int64_t>(idx);
     auto hw_out = empty<float>({
       idx.size(0), idx.size(1)
     });
@@ -100,7 +98,7 @@ TEST(TakeAlongAxisTests, IdentityIndex_3D) {
 
     // upload to device
     auto hw_t   = host_to_device<int32_t>(t);
-    auto hw_idx = host_to_device<idx_t>(idx);
+    auto hw_idx = host_to_device<int64_t>(idx);
     auto hw_out = empty<int32_t>({
         idx.size(0), idx.size(1), idx.size(2)
     });
@@ -169,7 +167,7 @@ TEST(TakeAlongAxisTests, FourDim_Axis2_Fixed) {
   auto expected = torch::take_along_dim(t, idx, /*dim=*/2);
 
   auto hw_t   = host_to_device<int32_t>(t);
-  auto hw_idx = host_to_device<idx_t>(idx);
+  auto hw_idx = host_to_device<int64_t>(idx);
   auto hw_out = empty<int32_t>({
     idx.size(0), idx.size(1), idx.size(2), idx.size(3)
   });
@@ -203,7 +201,7 @@ TEST(TakeAlongAxisTests, IdentityGather4D_Axis0) {
     auto expected = torch::take_along_dim(t, idx, /*axis=*/0);
 
     auto hw_t   = host_to_device<int64_t>(t);
-    auto hw_idx = host_to_device<idx_t>(idx);
+    auto hw_idx = host_to_device<int64_t>(idx);
     auto hw_out = empty<int64_t>({
       idx.size(0), idx.size(1), idx.size(2), idx.size(3)
     });
@@ -246,7 +244,7 @@ TEST(TakeAlongAxisTests, ElevenDim_VariedShape_Axis7) {
 
   // upload
   auto hw_t   = host_to_device<int32_t>(t);
-  auto hw_idx = host_to_device<idx_t>(idx);
+  auto hw_idx = host_to_device<int64_t>(idx);
 
   // allocate output with exactly the idx shape
   auto hw_out = empty<int32_t>({
@@ -271,7 +269,7 @@ TEST(TakeAlongAxisTests, NegativeIndicesMapping) {
     auto expected = torch::tensor({300,100,200}, torch::kInt32);
 
     auto hw_t   = host_to_device<int32_t>(t);
-    auto hw_idx = host_to_device<idx_t>(idx);
+    auto hw_idx = host_to_device<int64_t>(idx);
     auto hw_out = empty<int32_t>({ idx.size(0) });
 
     take_along_axis<int32_t>(hw_t, hw_idx, 0, hw_out);
@@ -286,7 +284,7 @@ TEST(TakeAlongAxisTests, NegativeAxisAsLastDim) {
     auto expected = torch::take_along_dim(t, idx, 1);
 
     auto hw_t   = host_to_device<int64_t>(t);
-    auto hw_idx = host_to_device<idx_t>(idx);
+    auto hw_idx = host_to_device<int64_t>(idx);
     auto hw_out = empty<int64_t>({
       idx.size(0), idx.size(1)
     });
@@ -303,7 +301,7 @@ TEST(TakeAlongAxisTests, EmptyDimProducesEmpty) {
     auto expected = torch::take_along_dim(t, idx, 0);
 
     auto hw_t   = host_to_device<int32_t>(t);
-    auto hw_idx = host_to_device<idx_t>(idx);
+    auto hw_idx = host_to_device<int64_t>(idx);
     auto hw_out = empty<int32_t>({
       idx.size(0), idx.size(1)
     });
@@ -322,7 +320,7 @@ TEST(TakeAlongAxisTests, Works_OnNonContiguousInput) {
     auto expected = torch::take_along_dim(t, idx, 1);
 
     auto hw_t   = host_to_device<int64_t>(t);
-    auto hw_idx = host_to_device<idx_t>(idx);
+    auto hw_idx = host_to_device<int64_t>(idx);
     auto hw_out = empty<int64_t>({
       idx.size(0), idx.size(1)
     });
@@ -340,7 +338,7 @@ TEST(TakeAlongAxisTests, LargeTensorStress) {
     auto expected = torch::take_along_dim(t, idx, 0);
 
     auto hw_t   = host_to_device<int32_t>(t);
-    auto hw_idx = host_to_device<idx_t>(idx);
+    auto hw_idx = host_to_device<int64_t>(idx);
     auto hw_out = zeros<int32_t>({ idx.size(0) });
 
     take_along_axis<int32_t>(hw_t, hw_idx, 0, hw_out);
@@ -359,7 +357,7 @@ TEST(TakeAlongAxisTests, DoubleType) {
     auto expected = torch::take_along_dim(t, idx, 1);
 
     auto hw_t   = host_to_device<double>(t);
-    auto hw_idx = host_to_device<idx_t>(idx);
+    auto hw_idx = host_to_device<int64_t>(idx);
     auto hw_out = empty<double>({
       idx.size(0), idx.size(1)
     });
@@ -374,12 +372,12 @@ TEST(TakeAlongAxisTests, DoubleType) {
  ***********************************************************************************************/
 
 // Scalar input + scalar idx → should throw out_of_range (torch errors on rank 0)
-VALIDATION_TEST(TakeAlongAxisTests, ScalarInputAndScalarIdx_Throws) {
+VALIDATION_TEST(TakeAlongAxisTests, ScalarInputAndScalarint64_throws) {
   auto t   = torch::tensor(42, torch::kInt32);
   auto idx = torch::tensor(0,  torch::kInt64);
 
   auto hw_t   = host_to_device<int32_t>(t);
-  auto hw_idx = host_to_device<idx_t>(idx);
+  auto hw_idx = host_to_device<int64_t>(idx);
   auto hw_out = zeros<int32_t>({});  // shape = {}
 
   EXPECT_THROW(
@@ -395,7 +393,7 @@ VALIDATION_TEST(TakeAlongAxisTests, Throws_OnShapeMismatchNonAxis) {
     auto idx = torch::randint(0, 2, {1, 3}, torch::kInt64);
 
     auto hw_t   = host_to_device<int32_t>(t);
-    auto hw_idx = host_to_device<idx_t>(idx);
+    auto hw_idx = host_to_device<int64_t>(idx);
     auto hw_out = zeros<int32_t>({ idx.size(0), idx.size(1) });
 
     EXPECT_THROW(
@@ -410,7 +408,7 @@ VALIDATION_TEST(TakeAlongAxisTests, Throws_OnRankMismatch) {
     auto t   = torch::arange(4, torch::kInt32);       // rank=1
     auto idx = torch::randint(0,4,{2,2}, torch::kInt64);// rank=2
     auto hw_t   = host_to_device<int32_t>(t);
-    auto hw_idx = host_to_device<idx_t>(idx);
+    auto hw_idx = host_to_device<int64_t>(idx);
     auto hw_out = empty<int32_t>({
       idx.size(0), idx.size(1)
     });
@@ -426,7 +424,7 @@ VALIDATION_TEST(TakeAlongAxisTests, Throws_OnAxisOutOfRange_MultiDim) {
     auto t   = torch::randint(0,10,{3,3}, torch::kInt64);
     auto idx = torch::randint(0,3, {3,3}, torch::kInt64);
     auto hw_t   = host_to_device<int64_t>(t);
-    auto hw_idx = host_to_device<idx_t>(idx);
+    auto hw_idx = host_to_device<int64_t>(idx);
     auto hw_out = empty<int64_t>({
       idx.size(0), idx.size(1)
     });
@@ -446,7 +444,7 @@ VALIDATION_TEST(TakeAlongAxisTests, Throws_OnAxisOutOfRange_ZeroDim) {
     auto t   = torch::tensor(7, torch::kInt32);
     auto idx = torch::tensor(0, torch::kInt64);
     auto hw_t   = host_to_device<int32_t>(t);
-    auto hw_idx = host_to_device<idx_t>(idx);
+    auto hw_idx = host_to_device<int64_t>(idx);
     auto hw_out = empty<int32_t>({});  // scalar
 
     EXPECT_THROW(
@@ -464,7 +462,7 @@ VALIDATION_TEST(TakeAlongAxisTests, Throws_OnIndexOutOfBounds) {
     auto t   = torch::randn({4}, torch::kFloat);
     auto idx = torch::tensor({0,4,1}, torch::kInt64);
     auto hw_t   = host_to_device<float>(t);
-    auto hw_idx = host_to_device<idx_t>(idx);
+    auto hw_idx = host_to_device<int64_t>(idx);
     auto hw_out = empty<float>({ idx.size(0) });
 
     EXPECT_THROW(
@@ -480,7 +478,7 @@ VALIDATION_TEST(TakeAlongAxisTests, Throws_OnBroadcastableIdx) {
     auto idx = torch::randint(0, 4, {2, 1, 4}, torch::kInt64);
 
     auto hw_t   = host_to_device<float>(t);
-    auto hw_idx = host_to_device<idx_t>(idx);
+    auto hw_idx = host_to_device<int64_t>(idx);
     auto hw_out = empty<float>({ idx.size(0), idx.size(1), idx.size(2) });
 
     EXPECT_THROW(

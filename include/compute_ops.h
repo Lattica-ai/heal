@@ -18,24 +18,20 @@
 
 namespace lattica_hw_api {
 
-    using IndexType = int64_t;
-
-    // —————————————————————————————————————————————————————————————————————————
-
     template <typename T>
     void take_along_axis(
-        const std::shared_ptr<DeviceTensor<T>>&           a,
-        const std::shared_ptr<DeviceTensor<IndexType>>&   indices,
-        IndexType                                         axis,
-        std::shared_ptr<DeviceTensor<T>>&                 result
+        const std::shared_ptr<DeviceTensor<T>>&         a,
+        const std::shared_ptr<DeviceTensor<int64_t>>&   indices,
+        int64_t                                         axis,
+        std::shared_ptr<DeviceTensor<T>>&               result
     );
 
     template <typename T>
     void apply_g_decomp(
         const std::shared_ptr<DeviceTensor<T>>& a,
-        int32_t                             g_exp,
-        int32_t                             g_base_bits,
-        std::shared_ptr<DeviceTensor<T>>&   result
+        int32_t                                 g_exp,
+        int32_t                                 g_base_bits,
+        std::shared_ptr<DeviceTensor<T>>&       result
     );
 
     template <typename T>
