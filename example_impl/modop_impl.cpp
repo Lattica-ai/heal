@@ -1,6 +1,7 @@
 #include "device_memory_impl.h"
 #include "modop.h"
 #include "typing.h"
+#include "utils.h"
 #include <numeric>
 #include <stdexcept>
 #include <functional>
@@ -19,27 +20,13 @@ void elementwise_modop(
     CombineOp combine_op)
 {
     const auto& out_shape = result->dims;
-    const int64_t ndim = out_shape.size();
 
     // Total number of elements
-    int64_t total = 1;
-    for (auto d : out_shape) total *= d;
+    int64_t total = device_tensor_utils::numel(out_shape);
 
-    // Precompute strides for linear → nd coord mapping
-    std::vector<int64_t> strides(ndim, 1);
-    for (int i = ndim - 2; i >= 0; --i) {
-        strides[i] = strides[i + 1] * out_shape[i + 1];
-    }
-
-    #pragma omp parallel for
     for (int64_t idx = 0; idx < total; ++idx) {
-        // Compute multi-dimensional coordinate
-        std::vector<int64_t> coord(ndim);
-        int64_t linear = idx;
-        for (int d = 0; d < ndim; ++d) {
-            coord[d] = linear / strides[d];
-            linear %= strides[d];
-        }
+        // Use unravel_index to compute multi-dimensional coordinate
+        std::vector<int64_t> coord = device_tensor_utils::unravel_index(idx, out_shape);
 
         T a_val = get_a(coord);
         T b_val = get_b(coord);
@@ -51,8 +38,8 @@ void elementwise_modop(
 
 // ---- Wrapper Functions ----
 #define CHECK_DIMS_MATCH_LAST(tensor, result, label) \
-    if (tensor->dims.size() != 1 && tensor->dims.back() != result->dims.back()) { \
-        throw std::invalid_argument("Last dimension of " label " must match last dimension of result."); \
+    if (tensor->dims.size() != 1 || tensor->dims.back() != result->dims.back()) { \
+        throw std::invalid_argument(label " should be one-dimensional, and its size must match the last dimension of the result."); \
     }
 
 #define CHECK_DIMS_BROADCASTABLE(tensor, result, label) \
@@ -69,7 +56,19 @@ void elementwise_modop(
         } \
     }
 
-#define DEFINE_MODOP_WRAPPER(OPNAME, OPERATOR) \
+#define MAKE_MOD_COMBINE_LAMBDA(OP_EXPR)                  \
+[](T a, T b, T p) {                                       \
+    using Wide = T_DP<T>;                                 \
+    /* do the wide‐precision op */                        \
+    Wide tmp = OP_EXPR;                                   \
+    /* C++ remainder, may be negative */                  \
+    Wide rem = tmp % static_cast<Wide>(p);                \
+    /* shift into [0,p) */                                \
+    if (rem < 0) rem += static_cast<Wide>(p);             \
+    return static_cast<T>(rem);                           \
+}
+
+#define DEFINE_MODOP_WRAPPER(OPNAME, OP_EXPR) \
 template <typename T> \
 void OPNAME##_ttt( \
     const std::shared_ptr<DeviceTensor<T>>& a, \
@@ -84,10 +83,7 @@ void OPNAME##_ttt( \
         [b](const std::vector<int64_t>& coord) { return b->at_with_broadcast(coord); }, \
         [p](const std::vector<int64_t>& coord) { return p->at_with_broadcast(coord); }, \
         result, \
-        [](T a, T b, T p) { \
-            T_DP<T> tmp = OPERATOR; \
-            return static_cast<T>(tmp % static_cast<T_DP<T>>(p)); \
-        }); \
+        MAKE_MOD_COMBINE_LAMBDA(OP_EXPR)); \
 } \
 template <typename T> \
 void OPNAME##_ttc( \
@@ -102,10 +98,7 @@ void OPNAME##_ttc( \
         [b](const std::vector<int64_t>& coord) { return b->at_with_broadcast(coord); }, \
         [&](const std::vector<int64_t>&) { return p_scalar; }, \
         result, \
-        [](T a, T b, T p) { \
-            T_DP<T> tmp = OPERATOR; \
-            return static_cast<T>(tmp % static_cast<T_DP<T>>(p)); \
-        }); \
+        MAKE_MOD_COMBINE_LAMBDA(OP_EXPR)); \
 } \
 template <typename T> \
 void OPNAME##_tct( \
@@ -120,10 +113,7 @@ void OPNAME##_tct( \
         [&](const std::vector<int64_t>&) { return b_scalar; }, \
         [p](const std::vector<int64_t>& coord) { return p->at_with_broadcast(coord); }, \
         result, \
-        [](T a, T b, T p) { \
-            T_DP<T> tmp = OPERATOR; \
-            return static_cast<T>(tmp % static_cast<T_DP<T>>(p)); \
-        }); \
+        MAKE_MOD_COMBINE_LAMBDA(OP_EXPR)); \
 } \
 template <typename T> \
 void OPNAME##_tcc( \
@@ -137,10 +127,7 @@ void OPNAME##_tcc( \
         [&](const std::vector<int64_t>&) { return b_scalar; }, \
         [&](const std::vector<int64_t>&) { return p_scalar; }, \
         result, \
-        [](T a, T b, T p) { \
-            T_DP<T> tmp = OPERATOR; \
-            return static_cast<T>(tmp % static_cast<T_DP<T>>(p)); \
-        }); \
+        MAKE_MOD_COMBINE_LAMBDA(OP_EXPR)); \
 }
 
 DEFINE_MODOP_WRAPPER(modsum, static_cast<T_DP<T>>(a) + static_cast<T_DP<T>>(b))

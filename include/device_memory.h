@@ -12,6 +12,7 @@ template <typename T>
 struct DeviceTensor {
     void reshape(const std::vector<int64_t>& new_dims);
     void print() const;
+    void print_metadata() const;
 };
 
 namespace lattica_hw_api {
