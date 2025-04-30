@@ -9,23 +9,34 @@ build_dir = os.path.join(os.path.dirname(__file__), "../../build/example_impl")
 sys.path.insert(0, build_dir)
 
 import lattica_hw as lhw
-from lattica_hw import DeviceTensor32, DeviceTensor64, DeviceTensorfloat64
+from lattica_hw import DeviceTensor32, DeviceTensor64, DeviceTensorfloat32, DeviceTensorfloat64
 
 _host_to_device = {
     torch.int32: lhw.host_to_device_32,
     torch.int64: lhw.host_to_device_64,
+    torch.float32: lhw.host_to_device_float32,
     torch.float64: lhw.host_to_device_float64
 }
 
 _device_to_host = {
     DeviceTensor32: lhw.device_to_host_32,
     DeviceTensor64: lhw.device_to_host_64,
+    DeviceTensorfloat32: lhw.device_to_host_float32,
     DeviceTensorfloat64: lhw.device_to_host_float64
 }
 
-_allocate = {
+_empty = {
+    torch.int32: lhw.empty_32,
+    torch.int64: lhw.empty_64,
+    torch.float32: lhw.empty_float32,
+    torch.float64: lhw.empty_float64
+}
+
+_zeros = {
     torch.int32: lhw.zeros_32,
     torch.int64: lhw.zeros_64,
+    torch.float32: lhw.zeros_float32,
+    torch.float64: lhw.zeros_float64
 }
 
 _expand_impls = {
@@ -113,12 +124,38 @@ _ntt = {
     DeviceTensor64: lhw.ntt_64,
 }
 
+
+_take_along_axis_impls = {
+    DeviceTensor32:    lhw.take_along_axis_32,
+    DeviceTensor64:    lhw.take_along_axis_64,
+    DeviceTensorfloat32: lhw.take_along_axis_float32,
+    DeviceTensorfloat64: lhw.take_along_axis_float64,
+}
+
+_apply_g_decomp_impls = {
+    DeviceTensor32:    lhw.apply_g_decomp_32,
+    DeviceTensor64:    lhw.apply_g_decomp_64,
+}
+
+_abs_impls = {
+    DeviceTensor32:    lhw.abs_32,
+    DeviceTensor64:    lhw.abs_64,
+    DeviceTensorfloat32: lhw.abs_float32,
+    DeviceTensorfloat64: lhw.abs_float64,
+}
+
+_set_const_val_impls = {
+    DeviceTensor32:    lhw.set_const_val_32,
+    DeviceTensor64:    lhw.set_const_val_64,
+    DeviceTensorfloat32: lhw.set_const_val_float32,
+    DeviceTensorfloat64: lhw.set_const_val_float64,
+}
+
 def _dispatch(key, *args, impls):
     try:
         return impls[key](*args)
     except KeyError:
         raise TypeError(f"Unsupported tensor type: {key}")
-
 
 
 class PythonToCppDispatcher(ABC):
@@ -130,8 +167,11 @@ class PythonToCppDispatcher(ABC):
         return _dispatch(type(a), a, impls=_device_to_host)
 
     def empty(self, shape, dtype):
-        return _dispatch(dtype, shape, impls=_allocate)
+        return _dispatch(dtype, shape, impls=_empty)
 
+    def zeros(self, shape, dtype):
+        return _dispatch(dtype, shape, impls=_zeros)
+    
     def axis_modsum(self, a, axis, q_list, out):
         _dispatch(type(a), a, q_list, out, axis, impls=_axis_modsum)
         return out
@@ -179,7 +219,7 @@ class PythonToCppDispatcher(ABC):
     def _modneg_tc(self, a, p_scalar, out):
         _dispatch(type(a), a, p_scalar, out, impls=_modneg['tc'])
         return out
-    
+
     def expand(self, a, repeat, axis):
         return _dispatch(type(a), a, axis, repeat, impls=_expand_impls)
 
@@ -191,6 +231,18 @@ class PythonToCppDispatcher(ABC):
 
     def contiguous(self, a):
         return _dispatch(type(a), a, impls=_contiguous_impls)
+
+    def take_along_axis(self, a, indices, axis, out):
+        return _dispatch(type(a), a, indices, axis, out,impls=_take_along_axis_impls)
+
+    def apply_g_decomp(self, a, *args, out):
+        return _dispatch(type(a), a, *args, out, impls=_apply_g_decomp_impls)
+
+    def abs(self, a, out):
+        return _dispatch(type(a), a, out, impls=_abs_impls)
+
+    def set_const_val(self, a, const_val, out):
+        return _dispatch(type(a), a, const_val, out, impls=_set_const_val_impls)
 
     def ntt(self, a, perm, perm_pairs, q_list, psi_arr, out, tile, skip_perm):
         if skip_perm:

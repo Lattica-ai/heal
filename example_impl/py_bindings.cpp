@@ -74,6 +74,10 @@ void bind_device_memory(py::module_& m, const std::string& suffix) {
 template <typename T>
 void bind_memory_helpers(py::module_& m, const std::string& suffix) {
     using namespace lattica_hw_api;
+
+    m.def(("empty_" + suffix).c_str(),
+          &empty<T>,
+          py::arg("dims"));
     m.def(("zeros_" + suffix).c_str(),
           &zeros<T>,
           py::arg("dims"));
@@ -91,17 +95,45 @@ void bind_contiguous(py::module_& m, const std::string& suffix) {
           py::arg("tensor"), "Return a contiguous version of the tensor.");
 }
 
+template <typename T>
+void bind_compute_ops(py::module_& m, const std::string& suffix) {
+    m.def(("take_along_axis_" + suffix).c_str(), &take_along_axis<T>,
+        py::arg("tensor"), py::arg("indices"), py::arg("axis"),
+        py::arg("result"), "Take elements along the given axis at the specified indices into result."
+    );
+
+     // Only bind apply_g_decomp for int32 and int64
+     if constexpr (std::is_same_v<T,int32_t> || std::is_same_v<T,int64_t>) {
+          m.def(("apply_g_decomp_" + suffix).c_str(), &apply_g_decomp<T>,
+              py::arg("tensor"), py::arg("g_exp"), py::arg("g_base_bits"), py::arg("result"),
+              "Apply G-decomposition on tensor with given g_exp and g_base_bits, writing into result."
+          );
+      }
+
+    m.def(("abs_" + suffix).c_str(), &abs<T>,
+        py::arg("tensor"), py::arg("result"),
+        "Compute elementwise absolute value of tensor into result."
+    );
+
+    m.def(("set_const_val_" + suffix).c_str(), &set_const_val<T>,
+        py::arg("tensor"), py::arg("const_val"),
+        "Fill every element of tensor with the given constant value into result."
+    );
+}
+
 PYBIND11_MODULE(lattica_hw, m) {
     m.doc() = "Lattica Hardware API Python bindings";
 
     // Bind DeviceTensor class
     bind_device_memory<int32_t>(m, "32");
     bind_device_memory<int64_t>(m, "64");
+    bind_device_memory<float>(m, "float32");
     bind_device_memory<double>(m, "float64");
 
     // Bind memory ops
     bind_memory_helpers<int32_t>(m, "32");
     bind_memory_helpers<int64_t>(m, "64");
+    bind_memory_helpers<float>(m, "float32");
     bind_memory_helpers<double>(m, "float64");
 
     // Bind modular ops
@@ -126,6 +158,12 @@ PYBIND11_MODULE(lattica_hw, m) {
     bind_contiguous<int64_t>(m, "64");
     bind_contiguous<double>(m, "float64");
 
+    // compute ops
+    bind_compute_ops<int32_t>(m, "32");
+    bind_compute_ops<int64_t>(m, "64");
+    bind_compute_ops<float>(m, "float32");
+    bind_compute_ops<double>(m, "float64");
+
     // ntt
     m.def("ntt_32", &ntt<int32_t>, "NTT (int32)");
     m.def("ntt_64", &ntt<int64_t>, "NTT (int64)");
@@ -137,4 +175,6 @@ PYBIND11_MODULE(lattica_hw, m) {
     // permute
     m.def("permute_32", &permute<int32_t>, "Permute (int32)");
     m.def("permute_64", &permute<int64_t>, "Permute (int64)");
+
+
 }
