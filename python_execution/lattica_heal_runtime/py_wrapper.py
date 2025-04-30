@@ -24,8 +24,8 @@ _device_to_host = {
 }
 
 _allocate = {
-    torch.int32: lhw.allocate_on_hardware_32,
-    torch.int64: lhw.allocate_on_hardware_64,
+    torch.int32: lhw.zeros_32,
+    torch.int64: lhw.zeros_64,
 }
 
 _expand_impls = {
@@ -52,7 +52,7 @@ _contiguous_impls = {
     DeviceTensorfloat64: lhw.make_contiguous_float64
 }
 
-# modmul / modsum
+# modmul / modsum / modneg
 _modmul = {
     'ttt': {
         DeviceTensor32: lhw.modmul_ttt_32,
@@ -90,6 +90,18 @@ _modsum = {
         DeviceTensor64: lhw.modsum_ttc_64,
     }
 }
+
+_modneg = {
+    'tt': {
+        DeviceTensor32: lhw.modneg_tt_32,
+        DeviceTensor64: lhw.modneg_tt_64,
+    },
+    'tc': {
+        DeviceTensor32: lhw.modneg_tc_32,
+        DeviceTensor64: lhw.modneg_tc_64,
+    }
+}
+
 
 _axis_modsum = {
     DeviceTensor32: lhw.axis_modsum_32,
@@ -160,6 +172,14 @@ class PythonToCppDispatcher(ABC):
         _dispatch(type(a), a, b, p, out, impls=_modsum['ttc'])
         return out
 
+    def _modneg_tt(self, a, p, out):
+        _dispatch(type(a), a, p, out, impls=_modneg['tt'])
+        return out
+
+    def _modneg_tc(self, a, p_scalar, out):
+        _dispatch(type(a), a, p_scalar, out, impls=_modneg['tc'])
+        return out
+    
     def expand(self, a, repeat, axis):
         return _dispatch(type(a), a, axis, repeat, impls=_expand_impls)
 

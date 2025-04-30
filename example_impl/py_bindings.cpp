@@ -27,7 +27,14 @@ void bind_modop_variants(py::module_& m, const std::string& suffix) {
           "Elementwise modular addition: ([...,k] + scalar) % [k]");
     m.def(("modsum_tcc_" + suffix).c_str(), &modsum_tcc<T>,
           "Elementwise modular addition: ([...,k] + scalar) % scalar");
+
+    // modneg variants
+    m.def(("modneg_tt_" + suffix).c_str(), &modneg_tt<T>,
+          "Elementwise modular negation: (−[...,k]) % [...,k]");
+    m.def(("modneg_tc_" + suffix).c_str(), &modneg_tc<T>,
+          "Elementwise modular negation: (−[...,k]) % scalar");
 }
+
 
 template <typename T>
 void bind_g_decomposition(py::module_& m, const std::string& suffix) {

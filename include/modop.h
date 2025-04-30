@@ -101,6 +101,25 @@ namespace lattica_hw_api {
         std::shared_ptr<DeviceTensor<T>>& result
     );
 
+
+    // ---------- Modular Negation Variants ----------
+
+
+    template <typename T>
+    void modneg_tt(
+        const std::shared_ptr<DeviceTensor<T>>& a,
+        const std::shared_ptr<DeviceTensor<T>>& p,
+        std::shared_ptr<DeviceTensor<T>>& result
+    );
+
+
+    template <typename T>
+    void modneg_tc(
+        const std::shared_ptr<DeviceTensor<T>>& a,
+        T p_scalar,
+        std::shared_ptr<DeviceTensor<T>>& result
+    );
+
 }
 
 #endif // MODOP_H

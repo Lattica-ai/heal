@@ -24,6 +24,7 @@ void elementwise_modop(
     // Total number of elements
     int64_t total = device_tensor_utils::numel(out_shape);
 
+    #pragma omp parallel for
     for (int64_t idx = 0; idx < total; ++idx) {
         // Use unravel_index to compute multi-dimensional coordinate
         std::vector<int64_t> coord = device_tensor_utils::unravel_index(idx, out_shape);
@@ -146,5 +147,98 @@ template void modmul_tcc<T>(const std::shared_ptr<DeviceTensor<T>>&, T, T, std::
 
 INSTANTIATE_ALL(int32_t)
 INSTANTIATE_ALL(int64_t)
+
+
+
+// ---------- Modular Negation Implementations ----------
+
+template <typename T>
+void modneg_tt(
+    const std::shared_ptr<DeviceTensor<T>>& a,
+    const std::shared_ptr<DeviceTensor<T>>& p,
+    std::shared_ptr<DeviceTensor<T>>& result)
+{
+    // — no broadcasting: shapes must be identical
+    if (a->dims != p->dims || a->dims != result->dims) {
+        throw std::invalid_argument("modneg_tt: tensor shapes of a, p and result must match exactly");
+    }
+
+    // — p must be strictly positive everywhere
+    {
+        auto const& shape = p->dims;
+        int64_t total = device_tensor_utils::numel(shape);
+        for (int64_t idx = 0; idx < total; ++idx) {
+            auto coord = device_tensor_utils::unravel_index(idx, shape);
+            T pv = p->at(coord);
+            if (pv <= 0) {
+                throw std::invalid_argument("modneg_tt: modulus p must be strictly positive");
+            }
+        }
+    }
+
+    // element‐wise (-a) % p
+    elementwise_modop<T>(
+        [a](auto const& coord) { return a->at(coord); },
+        // dummy b‐getter (unused)
+        [](auto const&) { return T(0); },
+        [p](auto const& coord) { return p->at(coord); },
+        result,
+        [](T a_val, T /*unused*/, T p_val) {
+            using Wide = T_DP<T>;
+            Wide tmp = -static_cast<Wide>(a_val);
+            Wide rem = tmp % static_cast<Wide>(p_val);
+            if (rem < 0) rem += static_cast<Wide>(p_val);
+            return static_cast<T>(rem);
+        }
+    );
+}
+
+template <typename T>
+void modneg_tc(
+    const std::shared_ptr<DeviceTensor<T>>& a,
+    T p_scalar,
+    std::shared_ptr<DeviceTensor<T>>& result)
+{
+    // — no broadcasting: shape of result must match a
+    if (a->dims != result->dims) {
+        throw std::invalid_argument("modneg_tc: tensor shape of result must match a");
+    }
+    // — p_scalar must be strictly positive
+    if (p_scalar <= 0) {
+        throw std::invalid_argument("modneg_tc: modulus p_scalar must be strictly positive");
+    }
+
+    elementwise_modop<T>(
+        [a](auto const& coord) { return a->at(coord); },
+        [](auto const&) { return T(0); },
+        [&](auto const&) { return p_scalar; },
+        result,
+        [](T a_val, T /*unused*/, T p_val) {
+            using Wide = T_DP<T>;
+            Wide tmp = -static_cast<Wide>(a_val);
+            Wide rem = tmp % static_cast<Wide>(p_val);
+            if (rem < 0) rem += static_cast<Wide>(p_val);
+            return static_cast<T>(rem);
+        }
+    );
+}
+
+template void modneg_tt<int32_t>(
+    const std::shared_ptr<DeviceTensor<int32_t>>&,
+    const std::shared_ptr<DeviceTensor<int32_t>>&,
+    std::shared_ptr<DeviceTensor<int32_t>>&);
+template void modneg_tt<int64_t>(
+    const std::shared_ptr<DeviceTensor<int64_t>>&,
+    const std::shared_ptr<DeviceTensor<int64_t>>&,
+    std::shared_ptr<DeviceTensor<int64_t>>&);
+
+template void modneg_tc<int32_t>(
+    const std::shared_ptr<DeviceTensor<int32_t>>&,
+    int32_t,
+    std::shared_ptr<DeviceTensor<int32_t>>&);
+template void modneg_tc<int64_t>(
+    const std::shared_ptr<DeviceTensor<int64_t>>&,
+    int64_t,
+    std::shared_ptr<DeviceTensor<int64_t>>&);
 
 } // namespace lattica_hw_api
