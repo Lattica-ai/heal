@@ -58,6 +58,14 @@ This compiles the C++ HEAL functions and builds Python bindings used by the runt
 
 Run a simulated AI model using HEAL:
 
+First, install the Python runtime:
+
+```bash
+pip install -e python_execution
+```
+
+Then run the example pipeline:
+
 ```bash
 cd python_execution
 python ../example_run_transcript.py
