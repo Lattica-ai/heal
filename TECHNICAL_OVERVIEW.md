@@ -26,11 +26,11 @@ Tensors behave similarly to those in PyTorch or NumPy, but are exposed through a
 
 Memory-related instructions define how and where tensor data is allocated or transferred. Examples include:
 
-- `host_to_device` — Transfers plaintext data to device memory
-- `device_to_host` — Moves data back to the host
+- `host_to_device` — Transfers tensors to device memory
+- `device_to_host` — Moves tensors back to the host
 - `empty` — Allocates a new, uninitialized tensor on device memory
 
-These operations are crucial for efficient memory usage and integration with encrypted memory backends. Vendors should optimize these paths to align with their device architecture.
+These operations are crucial for efficient memory usage. Vendors should optimize these paths to align with their device architecture.
 
 ---
 
@@ -40,7 +40,7 @@ HEAL defines a set of arithmetic and tensor manipulation operations, such as:
 
 - `modsum`, `modmul` — Perform modular arithmetic
 - `reshape`, `permute`, `repeat_interleave` — Modify or reinterpret tensor shapes
-- `axis_modsum`, `ntt`, etc. — More specialized FHE-aligned operations
+- `g_decomposition`, `ntt`, etc. — More specialized FHE-aligned operations
 
 Each operation reads input tensors by ID, performs the computation, and writes to output tensors. 
 
