@@ -87,7 +87,7 @@ The HEAL **runtime** is a Python-based executor that:
 - Interfaces with your C++ functions via pybind11
 - Tracks intermediate state and logs performance
 
-It is located under `python_execution/` and is used for running full workloads (e.g. `example_run_transcript.py`).
+It is located under `python_execution/` and is used for running full workloads (e.g., `example_transcripts/standalone_matmul_simple.json`).
 
 ---
 
