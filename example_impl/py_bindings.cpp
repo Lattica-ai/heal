@@ -121,6 +121,22 @@ void bind_compute_ops(py::module_& m, const std::string& suffix) {
     );
 }
 
+template <typename T>
+void bind_axis_modops(py::module_& m, const std::string& suffix) {
+      // axis-wise modular sum
+      m.def(("axis_modsum_" + suffix).c_str(), &axis_modsum<T>,
+          py::arg("a"), py::arg("p"), py::arg("result"), py::arg("axis"),
+          ("Axis-wise modular sum (" + suffix + ")").c_str()
+      );
+
+      // axis-wise modular multiply-then-sum
+      m.def(
+          ("modmul_axis_sum_" + suffix).c_str(), &modmul_axis_sum<T>,
+          py::arg("a"), py::arg("b"), py::arg("p"), py::arg("perm"), py::arg("result"), py::arg("apply_perm"),
+          ("Axis-wise modular multiply-then-sum (int" + suffix + ")").c_str()
+      );
+  }
+
 PYBIND11_MODULE(lattica_hw, m) {
     m.doc() = "Lattica Hardware API Python bindings";
 
@@ -140,9 +156,9 @@ PYBIND11_MODULE(lattica_hw, m) {
     bind_modop_variants<int32_t>(m, "32");
     bind_modop_variants<int64_t>(m, "64");
 
-    // axis_modsum
-    m.def("axis_modsum_32", &axis_modsum<int32_t>, "Axis-wise modular sum (int32)");
-    m.def("axis_modsum_64", &axis_modsum<int64_t>, "Axis-wise modular sum (int64)");
+    // Bind axis-wise modular ops
+    bind_axis_modops<int32_t>(m, "32");
+    bind_axis_modops<int64_t>(m, "64");
 
     // g_decomposition
     bind_g_decomposition<int32_t>(m, "32");

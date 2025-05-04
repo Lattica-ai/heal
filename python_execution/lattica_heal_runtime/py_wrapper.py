@@ -119,6 +119,11 @@ _axis_modsum = {
     DeviceTensor64: lhw.axis_modsum_64,
 }
 
+_modmul_axis_sum = {
+    DeviceTensor32: lhw.modmul_axis_sum_32,
+    DeviceTensor64: lhw.modmul_axis_sum_64,
+}
+
 _ntt = {
     DeviceTensor32: lhw.ntt_32,
     DeviceTensor64: lhw.ntt_64,
@@ -171,9 +176,13 @@ class PythonToCppDispatcher(ABC):
 
     def zeros(self, shape, dtype):
         return _dispatch(dtype, shape, impls=_zeros)
-    
+
     def axis_modsum(self, a, axis, q_list, out):
         _dispatch(type(a), a, q_list, out, axis, impls=_axis_modsum)
+        return out
+
+    def modmul_axis_sum(self, a, b, q_list, out, axis):
+        _dispatch(type(a), a, b, q_list, out, axis, impls=_modmul_axis_sum)
         return out
 
     def reshape(self, device_tensor, new_shape):
