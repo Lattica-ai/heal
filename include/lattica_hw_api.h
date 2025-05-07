@@ -14,5 +14,6 @@
 #include "g_decomposition.h" // Gadget decomposition
 #include "ntt.h"             // NTT and INTT
 #include "permute.h"         // Permutations
+#include "shape_manipulation.h"     // Shape manipulation functions
 
 #endif // LATTICA_HARDWARE_API_H

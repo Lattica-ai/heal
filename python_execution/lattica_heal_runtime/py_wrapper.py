@@ -101,6 +101,12 @@ _ntt = {
     DeviceTensor64: lhw.ntt_64,
 }
 
+_pad_single_axis_impls = {
+    DeviceTensor32: lhw.pad_single_axis_32,
+    DeviceTensor64: lhw.pad_single_axis_64,
+    DeviceTensorfloat64: lhw.pad_single_axis_float64
+}
+
 def _dispatch(key, *args, impls):
     try:
         return impls[key](*args)
@@ -168,6 +174,9 @@ class PythonToCppDispatcher(ABC):
 
     def unsqueeze(self, a, axis):
         return _dispatch(type(a), a, axis, impls=_unsqueeze_impls)
+
+    def pad_single_axis(self, a, pad, axis):
+        return _dispatch(type(a), a, pad, axis, impls=_pad_single_axis_impls)
 
     def contiguous(self, a):
         return _dispatch(type(a), a, impls=_contiguous_impls)

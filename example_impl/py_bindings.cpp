@@ -130,4 +130,8 @@ PYBIND11_MODULE(lattica_hw, m) {
     // permute
     m.def("permute_32", &permute<int32_t>, "Permute (int32)");
     m.def("permute_64", &permute<int64_t>, "Permute (int64)");
+
+    m.def("pad_single_axis_32", &pad_single_axis<int32_t>, "Pad a single axis of a tensor (int32)");
+    m.def("pad_single_axis_64", &pad_single_axis<int64_t>, "Pad a single axis of a tensor (int64)");
+    m.def("pad_single_axis_float64", &pad_single_axis<double>, "Pad a single axis of a tensor (float64)");
 }
