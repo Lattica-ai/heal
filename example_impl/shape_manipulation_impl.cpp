@@ -14,6 +14,13 @@ void pad_single_axis(
     int64_t axis,
     std::shared_ptr<DeviceTensor<T>>& result
 ) {
+    if (!a) {
+        throw std::invalid_argument("pad_single_axis: input tensor pointer is null");
+    }
+    if (!result) {
+        throw std::invalid_argument("pad_single_axis: result tensor pointer is null");
+    }
+
     // pad must be non-negative
     if (pad < 0) {
         throw std::invalid_argument("pad_single_axis: pad must be non-negative");
