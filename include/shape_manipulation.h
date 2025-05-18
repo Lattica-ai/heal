@@ -2,25 +2,27 @@
 #define SHAPE_MANIPULATION_H
 
 /**
- * @file pad_single_axis.h
- * @brief Appends zero values to the end of a specific axis in a tensor.
+ * @brief Append zeros to the end of one axis of a tensor.
  *
- * This module pads a tensor by adding zero elements at the end of the specified axis,
- * returning a new tensor with an expanded shape along that axis.
+ * Given an input DeviceTensor `a`, this function writes into a pre-allocated
+ * DeviceTensor `result` so that along the chosen axis:
  *
- * Inputs:
- * - Tensor `a` of arbitrary shape.
- * - Integer `pad`: number of zeros to append.
- * - Integer `axis`: axis along which to pad (may be negative to count from the end).
+ *   result.shape[axis] == a.shape[axis] + pad
  *
- * Output:
- * - Tensor `result` with the same shape as `a` except that
- *   `result.shape[axis] = a.shape[axis] + pad`.
+ * All other dimensions are identical.  The extra entries are filled with zero.
  *
- * Requirements:
- * - `pad >= 0`
- * - `axis` must satisfy `-a->ndim() <= axis < a->ndim()`
- *   (negative values count from the end: `-1` = last axis, `-2` = second-to-last, etc.).
+ * @tparam T   element type
+ * @param a         shared_ptr to the source tensor (must be non-null)
+ * @param pad       number of zeros to append (must be ≥ 0)
+ * @param axis      axis along which to pad; may be negative (−1 is last axis)
+ * @param result    shared_ptr to the destination tensor (must be non-null,
+ *                  and already allocated with the correct expanded shape)
+ *
+ * @throws std::invalid_argument if
+ *   - `a` or `result` is null
+ *   - `pad < 0`
+ *   - `axis` is out of range (−rank … rank−1)
+ *   - `result->dims` does not match `a->dims` except for the specified axis
  */
 
 namespace lattica_hw_api {
