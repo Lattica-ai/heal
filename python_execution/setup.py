@@ -7,7 +7,8 @@ setup(
     author_email="support@lattica.ai",
     packages=find_packages(),
     install_requires=[
-        "torch",
+        "torch~=2.5.1",
+        "numpy~=2.0.1"
     ],
     python_requires=">=3.7",
 )
