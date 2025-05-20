@@ -26,9 +26,7 @@ jobs:
           pip install pybind11
 
       - name: Install system dependencies
-        run: |
-          pip install -e python_execution
-          set -e
+        run: pip install -e python_execution
 
       - name: Create build directory
         run: mkdir -p build
