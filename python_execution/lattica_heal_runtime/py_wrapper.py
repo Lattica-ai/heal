@@ -26,6 +26,7 @@ _device_to_host = {
 _allocate = {
     torch.int32: lhw.allocate_on_hardware_32,
     torch.int64: lhw.allocate_on_hardware_64,
+    torch.float64: lhw.allocate_on_hardware_float64
 }
 
 _expand_impls = {
@@ -101,6 +102,12 @@ _ntt = {
     DeviceTensor64: lhw.ntt_64,
 }
 
+_pad_single_axis_impls = {
+    DeviceTensor32: lhw.pad_single_axis_32,
+    DeviceTensor64: lhw.pad_single_axis_64,
+    DeviceTensorfloat64: lhw.pad_single_axis_float64
+}
+
 def _dispatch(key, *args, impls):
     try:
         return impls[key](*args)
@@ -169,6 +176,10 @@ class PythonToCppDispatcher(ABC):
     def unsqueeze(self, a, axis):
         return _dispatch(type(a), a, axis, impls=_unsqueeze_impls)
 
+    def pad_single_axis(self, a, pad, axis, out):
+        _dispatch(type(a), a, pad, axis, out, impls=_pad_single_axis_impls)
+        return out
+    
     def contiguous(self, a):
         return _dispatch(type(a), a, impls=_contiguous_impls)
 
