@@ -23,9 +23,10 @@ jobs:
       - name: Install Python dependencies (CPU-only)
         run: |
           python -m pip install --upgrade pip
-          pip install torch==2.6.0 --index-url https://download.pytorch.org/whl/cpu
-          pip install numpy
           pip install pybind11
+
+      - name: Install system dependencies
+        run: pip install -e python_execution
 
       - name: Create build directory
         run: mkdir -p build
@@ -50,7 +51,5 @@ jobs:
 
       - name: Run example_run_transcript.py
         run: |
-          pip install -e python_execution
-          set -e
           echo "Running Python script..."
           python example_run_transcript.py
