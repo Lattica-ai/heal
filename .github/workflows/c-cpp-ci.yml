@@ -50,6 +50,7 @@ jobs:
 
       - name: Run example_run_transcript.py
         run: |
+          set -e
           pip install -e python_execution
           echo "Running Python script..."
           python example_run_transcript.py
