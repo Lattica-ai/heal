@@ -40,8 +40,8 @@ TEST(NTTTests, PerformNTTAndVerifyRestorationTorch) {
     auto restored_hw = allocate_on_hardware<int32_t>({1, 4, 1, 2});
 
     // Perform NTT and inverse NTT
-    ntt<int32_t>(a_hw, p_hw, perm_hw, twiddles_hw, result_hw);
-    intt<int32_t>(result_hw, p_hw, perm_hw, inv_twiddles_hw, m_inv_hw, restored_hw);
+    ntt<int32_t>(a_hw, p_hw, perm_hw, twiddles_hw, nullptr, nullptr, result_hw);
+    intt<int32_t>(result_hw, p_hw, perm_hw, inv_twiddles_hw, m_inv_hw, nullptr, nullptr, restored_hw);
 
     // Download result
     torch::Tensor restored_cpu = device_to_host<int32_t>(restored_hw);
