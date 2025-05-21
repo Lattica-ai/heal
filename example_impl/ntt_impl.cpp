@@ -103,8 +103,8 @@ void ntt(
                             T v_val = result->at({i, jx + step, j, t});
                             T_DP<T> v_tw = static_cast<T_DP<T>>(v_val) * static_cast<T_DP<T>>(s);
                             T v_mod = static_cast<T>(v_tw % static_cast<T_DP<T>>(mod));
-                            result->at({i, jx, j, t}) = (u_val + v_mod) % mod;
-                            result->at({i, jx + step, j, t}) = (u_val + mod - v_mod) % mod;
+                            result->at({i, jx, j, t}) = (((u_val + v_mod) % mod) + mod) % mod;
+                            result->at({i, jx + step, j, t}) = (((u_val + mod - v_mod) % mod) + mod) % mod;
                         }
                     }
                 }
