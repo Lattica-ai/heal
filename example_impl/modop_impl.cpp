@@ -10,6 +10,37 @@
 
 namespace lattica_hw_api {
 
+template <typename T, typename AGetter, typename BGetter, typename CombineOp>
+void elementwise_mod2(
+    AGetter get_a,
+    BGetter get_b,
+    std::shared_ptr<DeviceTensor<T>>& result,
+    CombineOp combine_op)
+{
+    const auto& out_shape = result->dims;
+    int64_t ndim = out_shape.size();
+
+    // Compute total size and strides (same as before)…
+    int64_t total = 1;
+    for (auto d : out_shape) total *= d;
+    std::vector<int64_t> strides(ndim,1);
+    for (int i = ndim-2; i>=0; --i)
+        strides[i] = strides[i+1] * out_shape[i+1];
+
+    #pragma omp parallel for
+    for (int64_t idx = 0; idx < total; ++idx) {
+        std::vector<int64_t> coord(ndim);
+        int64_t linear = idx;
+        for (int d = 0; d < ndim; ++d) {
+            coord[d]  = linear / strides[d];
+            linear   %= strides[d];
+        }
+        T a_val = get_a(coord);
+        T b_val = get_b(coord);
+        result->at(coord) = combine_op(a_val, b_val);
+    }
+}
+
 template <typename T, typename AGetter, typename BGetter, typename PGetter, typename CombineOp>
 void elementwise_modop(
     AGetter get_a,
@@ -69,7 +100,12 @@ void elementwise_modop(
         } \
     }
 
-#define DEFINE_MODOP_WRAPPER(OPNAME, OPERATOR) \
+#define CHECK_NOT_NULL(ptr, label) \
+    if (!(ptr)) \
+        throw std::invalid_argument(std::string(label) + \
+            " pointer must not be null.");
+
+#define DEFINE_MODULAR_ARITHMETIC_WRAPPER(OPNAME, OPERATOR) \
 template <typename T> \
 void OPNAME##_ttt( \
     const std::shared_ptr<DeviceTensor<T>>& a, \
@@ -143,8 +179,65 @@ void OPNAME##_tcc( \
         }); \
 }
 
-DEFINE_MODOP_WRAPPER(modsum, static_cast<T_DP<T>>(a) + static_cast<T_DP<T>>(b))
-DEFINE_MODOP_WRAPPER(modmul, static_cast<T_DP<T>>(a) * static_cast<T_DP<T>>(b))
+
+#define CHECK_SAME_DIMS(tensor, result, label) \
+    if ((tensor)->dims != (result)->dims) \
+        throw std::invalid_argument(std::string(label) + \
+            " must have exactly the same shape as result."); \
+
+#define DEFINE_SIMPLE_MOD_WRAPPER(OPNAME) \
+template <typename T> \
+void OPNAME##_tt( \
+    const std::shared_ptr<DeviceTensor<T>>& a, \
+    const std::shared_ptr<DeviceTensor<T>>& b, \
+    std::shared_ptr<DeviceTensor<T>>& result) \
+{ \
+    CHECK_NOT_NULL(a, "a"); \
+    CHECK_NOT_NULL(b, "b"); \
+    CHECK_SAME_DIMS(a, result, "a"); \
+    CHECK_SAME_DIMS(b, result, "b"); \
+    elementwise_mod2<T>( \
+        [a](auto& coord) { return a->at(coord); }, \
+        [b](auto& coord) { return b->at(coord); }, \
+        result, \
+        [](T a, T b) { return static_cast<T>(a % b); } \
+    ); \
+} \
+template <typename T> \
+void OPNAME##_tc( \
+    const std::shared_ptr<DeviceTensor<T>>& a, \
+    int64_t b_scalar, \
+    std::shared_ptr<DeviceTensor<T>>& result) \
+{ \
+    CHECK_NOT_NULL(a, "a"); \
+    CHECK_SAME_DIMS(a, result, "a"); \
+    elementwise_mod2<T>( \
+        [a](auto& coord) { return a->at(coord); }, \
+        [&](auto&) { return static_cast<T>(b_scalar); }, \
+        result, \
+        [](T a, T b) { return static_cast<T>(a % b); } \
+    ); \
+} \
+template <typename T> \
+void OPNAME##_ct( \
+    int64_t a_scalar, \
+    const std::shared_ptr<DeviceTensor<T>>& b, \
+    std::shared_ptr<DeviceTensor<T>>& result) \
+{ \
+    CHECK_NOT_NULL(b, "b"); \
+    CHECK_SAME_DIMS(b, result, "b"); \
+    elementwise_mod2<T>( \
+        [&](auto&)      { return static_cast<T>(a_scalar); }, \
+        [b](auto& coord) { return b->at(coord); }, \
+        result, \
+        [](T a, T b) { return static_cast<T>(a % b); } \
+    ); \
+}
+
+
+DEFINE_MODULAR_ARITHMETIC_WRAPPER(modsum, static_cast<T_DP<T>>(a) + static_cast<T_DP<T>>(b))
+DEFINE_MODULAR_ARITHMETIC_WRAPPER(modmul, static_cast<T_DP<T>>(a) * static_cast<T_DP<T>>(b))
+DEFINE_SIMPLE_MOD_WRAPPER(mod)
 
 // Explicit instantiations
 #define INSTANTIATE_ALL(T) \
@@ -155,7 +248,10 @@ template void modsum_tcc<T>(const std::shared_ptr<DeviceTensor<T>>&, T, T, std::
 template void modmul_ttt<T>(const std::shared_ptr<DeviceTensor<T>>&, const std::shared_ptr<DeviceTensor<T>>&, const std::shared_ptr<DeviceTensor<T>>&, std::shared_ptr<DeviceTensor<T>>&); \
 template void modmul_ttc<T>(const std::shared_ptr<DeviceTensor<T>>&, const std::shared_ptr<DeviceTensor<T>>&, T, std::shared_ptr<DeviceTensor<T>>&); \
 template void modmul_tct<T>(const std::shared_ptr<DeviceTensor<T>>&, T, const std::shared_ptr<DeviceTensor<T>>&, std::shared_ptr<DeviceTensor<T>>&); \
-template void modmul_tcc<T>(const std::shared_ptr<DeviceTensor<T>>&, T, T, std::shared_ptr<DeviceTensor<T>>&);
+template void modmul_tcc<T>(const std::shared_ptr<DeviceTensor<T>>&, T, T, std::shared_ptr<DeviceTensor<T>>&); \
+template void mod_tt<T>(const std::shared_ptr<DeviceTensor<T>>&, const std::shared_ptr<DeviceTensor<T>>&, std::shared_ptr<DeviceTensor<T>>&); \
+template void mod_tc<T>(const std::shared_ptr<DeviceTensor<T>>&, int64_t, std::shared_ptr<DeviceTensor<T>>&); \
+template void mod_ct<T>(int64_t, const std::shared_ptr<DeviceTensor<T>>&, std::shared_ptr<DeviceTensor<T>>&); \
 
 INSTANTIATE_ALL(int32_t)
 INSTANTIATE_ALL(int64_t)
