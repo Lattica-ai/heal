@@ -17,7 +17,7 @@ namespace lattica_hw_api {
      * @return A contiguous version of the tensor.
      */
     template <typename T>
-    std::shared_ptr<DeviceTensor<T>> make_contiguous(const std::shared_ptr<DeviceTensor<T>>& tensor);
+    std::shared_ptr<DeviceTensor<T>> contiguous(const std::shared_ptr<DeviceTensor<T>>& tensor);
 
 }
 

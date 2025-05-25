@@ -42,8 +42,8 @@ _unsqueeze_impls = {
 }
 
 _contiguous_impls = {
-    DeviceTensor32: lhw.make_contiguous_32,
-    DeviceTensor64: lhw.make_contiguous_64,
+    DeviceTensor32: lhw.contiguous_32,
+    DeviceTensor64: lhw.contiguous_64,
 }
 
 # modmul / modsum

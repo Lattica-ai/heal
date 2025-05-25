@@ -80,7 +80,7 @@ void bind_memory_helpers(py::module_& m, const std::string& suffix) {
 
 template <typename T>
 void bind_contiguous(py::module_& m, const std::string& suffix) {
-    m.def(("make_contiguous_" + suffix).c_str(), &make_contiguous<T>,
+    m.def(("contiguous_" + suffix).c_str(), &contiguous<T>,
           py::arg("tensor"), "Return a contiguous version of the tensor.");
 }
 
