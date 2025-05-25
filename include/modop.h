@@ -7,7 +7,7 @@
  *
  * This module implements functions for elementwise modular multiplication, modular
  * addition, and modular reduction (remainder) between tensors stored in device memory.
- * All operations support broadcasting and non-contiguous layout via internal
+ * Operations support broadcasting and non-contiguous layout via internal
  * stride-aware indexing.
  *
  * Operations:
@@ -23,7 +23,7 @@
  * - All inputs must be of the same element type `T` (except scalar remainders use int64_t).
  * - Non-contiguous tensors are supported using internal stride-aware indexing.
  *
- * Broadcasting semantics follow PyTorch's rules:
+ * Broadcasting semantics follow PyTorch's rules (only in multiplication and addition):
  * - Dimensions are compared from the trailing dimensions backward.
  * - A dimension of size 1 can be expanded to match the other tensor's size.
  * - Leading dimensions can be added implicitly.
