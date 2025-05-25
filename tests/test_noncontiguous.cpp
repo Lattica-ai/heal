@@ -16,7 +16,7 @@ TEST(NonContiguousTests, TransposeAndAddWithStrides) {
     auto a_t_hw = host_to_device<int32_t>(a_t);
 
     // Allocate result and modulus
-    auto result_hw = allocate_on_hardware<int32_t>({2, 3, 3, 1});
+    auto result_hw = zeros<int32_t>({2, 3, 3, 1});
     auto p_hw = host_to_device<int32_t>(torch::tensor({100}, torch::kInt32));  // [1]
 
     // Perform modular multiplication: result = a * a_t mod 100

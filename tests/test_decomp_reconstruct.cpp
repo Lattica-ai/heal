@@ -10,7 +10,7 @@ TEST(DecompReconstructTests, DecomposeAndReconstruct_Torch) {
     int64_t base_bits = 1;
 
     auto a_hw = host_to_device<int32_t>(a_cpu);
-    auto a_digits_hw = allocate_on_hardware<int32_t>({3, power});
+    auto a_digits_hw = zeros<int32_t>({3, power});
 
     g_decomposition(a_hw, a_digits_hw, power, base_bits);
 
@@ -26,7 +26,7 @@ TEST(DecompReconstructTests, DecomposeAndReconstruct_Torch) {
     a_digits_hw->reshape({3, power, 1});
 
     // Reconstruct
-    auto a_recon_hw = allocate_on_hardware<int32_t>({3, 1});
+    auto a_recon_hw = zeros<int32_t>({3, 1});
     auto p1_hw = host_to_device<int32_t>(torch::tensor({1024}, torch::dtype(torch::kInt32)));
 
     axis_modsum(a_digits_hw, p1_hw, a_recon_hw, 1);

@@ -67,8 +67,8 @@ void bind_device_memory(py::module_& m, const std::string& suffix) {
 template <typename T>
 void bind_memory_helpers(py::module_& m, const std::string& suffix) {
     using namespace lattica_hw_api;
-    m.def(("allocate_on_hardware_" + suffix).c_str(),
-          &allocate_on_hardware<T>,
+    m.def(("zeros_" + suffix).c_str(),
+          &zeros<T>,
           py::arg("dims"));
     m.def(("host_to_device_" + suffix).c_str(),
           &host_to_device<T>,
