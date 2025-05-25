@@ -96,6 +96,11 @@ _axis_modsum = {
     DeviceTensor64: lhw.axis_modsum_64,
 }
 
+_apply_g_decomp = {
+    DeviceTensor32: lhw.apply_g_decomp_32,
+    DeviceTensor64: lhw.apply_g_decomp_64,
+}
+
 _ntt = {
     DeviceTensor32: lhw.ntt_32,
     DeviceTensor64: lhw.ntt_64,
@@ -124,6 +129,10 @@ class PythonToCppDispatcher(ABC):
         _dispatch(type(a), a, q_list, out, axis, impls=_axis_modsum)
         return out
 
+    def apply_g_decomp(self, a, g_exp, g_base_bits, out):
+        _dispatch(type(a), a, out, g_exp, g_base_bits, impls=_apply_g_decomp)
+        return out
+    
     def reshape(self, device_tensor, new_shape):
         device_tensor.reshape(new_shape)
         return device_tensor
