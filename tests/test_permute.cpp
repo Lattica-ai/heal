@@ -34,7 +34,7 @@ void run_permute_case(
 ) {
     auto a_hw = host_to_device<int32_t>(a);
     auto perms_hw = host_to_device<int32_t>(perms);
-    auto result_hw = zeros<int32_t>(a.sizes().vec());
+    auto result_hw = empty<int32_t>(a.sizes().vec());
 
     permute<int32_t>(a_hw, perms_hw, result_hw, elementwise_axis, perm_axis);
     auto result = device_to_host<int32_t>(result_hw);
@@ -66,7 +66,7 @@ TEST(PermuteTests, InvalidDimsThrows) {
     auto perms = torch::randint(0, 3, {2, 3}, torch::kInt32);
     auto a_hw = host_to_device<int32_t>(a);
     auto perms_hw = host_to_device<int32_t>(perms);
-    auto result_hw = zeros<int32_t>({2, 3, 4});
+    auto result_hw = empty<int32_t>({2, 3, 4});
 
     EXPECT_THROW(permute<int32_t>(a_hw, perms_hw, result_hw, 3, 1), std::invalid_argument);
     EXPECT_THROW(permute<int32_t>(a_hw, perms_hw, result_hw, 1, 1), std::invalid_argument);
@@ -78,7 +78,7 @@ TEST(PermuteTests, PermutationOutOfBoundsThrows) {
     auto perms = torch::tensor({{0, 1, 3}, {1, 2, 0}}, torch::kInt32);  // 3 is OOB
     auto a_hw = host_to_device<int32_t>(a);
     auto perms_hw = host_to_device<int32_t>(perms);
-    auto result_hw = zeros<int32_t>({2, 3, 4});
+    auto result_hw = empty<int32_t>({2, 3, 4});
 
     EXPECT_THROW(permute<int32_t>(a_hw, perms_hw, result_hw, 0, 1), std::out_of_range);
 }

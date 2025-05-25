@@ -16,7 +16,7 @@ TEST(AxisModSumTests, Basic3DAxis1) {
 
     auto a_hw = host_to_device<int32_t>(a);
     auto p_hw = host_to_device<int32_t>(p);
-    auto result_hw = zeros<int32_t>({2, 4});
+    auto result_hw = empty<int32_t>({2, 4});
 
     axis_modsum(a_hw, p_hw, result_hw, /*axis=*/1);
 
@@ -39,7 +39,7 @@ TEST(AxisModSumTests, ReduceFirstAxis) {
 
     auto a_hw = host_to_device<int32_t>(a);
     auto p_hw = host_to_device<int32_t>(p);
-    auto result_hw = zeros<int32_t>({4});
+    auto result_hw = empty<int32_t>({4});
 
     axis_modsum(a_hw, p_hw, result_hw, /*axis=*/0);
 
@@ -55,7 +55,7 @@ TEST(AxisModSumTests, HighDimReduction) {
 
     auto a_hw = host_to_device<int32_t>(a);
     auto p_hw = host_to_device<int32_t>(p);
-    auto result_hw = zeros<int32_t>({2, 2, 3});
+    auto result_hw = empty<int32_t>({2, 2, 3});
 
     axis_modsum(a_hw, p_hw, result_hw, /*axis=*/2);
 
@@ -68,7 +68,7 @@ TEST(AxisModSumTests, InvalidAxisThrows) {
     torch::Tensor p = torch::tensor({7, 11}, torch::kInt32);
     auto a_hw = host_to_device<int32_t>(a);
     auto p_hw = host_to_device<int32_t>(p);
-    auto result_hw = zeros<int32_t>({2, 2});  // removing axis=2
+    auto result_hw = empty<int32_t>({2, 2});  // removing axis=2
 
     EXPECT_THROW(axis_modsum(a_hw, p_hw, result_hw, -1), std::invalid_argument);
     EXPECT_THROW(axis_modsum(a_hw, p_hw, result_hw, 3), std::invalid_argument);
@@ -79,7 +79,7 @@ TEST(AxisModSumTests, ModulusShapeMismatchThrows) {
     torch::Tensor p = torch::tensor({7, 11, 13}, torch::kInt32);  // invalid shape
     auto a_hw = host_to_device<int32_t>(a);
     auto p_hw = host_to_device<int32_t>(p);
-    auto result_hw = zeros<int32_t>({2, 2});
+    auto result_hw = empty<int32_t>({2, 2});
 
     EXPECT_THROW(axis_modsum(a_hw, p_hw, result_hw, 2), std::invalid_argument);
 }
