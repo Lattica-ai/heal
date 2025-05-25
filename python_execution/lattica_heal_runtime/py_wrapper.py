@@ -23,9 +23,9 @@ _device_to_host = {
     DeviceTensorfloat64: lhw.device_to_host_float64
 }
 
-_allocate = {
-    torch.int32: lhw.allocate_on_hardware_32,
-    torch.int64: lhw.allocate_on_hardware_64,
+_zeros = {
+    torch.int32: lhw.zeros_32,
+    torch.int64: lhw.zeros_64,
 }
 
 _expand_impls = {
@@ -47,9 +47,9 @@ _unsqueeze_impls = {
 }
 
 _contiguous_impls = {
-    DeviceTensor32: lhw.make_contiguous_32,
-    DeviceTensor64: lhw.make_contiguous_64,
-    DeviceTensorfloat64: lhw.make_contiguous_float64
+    DeviceTensor32: lhw.contiguous_32,
+    DeviceTensor64: lhw.contiguous_64,
+    DeviceTensorfloat64: lhw.contiguous_float64
 }
 
 # modmul / modsum
@@ -96,6 +96,11 @@ _axis_modsum = {
     DeviceTensor64: lhw.axis_modsum_64,
 }
 
+_apply_g_decomp = {
+    DeviceTensor32: lhw.apply_g_decomp_32,
+    DeviceTensor64: lhw.apply_g_decomp_64,
+}
+
 _ntt = {
     DeviceTensor32: lhw.ntt_32,
     DeviceTensor64: lhw.ntt_64,
@@ -117,13 +122,17 @@ class PythonToCppDispatcher(ABC):
     def device_to_host(self, a):
         return _dispatch(type(a), a, impls=_device_to_host)
 
-    def empty(self, shape, dtype):
-        return _dispatch(dtype, shape, impls=_allocate)
+    def zeros(self, shape, dtype):
+        return _dispatch(dtype, shape, impls=_zeros)
 
     def axis_modsum(self, a, axis, q_list, out):
         _dispatch(type(a), a, q_list, out, axis, impls=_axis_modsum)
         return out
 
+    def apply_g_decomp(self, a, g_exp, g_base_bits, out):
+        _dispatch(type(a), a, out, g_exp, g_base_bits, impls=_apply_g_decomp)
+        return out
+    
     def reshape(self, device_tensor, new_shape):
         device_tensor.reshape(new_shape)
         return device_tensor

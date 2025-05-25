@@ -31,7 +31,7 @@ void bind_modop_variants(py::module_& m, const std::string& suffix) {
 
 template <typename T>
 void bind_g_decomposition(py::module_& m, const std::string& suffix) {
-    m.def(("g_decomposition_" + suffix).c_str(), &g_decomposition<T>,
+    m.def(("apply_g_decomp_" + suffix).c_str(), &apply_g_decomp<T>,
           py::arg("a"), py::arg("result"), py::arg("power"), py::arg("base_bits"),
           "G decomposition (base 2^base_bits)");
 }
@@ -67,8 +67,8 @@ void bind_device_memory(py::module_& m, const std::string& suffix) {
 template <typename T>
 void bind_memory_helpers(py::module_& m, const std::string& suffix) {
     using namespace lattica_hw_api;
-    m.def(("allocate_on_hardware_" + suffix).c_str(),
-          &allocate_on_hardware<T>,
+    m.def(("zeros_" + suffix).c_str(),
+          &zeros<T>,
           py::arg("dims"));
     m.def(("host_to_device_" + suffix).c_str(),
           &host_to_device<T>,
@@ -80,7 +80,7 @@ void bind_memory_helpers(py::module_& m, const std::string& suffix) {
 
 template <typename T>
 void bind_contiguous(py::module_& m, const std::string& suffix) {
-    m.def(("make_contiguous_" + suffix).c_str(), &make_contiguous<T>,
+    m.def(("contiguous_" + suffix).c_str(), &contiguous<T>,
           py::arg("tensor"), "Return a contiguous version of the tensor.");
 }
 

@@ -7,7 +7,7 @@
 namespace lattica_hw_api {
 
     template <typename T>
-    std::shared_ptr<DeviceTensor<T>> make_contiguous(const std::shared_ptr<DeviceTensor<T>>& tensor) {
+    std::shared_ptr<DeviceTensor<T>> contiguous(const std::shared_ptr<DeviceTensor<T>>& tensor) {
         if (tensor->is_contiguous()) return tensor;
 
         int64_t total = std::accumulate(
@@ -51,9 +51,9 @@ namespace lattica_hw_api {
         return tensor;
     }
 
-template std::shared_ptr<DeviceTensor<int32_t>> make_contiguous<int32_t>(const std::shared_ptr<DeviceTensor<int32_t>>&);
-template std::shared_ptr<DeviceTensor<int64_t>> make_contiguous<int64_t>(const std::shared_ptr<DeviceTensor<int64_t>>&);
-template std::shared_ptr<DeviceTensor<double>> make_contiguous<double>(const std::shared_ptr<DeviceTensor<double>>&);
+template std::shared_ptr<DeviceTensor<int32_t>> contiguous<int32_t>(const std::shared_ptr<DeviceTensor<int32_t>>&);
+template std::shared_ptr<DeviceTensor<int64_t>> contiguous<int64_t>(const std::shared_ptr<DeviceTensor<int64_t>>&);
+template std::shared_ptr<DeviceTensor<double>> contiguous<double>(const std::shared_ptr<DeviceTensor<double>>&);
 
 
 } // namespace lattica_hw_api
