@@ -18,11 +18,11 @@ struct DeviceTensor {
 namespace lattica_hw_api {
 
 /**
- * @brief Allocate a new device tensor on hardware.
+ * @brief Allocate a new device tensor on hardware with all elements initialized to zero.
  * @param dims Shape of the tensor.
  */
 template <typename T>
-std::shared_ptr<DeviceTensor<T>> allocate_on_hardware(const std::vector<int64_t>& dims);
+std::shared_ptr<DeviceTensor<T>> zeros(const std::vector<int64_t>& dims);
 
 /**
  * @brief Upload a PyTorch tensor to device memory.

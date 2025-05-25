@@ -166,7 +166,7 @@ void DeviceTensor<T>::print_metadata() const {
 namespace lattica_hw_api {
 
 template <typename T>
-std::shared_ptr<DeviceTensor<T>> allocate_on_hardware(const std::vector<int64_t>& dims) {
+std::shared_ptr<DeviceTensor<T>> zeros(const std::vector<int64_t>& dims) {
     int64_t total_elems = std::accumulate(dims.begin(), dims.end(), int64_t(1), std::multiplies<int64_t>());
     void* buffer = calloc(total_elems, sizeof(T));
     std::vector<int64_t> strides(dims.size());
@@ -202,9 +202,9 @@ torch::Tensor device_to_host(const std::shared_ptr<DeviceTensor<T>>& memory) {
 }
 
 // Explicit instantiations
-template std::shared_ptr<DeviceTensor<int32_t>> allocate_on_hardware<int32_t>(const std::vector<int64_t>&);
-template std::shared_ptr<DeviceTensor<int64_t>> allocate_on_hardware<int64_t>(const std::vector<int64_t>&);
-template std::shared_ptr<DeviceTensor<double>> allocate_on_hardware<double>(const std::vector<int64_t>&);
+template std::shared_ptr<DeviceTensor<int32_t>> zeros<int32_t>(const std::vector<int64_t>&);
+template std::shared_ptr<DeviceTensor<int64_t>> zeros<int64_t>(const std::vector<int64_t>&);
+template std::shared_ptr<DeviceTensor<double>> zeros<double>(const std::vector<int64_t>&);
 
 template std::shared_ptr<DeviceTensor<int32_t>> host_to_device<int32_t>(const torch::Tensor&);
 template std::shared_ptr<DeviceTensor<int64_t>> host_to_device<int64_t>(const torch::Tensor&);

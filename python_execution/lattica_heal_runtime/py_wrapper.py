@@ -23,9 +23,9 @@ _device_to_host = {
     DeviceTensorfloat64: lhw.device_to_host_float64
 }
 
-_allocate = {
-    torch.int32: lhw.allocate_on_hardware_32,
-    torch.int64: lhw.allocate_on_hardware_64,
+_zeros = {
+    torch.int32: lhw.zeros_32,
+    torch.int64: lhw.zeros_64,
 }
 
 _expand_impls = {
@@ -117,8 +117,8 @@ class PythonToCppDispatcher(ABC):
     def device_to_host(self, a):
         return _dispatch(type(a), a, impls=_device_to_host)
 
-    def empty(self, shape, dtype):
-        return _dispatch(dtype, shape, impls=_allocate)
+    def zeros(self, shape, dtype):
+        return _dispatch(dtype, shape, impls=_zeros)
 
     def axis_modsum(self, a, axis, q_list, out):
         _dispatch(type(a), a, q_list, out, axis, impls=_axis_modsum)
