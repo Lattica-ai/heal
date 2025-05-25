@@ -28,6 +28,11 @@ _zeros = {
     torch.int64: lhw.zeros_64,
 }
 
+_empty = {
+    torch.int32: lhw.empty_32,
+    torch.int64: lhw.empty_64,
+}
+
 _expand_impls = {
     DeviceTensor32: lhw.expand_32,
     DeviceTensor64: lhw.expand_64,
@@ -125,6 +130,9 @@ class PythonToCppDispatcher(ABC):
     def zeros(self, shape, dtype):
         return _dispatch(dtype, shape, impls=_zeros)
 
+    def empty(self, shape, dtype):
+        return _dispatch(dtype, shape, impls=_empty)
+
     def axis_modsum(self, a, axis, q_list, out):
         _dispatch(type(a), a, q_list, out, axis, impls=_axis_modsum)
         return out
@@ -132,7 +140,7 @@ class PythonToCppDispatcher(ABC):
     def apply_g_decomp(self, a, g_exp, g_base_bits, out):
         _dispatch(type(a), a, out, g_exp, g_base_bits, impls=_apply_g_decomp)
         return out
-    
+
     def reshape(self, device_tensor, new_shape):
         device_tensor.reshape(new_shape)
         return device_tensor

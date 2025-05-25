@@ -36,8 +36,8 @@ TEST(NTTTests, PerformNTTAndVerifyRestorationTorch) {
     auto inv_twiddles_hw = host_to_device<int32_t>(inv_twiddles_cpu);
 
     // Allocate result and restoration buffers
-    auto result_hw = zeros<int32_t>({1, 4, 1, 2});
-    auto restored_hw = zeros<int32_t>({1, 4, 1, 2});
+    auto result_hw = empty<int32_t>({1, 4, 1, 2});
+    auto restored_hw = empty<int32_t>({1, 4, 1, 2});
 
     // Perform NTT and inverse NTT
     ntt<int32_t>(a_hw, p_hw, perm_hw, twiddles_hw, result_hw);
