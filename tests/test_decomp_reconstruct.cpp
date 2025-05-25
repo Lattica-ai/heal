@@ -12,7 +12,7 @@ TEST(DecompReconstructTests, DecomposeAndReconstruct_Torch) {
     auto a_hw = host_to_device<int32_t>(a_cpu);
     auto a_digits_hw = zeros<int32_t>({3, power});
 
-    g_decomposition(a_hw, a_digits_hw, power, base_bits);
+    apply_g_decomp(a_hw, a_digits_hw, power, base_bits);
 
     auto basis_hw = host_to_device<int32_t>(
         torch::tensor({1, 2, 4, 8, 16, 32}, torch::dtype(torch::kInt32)));
