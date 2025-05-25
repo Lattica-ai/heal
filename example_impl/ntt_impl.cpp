@@ -72,6 +72,8 @@ void ntt(
     const std::shared_ptr<DeviceTensor<T>>& p,
     const std::shared_ptr<DeviceTensor<T>>& perm,
     const std::shared_ptr<DeviceTensor<T>>& twiddles, // now [k, m]
+    const std::shared_ptr<DeviceTensor<T>>& log2p_list,
+    const std::shared_ptr<DeviceTensor<T>>& mu_list,
     std::shared_ptr<DeviceTensor<T>>& result
 ) {
     int64_t l, m, r, k;
@@ -101,8 +103,8 @@ void ntt(
                             T v_val = result->at({i, jx + step, j, t});
                             T_DP<T> v_tw = static_cast<T_DP<T>>(v_val) * static_cast<T_DP<T>>(s);
                             T v_mod = static_cast<T>(v_tw % static_cast<T_DP<T>>(mod));
-                            result->at({i, jx, j, t}) = (u_val + v_mod) % mod;
-                            result->at({i, jx + step, j, t}) = (u_val + mod - v_mod) % mod;
+                            result->at({i, jx, j, t}) = (((u_val + v_mod) % mod) + mod) % mod;
+                            result->at({i, jx + step, j, t}) = (((u_val + mod - v_mod) % mod) + mod) % mod;
                         }
                     }
                 }
@@ -120,6 +122,8 @@ void intt(
     const std::shared_ptr<DeviceTensor<T>>& perm,
     const std::shared_ptr<DeviceTensor<T>>& inv_twiddles, // now [k, m]
     const std::shared_ptr<DeviceTensor<T>>& m_inv,
+    const std::shared_ptr<DeviceTensor<T>>& log2p_list,
+    const std::shared_ptr<DeviceTensor<T>>& mu_list,
     std::shared_ptr<DeviceTensor<T>>& result
 ) {
     int64_t l, m, r, k;
@@ -166,9 +170,45 @@ void intt(
 }
 
 // Explicit instantiations
-template void ntt<int32_t>(const std::shared_ptr<DeviceTensor<int32_t>>&, const std::shared_ptr<DeviceTensor<int32_t>>&, const std::shared_ptr<DeviceTensor<int32_t>>&, const std::shared_ptr<DeviceTensor<int32_t>>&, std::shared_ptr<DeviceTensor<int32_t>>&);
-template void ntt<int64_t>(const std::shared_ptr<DeviceTensor<int64_t>>&, const std::shared_ptr<DeviceTensor<int64_t>>&, const std::shared_ptr<DeviceTensor<int64_t>>&, const std::shared_ptr<DeviceTensor<int64_t>>&, std::shared_ptr<DeviceTensor<int64_t>>&);
-template void intt<int32_t>(const std::shared_ptr<DeviceTensor<int32_t>>&, const std::shared_ptr<DeviceTensor<int32_t>>&, const std::shared_ptr<DeviceTensor<int32_t>>&, const std::shared_ptr<DeviceTensor<int32_t>>&, const std::shared_ptr<DeviceTensor<int32_t>>&, std::shared_ptr<DeviceTensor<int32_t>>&);
-template void intt<int64_t>(const std::shared_ptr<DeviceTensor<int64_t>>&, const std::shared_ptr<DeviceTensor<int64_t>>&, const std::shared_ptr<DeviceTensor<int64_t>>&, const std::shared_ptr<DeviceTensor<int64_t>>&, const std::shared_ptr<DeviceTensor<int64_t>>&, std::shared_ptr<DeviceTensor<int64_t>>&);
+// Explicit instantiations with optional Barrett‐reduction parameters
+
+template void ntt<int32_t>(
+    const std::shared_ptr<DeviceTensor<int32_t>>& /*a*/,
+    const std::shared_ptr<DeviceTensor<int32_t>>& /*p*/,
+    const std::shared_ptr<DeviceTensor<int32_t>>& /*perm*/,
+    const std::shared_ptr<DeviceTensor<int32_t>>& /*twiddles*/,
+    const std::shared_ptr<DeviceTensor<int32_t>>& /*log2p_list*/,
+    const std::shared_ptr<DeviceTensor<int32_t>>& /*mu_list*/,
+    std::shared_ptr<DeviceTensor<int32_t>>& /*result*/);
+
+template void ntt<int64_t>(
+    const std::shared_ptr<DeviceTensor<int64_t>>& /*a*/,
+    const std::shared_ptr<DeviceTensor<int64_t>>& /*p*/,
+    const std::shared_ptr<DeviceTensor<int64_t>>& /*perm*/,
+    const std::shared_ptr<DeviceTensor<int64_t>>& /*twiddles*/,
+    const std::shared_ptr<DeviceTensor<int64_t>>& /*log2p_list*/,
+    const std::shared_ptr<DeviceTensor<int64_t>>& /*mu_list*/,
+    std::shared_ptr<DeviceTensor<int64_t>>& /*result*/);
+
+template void intt<int32_t>(
+    const std::shared_ptr<DeviceTensor<int32_t>>& /*a*/,
+    const std::shared_ptr<DeviceTensor<int32_t>>& /*p*/,
+    const std::shared_ptr<DeviceTensor<int32_t>>& /*perm*/,
+    const std::shared_ptr<DeviceTensor<int32_t>>& /*inv_twiddles*/,
+    const std::shared_ptr<DeviceTensor<int32_t>>& /*m_inv*/,
+    const std::shared_ptr<DeviceTensor<int32_t>>& /*log2p_list*/,
+    const std::shared_ptr<DeviceTensor<int32_t>>& /*mu_list*/,
+    std::shared_ptr<DeviceTensor<int32_t>>& /*result*/);
+
+template void intt<int64_t>(
+    const std::shared_ptr<DeviceTensor<int64_t>>& /*a*/,
+    const std::shared_ptr<DeviceTensor<int64_t>>& /*p*/,
+    const std::shared_ptr<DeviceTensor<int64_t>>& /*perm*/,
+    const std::shared_ptr<DeviceTensor<int64_t>>& /*inv_twiddles*/,
+    const std::shared_ptr<DeviceTensor<int64_t>>& /*m_inv*/,
+    const std::shared_ptr<DeviceTensor<int64_t>>& /*log2p_list*/,
+    const std::shared_ptr<DeviceTensor<int64_t>>& /*mu_list*/,
+    std::shared_ptr<DeviceTensor<int64_t>>& /*result*/);
+
 
 } // namespace lattica_hw_api
