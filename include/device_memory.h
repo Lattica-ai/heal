@@ -25,6 +25,13 @@ template <typename T>
 std::shared_ptr<DeviceTensor<T>> zeros(const std::vector<int64_t>& dims);
 
 /**
+ * @brief Allocate a new device tensor on hardware without initializing elements.
+ * @param dims Shape of the tensor.
+ */
+template <typename T>
+std::shared_ptr<DeviceTensor<T>> empty(const std::vector<int64_t>& dims);
+
+/**
  * @brief Upload a PyTorch tensor to device memory.
  * @param tensor A contiguous torch::Tensor of type T.
  */
