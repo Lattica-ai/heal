@@ -177,5 +177,5 @@ class PythonToCppDispatcher(ABC):
             raise NotImplementedError(f"skip_perm is not supported. {skip_perm=}")
         if tile:
             a = self.expand(a, 2, -1)
-        _dispatch(type(a), a, q_list, log2p, mu_list, perm, psi_arr, out, impls=_ntt)
+        _dispatch(type(a), a, q_list, perm, psi_arr, log2p, mu_list, out, impls=_ntt)
         return out
