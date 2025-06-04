@@ -42,35 +42,73 @@ example_run_transcript.py  # Entry point to run a test workload
 - CMake ≥ 3.14
 - Python ≥ 3.8
 - Pybind11 (auto-installed by CMake)
-- A C++ compiler (e.g., `g++` or `clang++`)
+- A C++ compiler (GCC recommended, e.g., g++. Note: clang++ may cause build issues)
 
 ### 2. Build C++ Runtime & Bindings
 
+* Clone the repository:
+
 ```bash
-mkdir build && cd build
-cmake ..
-make -j
+git clone <repository-url>
+cd <repository-directory>
+```
+Replace `{repository-url}` and `{repository-directory}` with the actual URL and directory name.
+
+* Create a Python virtual environment:
+
+```bash
+python3 -m venv .venv
 ```
 
-This compiles the C++ HEAL functions and builds Python bindings used by the runtime.
+* Activate the virtual environment:
 
----
+```bash
+source .venv/bin/activate
+```
 
-## ▶️ Running the Example Pipeline
-
-Run a simulated AI model using HEAL:
-
-First, install the Python runtime:
+* Install the Python runtime library:
 
 ```bash
 pip install -e python_execution
 ```
 
-Then run the example pipeline:
+This installs the Python bindings necessary for running HEAL scripts.
+
+* Create a build directory:
 
 ```bash
-cd python_execution
-python ../example_run_transcript.py
+mkdir build
+```
+
+* Navigate into the build directory:
+
+```bash
+cd build
+```
+
+* Generate build files using CMake:
+
+```bash
+cmake ..
+```
+
+* Compile the HEAL runtime and Python bindings:
+```bash
+make -j
+```
+
+This completes building the C++ runtime and Python bindings for HEAL.
+
+---
+
+## ▶️ Running the Example Pipeline
+
+After completing the build steps above, you can run a simulated AI model using HEAL by executing the example script provided.
+
+From the root directory of the HEAL repository, run:
+
+```bash
+python example_run_transcript.py
 ```
 
 This will:
@@ -90,22 +128,13 @@ ctest --output-on-failure
 
 This runs all unit tests from the `/tests` directory to verify correctness.
 
----
-
-## 🧪 Testing a Custom Function
-
-To implement and test a new function (e.g., `modmul`):
-
-1. Add C++ code in `example_impl/modop_impl.cpp`
-2. Declare the function in `include/modop.h`
-3. Expose it via `py_bindings.cpp`
-4. Add a unit test in `tests/test_modop.cpp`
-5. Rebuild and re-run:
+To run a single test executable directly and see detailed success/failure logs, execute the test binary itself:
 
 ```bash
-make -j
-ctest --output-on-failure
+./tests/<test_executable>
 ```
+
+Replace `{test_executable}` with the actual name of your test binary.
 
 ---
 
