@@ -209,7 +209,6 @@ TEST(ModOpEdgeCases, IncorrectPShape) {
     EXPECT_THROW(modsum_ttt<int32_t>(a_hw, b_hw, p_hw, result_hw), std::invalid_argument);
 }
 
-
 /***************************************************************************************
 ****************************************************************************************
 ****                                                                                ****
@@ -224,16 +223,16 @@ TEST(ModOpEdgeCases, IncorrectPShape) {
 
 TEST(ModTTTests, BasicTensorTensor) {
     // elementwise tensor % tensor
-    auto a = torch::tensor({{5, 7, 9}, {10, 12, 14}}, torch::kInt32);
-    auto b = torch::tensor({{3, 5, 7}, {4, 6, 8}}, torch::kInt32);
+    auto a = torch::tensor({{5, 7, 9}, {10, 12, 14}}, torch::kInt64);
+    auto b = torch::tensor({{3, 5, 7}, {4, 6, 8}}, torch::kInt64);
     std::vector<int64_t> shape = {2, 3};
 
-    auto a_hw = host_to_device<int32_t>(a);
-    auto b_hw = host_to_device<int32_t>(b);
-    auto result_hw = allocate_on_hardware<int32_t>(shape);
+    auto a_hw = host_to_device<int64_t>(a);
+    auto b_hw = host_to_device<int64_t>(b);
+    auto result_hw = allocate_on_hardware<int64_t>(shape);
 
-    mod_tt<int32_t>(a_hw, b_hw, result_hw);
-    auto result = device_to_host<int32_t>(result_hw);
+    mod_tt<int64_t>(a_hw, b_hw, result_hw);
+    auto result = device_to_host<int64_t>(result_hw);
 
     auto expected = torch::remainder(a, b);
     ASSERT_TRUE(torch::equal(result, expected))
@@ -242,21 +241,21 @@ TEST(ModTTTests, BasicTensorTensor) {
 
 
 TEST(ModTTTests, SingletonDims) {
-    auto a = torch::tensor({{{7}}}, torch::kInt32);  // shape [1,1,1]
-    auto b = torch::tensor({{{3}}}, torch::kInt32);
-    auto result_hw = allocate_on_hardware<int32_t>({1,1,1});
-    mod_tt<int32_t>(host_to_device<int32_t>(a),
-                    host_to_device<int32_t>(b),
+    auto a = torch::tensor({{{7}}}, torch::kInt64);  // shape [1,1,1]
+    auto b = torch::tensor({{{3}}}, torch::kInt64);
+    auto result_hw = allocate_on_hardware<int64_t>({1,1,1});
+    mod_tt<int64_t>(host_to_device<int64_t>(a),
+                    host_to_device<int64_t>(b),
                     result_hw);
-    auto out = device_to_host<int32_t>(result_hw);
-    ASSERT_EQ(out.item<int32_t>(), 7 % 3);
+    auto out = device_to_host<int64_t>(result_hw);
+    ASSERT_EQ(out.item<int64_t>(), 7 % 3);
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// High-rank and non-contiguous
+// int32 and non-contiguous
 // ──────────────────────────────────────────────────────────────────────────────
 
-TEST(ModTTTests, HighRankTensor) {
+TEST(ModTTTests, Int32Tensor) {
     auto a = torch::randint(1, 100, {2,2,2,2}, torch::kInt32);
     auto b = torch::randint(1, 100, {2,2,2,2}, torch::kInt32);
     auto result_hw = allocate_on_hardware<int32_t>({2,2,2,2});
@@ -269,19 +268,19 @@ TEST(ModTTTests, HighRankTensor) {
 
 TEST(ModTTTests, NonContiguousDistinctTensors) {
     // Create a and b from different base buffers and transpose along different dims
-    auto baseA = torch::arange(1, 25, torch::kInt32).reshape({2,3,4});      // [2,3,4]
+    auto baseA = torch::arange(1, 25, torch::kInt64).reshape({2,3,4});      // [2,3,4]
     auto a     = baseA.transpose(0,2);                                      // [4,3,2], non-contiguous
 
-    auto baseB = torch::arange(25, 49, torch::kInt32).reshape({2,3,4});     // [2,3,4]
+    auto baseB = torch::arange(25, 49, torch::kInt64).reshape({2,3,4});     // [2,3,4]
     auto b     = baseB.permute({2,1,0});                                    // [4,3,2], non-contiguous
 
     std::vector<int64_t> shape = {4,3,2};
-    auto a_hw     = host_to_device<int32_t>(a);
-    auto b_hw     = host_to_device<int32_t>(b);
-    auto result_hw = allocate_on_hardware<int32_t>(shape);
+    auto a_hw     = host_to_device<int64_t>(a);
+    auto b_hw     = host_to_device<int64_t>(b);
+    auto result_hw = allocate_on_hardware<int64_t>(shape);
 
-    mod_tt<int32_t>(a_hw, b_hw, result_hw);
-    auto out = device_to_host<int32_t>(result_hw);
+    mod_tt<int64_t>(a_hw, b_hw, result_hw);
+    auto out = device_to_host<int64_t>(result_hw);
 
     ASSERT_TRUE(torch::equal(out, torch::remainder(a, b)))
         << "mod_tt with two distinct non-contiguous tensors failed.";
@@ -292,20 +291,20 @@ TEST(ModTTTests, NonContiguousDistinctTensors) {
 // ──────────────────────────────────────────────────────────────────────────────
 
 TEST(ModTTTests, NullPointerThrows) {
-    auto b = torch::tensor({1,2,3}, torch::kInt32);
-    auto b_hw = host_to_device<int32_t>(b);
-    auto result_hw = allocate_on_hardware<int32_t>({3});
-    EXPECT_THROW(mod_tt<int32_t>(nullptr, b_hw, result_hw), std::invalid_argument);
-    EXPECT_THROW(mod_tt<int32_t>(b_hw, nullptr, result_hw), std::invalid_argument);
+    auto b = torch::tensor({1,2,3}, torch::kInt64);
+    auto b_hw = host_to_device<int64_t>(b);
+    auto result_hw = allocate_on_hardware<int64_t>({3});
+    EXPECT_THROW(mod_tt<int64_t>(nullptr, b_hw, result_hw), std::invalid_argument);
+    EXPECT_THROW(mod_tt<int64_t>(b_hw, nullptr, result_hw), std::invalid_argument);
 }
 
 TEST(ModTTTests, ShapeMismatchThrows) {
-    auto a = torch::randint(0, 10, {2,3}, torch::kInt32);
-    auto b = torch::randint(0, 10, {2,2}, torch::kInt32);
-    auto a_hw = host_to_device<int32_t>(a);
-    auto b_hw = host_to_device<int32_t>(b);
-    auto result_hw = allocate_on_hardware<int32_t>({2,3});
-    EXPECT_THROW(mod_tt<int32_t>(a_hw, b_hw, result_hw), std::invalid_argument);
+    auto a = torch::randint(0, 10, {2,3}, torch::kInt64);
+    auto b = torch::randint(0, 10, {2,2}, torch::kInt64);
+    auto a_hw = host_to_device<int64_t>(a);
+    auto b_hw = host_to_device<int64_t>(b);
+    auto result_hw = allocate_on_hardware<int64_t>({2,3});
+    EXPECT_THROW(mod_tt<int64_t>(a_hw, b_hw, result_hw), std::invalid_argument);
 }
 
 
@@ -323,15 +322,15 @@ TEST(ModTTTests, ShapeMismatchThrows) {
 
 TEST(ModTCTests, BasicTensorScalar) {
     // elementwise tensor % scalar
-    auto a = torch::tensor({{5, 7, 9}, {10, 12, 14}}, torch::kInt32);
-    int32_t b_scalar = 6;
+    auto a = torch::tensor({{5, 7, 9}, {10, 12, 14}}, torch::kInt64);
+    int64_t b_scalar = 6;
     std::vector<int64_t> shape = {2, 3};
 
-    auto a_hw = host_to_device<int32_t>(a);
-    auto result_hw = allocate_on_hardware<int32_t>(shape);
+    auto a_hw = host_to_device<int64_t>(a);
+    auto result_hw = allocate_on_hardware<int64_t>(shape);
 
-    mod_tc<int32_t>(a_hw, b_scalar, result_hw);
-    auto result = device_to_host<int32_t>(result_hw);
+    mod_tc<int64_t>(a_hw, b_scalar, result_hw);
+    auto result = device_to_host<int64_t>(result_hw);
 
     auto expected = torch::remainder(a, b_scalar);
     ASSERT_TRUE(torch::equal(result, expected))
@@ -339,18 +338,18 @@ TEST(ModTCTests, BasicTensorScalar) {
 }
 
 TEST(ModTCTests, SingletonDimsScalar) {
-    auto a = torch::tensor({{7}}, torch::kInt32);  // [1,1]
-    auto result_hw = allocate_on_hardware<int32_t>({1,1});
-    mod_tc<int32_t>(host_to_device<int32_t>(a), 3, result_hw);
-    auto out = device_to_host<int32_t>(result_hw);
-    ASSERT_EQ(out.item<int32_t>(), 7 % 3);
+    auto a = torch::tensor({{7}}, torch::kInt64);  // [1,1]
+    auto result_hw = allocate_on_hardware<int64_t>({1,1});
+    mod_tc<int64_t>(host_to_device<int64_t>(a), 3, result_hw);
+    auto out = device_to_host<int64_t>(result_hw);
+    ASSERT_EQ(out.item<int64_t>(), 7 % 3);
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// High-rank and non-contiguous
+// int32 and non-contiguous
 // ──────────────────────────────────────────────────────────────────────────────
 
-TEST(ModTCTests, HighRankTensorScalar) {
+TEST(ModTCTests, Int32Tensor) {
     auto a = torch::randint(1, 50, {2,2,3,2}, torch::kInt32);
     auto result_hw = allocate_on_hardware<int32_t>({2,2,3,2});
     mod_tc<int32_t>(host_to_device<int32_t>(a), 7, result_hw);
@@ -359,11 +358,11 @@ TEST(ModTCTests, HighRankTensorScalar) {
 }
 
 TEST(ModTCTests, NonContiguousTensorScalar) {
-    auto base = torch::arange(1, 13, torch::kInt32).reshape({2,2,3});
+    auto base = torch::arange(1, 13, torch::kInt64).reshape({2,2,3});
     auto a = base.transpose(1,2);  // [2,3,2]
-    auto result_hw = allocate_on_hardware<int32_t>({2,3,2});
-    mod_tc<int32_t>(host_to_device<int32_t>(a), 4, result_hw);
-    auto out = device_to_host<int32_t>(result_hw);
+    auto result_hw = allocate_on_hardware<int64_t>({2,3,2});
+    mod_tc<int64_t>(host_to_device<int64_t>(a), 4, result_hw);
+    auto out = device_to_host<int64_t>(result_hw);
     ASSERT_TRUE(torch::equal(out, torch::remainder(a, 4)));
 }
 
@@ -372,18 +371,18 @@ TEST(ModTCTests, NonContiguousTensorScalar) {
 // ──────────────────────────────────────────────────────────────────────────────
 
 TEST(ModTCTests, NullPointerThrows) {
-    auto a = torch::tensor({1,2,3}, torch::kInt32);
-    auto a_hw = host_to_device<int32_t>(a);
-    auto result_hw = allocate_on_hardware<int32_t>({3});
-    EXPECT_THROW(mod_tc<int32_t>(nullptr, 5, result_hw), std::invalid_argument);
+    auto a = torch::tensor({1,2,3}, torch::kInt64);
+    auto a_hw = host_to_device<int64_t>(a);
+    auto result_hw = allocate_on_hardware<int64_t>({3});
+    EXPECT_THROW(mod_tc<int64_t>(nullptr, 5, result_hw), std::invalid_argument);
 }
 
 TEST(ModTCTests, ShapeMismatchThrows) {
-    auto a = torch::randint(0, 10, {2,3}, torch::kInt32);
-    auto a_hw = host_to_device<int32_t>(a);
+    auto a = torch::randint(0, 10, {2,3}, torch::kInt64);
+    auto a_hw = host_to_device<int64_t>(a);
     // wrong result shape
-    auto result_hw = allocate_on_hardware<int32_t>({3,2});
-    EXPECT_THROW(mod_tc<int32_t>(a_hw, 5, result_hw), std::invalid_argument);
+    auto result_hw = allocate_on_hardware<int64_t>({3,2});
+    EXPECT_THROW(mod_tc<int64_t>(a_hw, 5, result_hw), std::invalid_argument);
 }
 
 
@@ -401,17 +400,17 @@ TEST(ModTCTests, ShapeMismatchThrows) {
 
 TEST(ModCTTests, BasicScalarTensor) {
     // elementwise scalar % tensor
-    int32_t a_scalar = 6;
-    auto b = torch::tensor({{3, 5, 7}, {4, 6, 8}}, torch::kInt32);
+    int64_t a_scalar = 6;
+    auto b = torch::tensor({{3, 5, 7}, {4, 6, 8}}, torch::kInt64);
     std::vector<int64_t> shape = {2, 3};
 
-    auto b_hw = host_to_device<int32_t>(b);
-    auto result_hw = allocate_on_hardware<int32_t>(shape);
+    auto b_hw = host_to_device<int64_t>(b);
+    auto result_hw = allocate_on_hardware<int64_t>(shape);
 
-    mod_ct<int32_t>(a_scalar, b_hw, result_hw);
-    auto result = device_to_host<int32_t>(result_hw);
+    mod_ct<int64_t>(a_scalar, b_hw, result_hw);
+    auto result = device_to_host<int64_t>(result_hw);
 
-    auto full_a = torch::full(b.sizes(), a_scalar, torch::kInt32);
+    auto full_a = torch::full(b.sizes(), a_scalar, torch::kInt64);
     auto expected = torch::remainder(full_a, b);
     ASSERT_TRUE(torch::equal(result, expected))
         << "mod_ct basic scalar-tensor remainder failed.";
@@ -419,51 +418,51 @@ TEST(ModCTTests, BasicScalarTensor) {
 
 TEST(ModCTTests, ZeroNumerator) {
     // edge: zero numerator
-    int32_t a_scalar = 0;
-    auto b = torch::tensor({{1, 2}, {3, 4}}, torch::kInt32);
+    int64_t a_scalar = 0;
+    auto b = torch::tensor({{1, 2}, {3, 4}}, torch::kInt64);
     std::vector<int64_t> shape = {2, 2};
 
-    auto b_hw = host_to_device<int32_t>(b);
-    auto result_hw = allocate_on_hardware<int32_t>(shape);
+    auto b_hw = host_to_device<int64_t>(b);
+    auto result_hw = allocate_on_hardware<int64_t>(shape);
 
-    mod_ct<int32_t>(a_scalar, b_hw, result_hw);
-    auto result = device_to_host<int32_t>(result_hw);
+    mod_ct<int64_t>(a_scalar, b_hw, result_hw);
+    auto result = device_to_host<int64_t>(result_hw);
 
-    auto full_a = torch::full(b.sizes(), a_scalar, torch::kInt32);
+    auto full_a = torch::full(b.sizes(), a_scalar, torch::kInt64);
     auto expected = torch::remainder(full_a, b);
     ASSERT_TRUE(torch::equal(result, expected))
         << "mod_ct zero-numerator failed.";
 }
 
 TEST(ModCTTests, SingletonDimsScalarTensor) {
-    auto b = torch::tensor({{3}}, torch::kInt32);  // [1,1]
-    auto result_hw = allocate_on_hardware<int32_t>({1,1});
-    mod_ct<int32_t>(8, host_to_device<int32_t>(b), result_hw);
-    auto out = device_to_host<int32_t>(result_hw);
-    auto full_a = torch::full(b.sizes(), 8, torch::kInt32);
-    ASSERT_EQ(out.item<int32_t>(), (full_a % b).item<int32_t>());
+    auto b = torch::tensor({{3}}, torch::kInt64);  // [1,1]
+    auto result_hw = allocate_on_hardware<int64_t>({1,1});
+    mod_ct<int64_t>(8, host_to_device<int64_t>(b), result_hw);
+    auto out = device_to_host<int64_t>(result_hw);
+    auto full_a = torch::full(b.sizes(), 8, torch::kInt64);
+    ASSERT_EQ(out.item<int64_t>(), (full_a % b).item<int64_t>());
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// High-rank and non-contiguous
+// int32 and non-contiguous
 // ──────────────────────────────────────────────────────────────────────────────
 
-TEST(ModCTTests, HighRankScalarTensor) {
+TEST(ModCTTests, Int32Tensor) {
     auto b = torch::randint(1, 20, {2,3,2,2}, torch::kInt32);
     auto result_hw = allocate_on_hardware<int32_t>({2,3,2,2});
     mod_ct<int32_t>(9, host_to_device<int32_t>(b), result_hw);
     auto out = device_to_host<int32_t>(result_hw);
-    auto full_a = torch::full(b.sizes(), 9, torch::kInt32);
+    auto full_a = torch::full(b.sizes(), 9, torch::kInt64);
     ASSERT_TRUE(torch::equal(out, torch::remainder(full_a, b)));
 }
 
 TEST(ModCTTests, NonContiguousScalarTensor) {
-    auto base = torch::arange(1, 19, torch::kInt32).reshape({2,3,3});  // [2,3,3]
+    auto base = torch::arange(1, 19, torch::kInt64).reshape({2,3,3});  // [2,3,3]
     auto b = base.transpose(0,2);                                // now [3,3,2]
-    auto result_hw = allocate_on_hardware<int32_t>({3,3,2});
-    mod_ct<int32_t>(4, host_to_device<int32_t>(b), result_hw);
-    auto out = device_to_host<int32_t>(result_hw);
-    auto full_a = torch::full(b.sizes(), 4, torch::kInt32);
+    auto result_hw = allocate_on_hardware<int64_t>({3,3,2});
+    mod_ct<int64_t>(4, host_to_device<int64_t>(b), result_hw);
+    auto out = device_to_host<int64_t>(result_hw);
+    auto full_a = torch::full(b.sizes(), 4, torch::kInt64);
     ASSERT_TRUE(torch::equal(out, torch::remainder(full_a, b)));
 }
 
@@ -473,15 +472,15 @@ TEST(ModCTTests, NonContiguousScalarTensor) {
 // ──────────────────────────────────────────────────────────────────────────────
 
 TEST(ModCTTests, NullPointerThrows) {
-    auto b = torch::tensor({1,2,3}, torch::kInt32);
-    auto b_hw = host_to_device<int32_t>(b);
-    auto result_hw = allocate_on_hardware<int32_t>({3});
-    EXPECT_THROW(mod_ct<int32_t>(5, nullptr, result_hw), std::invalid_argument);
+    auto b = torch::tensor({1,2,3}, torch::kInt64);
+    auto b_hw = host_to_device<int64_t>(b);
+    auto result_hw = allocate_on_hardware<int64_t>({3});
+    EXPECT_THROW(mod_ct<int64_t>(5, nullptr, result_hw), std::invalid_argument);
 }
 
 TEST(ModCTTests, ShapeMismatchThrows) {
-    auto b = torch::randint(0, 10, {2,3}, torch::kInt32);
-    auto b_hw = host_to_device<int32_t>(b);
-    auto result_hw = allocate_on_hardware<int32_t>({3,2});     // wrong result shape
-    EXPECT_THROW(mod_ct<int32_t>(5, b_hw, result_hw), std::invalid_argument);
+    auto b = torch::randint(0, 10, {2,3}, torch::kInt64);
+    auto b_hw = host_to_device<int64_t>(b);
+    auto result_hw = allocate_on_hardware<int64_t>({3,2});     // wrong result shape
+    EXPECT_THROW(mod_ct<int64_t>(5, b_hw, result_hw), std::invalid_argument);
 }
