@@ -11,7 +11,7 @@
 namespace lattica_hw_api {
 
 template <typename T, typename AGetter, typename BGetter, typename CombineOp>
-void elementwise_mod2(
+void elementwise_modred(
     AGetter get_a,
     BGetter get_b,
     std::shared_ptr<DeviceTensor<T>>& result,
@@ -196,7 +196,7 @@ void OPNAME##_tt( \
     CHECK_NOT_NULL(b, "b"); \
     CHECK_SAME_DIMS(a, result, "a"); \
     CHECK_SAME_DIMS(b, result, "b"); \
-    elementwise_mod2<T>( \
+    elementwise_modred<T>( \
         [a](auto& coord) { return a->at(coord); }, \
         [b](auto& coord) { return b->at(coord); }, \
         result, \
@@ -211,7 +211,7 @@ void OPNAME##_tc( \
 { \
     CHECK_NOT_NULL(a, "a"); \
     CHECK_SAME_DIMS(a, result, "a"); \
-    elementwise_mod2<T>( \
+    elementwise_modred<T>( \
         [a](auto& coord) { return a->at(coord); }, \
         [&](auto&) { return static_cast<T>(b_scalar); }, \
         result, \
@@ -226,7 +226,7 @@ void OPNAME##_ct( \
 { \
     CHECK_NOT_NULL(b, "b"); \
     CHECK_SAME_DIMS(b, result, "b"); \
-    elementwise_mod2<T>( \
+    elementwise_modred<T>( \
         [&](auto&)      { return static_cast<T>(a_scalar); }, \
         [b](auto& coord) { return b->at(coord); }, \
         result, \
