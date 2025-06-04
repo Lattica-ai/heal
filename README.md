@@ -52,7 +52,7 @@ example_run_transcript.py  # Entry point to run a test workload
 git clone <repository-url>
 cd <repository-directory>
 ```
-Replace <repository-url> and <repository-directory> with the actual URL and directory name.
+Replace `{repository-url}` and `{repository-directory}` with the actual URL and directory name.
 
 * Create a Python virtual environment:
 
@@ -133,6 +133,8 @@ To run a single test executable directly and see detailed success/failure logs, 
 ```bash
 ./tests/<test_executable>
 ```
+
+Replace `{test_executable}` with the actual name of your test binary.
 
 ---
 
