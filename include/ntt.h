@@ -10,7 +10,7 @@
  * multiplication and other applications.
  *
  * Expected Input Sizes:
- * - Input tensor `a` must have shape `[l, m, r, k]` where:
+ * - Input tensor `a` must have shape `[l, m, r, k]`, where:
  *     - `l` is the left batch dimension.
  *     - `m` is the transform length (must be a power of 2).
  *     - `r` is the right batch dimension.
@@ -20,17 +20,23 @@
  * - Twiddle factors `twiddles` must have shape `[k, m]`.
  * - Modular inverses of `m`, `m_inv`, must have shape `[k]`.
  * - Output tensor `result` must have shape `[l, m, r, k]`.
+ *
+ * Optional Barrett Reduction Parameters:
+ * - `log2p_list` (shape `[k]`) – precomputed ⌊log₂(pᵢ)⌋ for each modulus pᵢ.
+ * - `mu_list`    (shape `[k]`) – precomputed Barrett constant ⌊2²ⁿ / pᵢ⌋ for each modulus pᵢ.
  */
 
 namespace lattica_hw_api {
 
     template <typename T>
     void ntt(
-        const std::shared_ptr<DeviceTensor<T>>& a,        // [l, m, r, k]
-        const std::shared_ptr<DeviceTensor<T>>& p,        // [k]
-        const std::shared_ptr<DeviceTensor<T>>& perm,     // [m]
-        const std::shared_ptr<DeviceTensor<T>>& twiddles, // [k, m]
-        std::shared_ptr<DeviceTensor<T>>& result          // [l, m, r, k] (output)
+        const std::shared_ptr<DeviceTensor<T>>& a,          // [l, m, r, k]
+        const std::shared_ptr<DeviceTensor<T>>& p,          // [k]
+        const std::shared_ptr<DeviceTensor<T>>& perm,       // [m]
+        const std::shared_ptr<DeviceTensor<T>>& twiddles,   // [k, m]
+        const std::shared_ptr<DeviceTensor<T>>& log2p_list, // [k]
+        const std::shared_ptr<DeviceTensor<T>>& mu_list,    // [k]
+        std::shared_ptr<DeviceTensor<T>>& result            // [l, m, r, k] (output)
     );
 
     template <typename T>
@@ -40,6 +46,8 @@ namespace lattica_hw_api {
         const std::shared_ptr<DeviceTensor<T>>& perm,          // [m]
         const std::shared_ptr<DeviceTensor<T>>& inv_twiddles,  // [k, m]
         const std::shared_ptr<DeviceTensor<T>>& m_inv,         // [k]
+        const std::shared_ptr<DeviceTensor<T>>& log2p_list,    // [k]
+        const std::shared_ptr<DeviceTensor<T>>& mu_list,       // [k]
         std::shared_ptr<DeviceTensor<T>>& result               // [l, m, r, k] (output)
     );
 

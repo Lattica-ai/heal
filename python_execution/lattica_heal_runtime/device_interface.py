@@ -41,8 +41,17 @@ class DeviceDispatcher(ABC):
     def _modsum_tcc(self, *args, **kwargs):
         return self.dispatcher._modsum_tcc(*args, **kwargs)
 
-    def modneg(self, *args, **kwargs):
-        return self.dispatcher.modneg(*args, **kwargs)
+    def _mod_tt(self, *args, **kwargs):
+        return self.dispatcher._mod_tt(*args, **kwargs)
+    def _mod_tc(self, *args, **kwargs):
+        return self.dispatcher._mod_tc(*args, **kwargs)
+    def _mod_ct(self, *args, **kwargs):
+        return self.dispatcher._mod_ct(*args, **kwargs)
+
+    def _modneg_tt(self, *args, **kwargs):
+        return self.dispatcher._modneg_tt(*args, **kwargs)
+    def _modneg_tc(self, *args, **kwargs):
+        return self.dispatcher._modneg_tc(*args, **kwargs)
 
     def axis_modsum(self, *args, **kwargs):
         return self.dispatcher.axis_modsum(*args, **kwargs)
