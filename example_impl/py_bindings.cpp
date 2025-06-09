@@ -57,6 +57,11 @@ void bind_memory_ops(py::module_& m, const std::string& suffix) {
           &moveaxis<T>,
           py::arg("tensor"), py::arg("axis_src"), py::arg("axis_dst"),
           "Moves an axis from axis_src to axis_dst.");
+
+    m.def(("get_slice_" + suffix).c_str(),
+          &get_slice<T>,
+          py::arg("tensor"), py::arg("sliceList"),
+          "Returns a slice of the tensor based on the provided slice list.");
 }
 
 template <typename T>
