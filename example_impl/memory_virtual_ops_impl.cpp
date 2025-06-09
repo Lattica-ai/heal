@@ -85,11 +85,120 @@ namespace lattica_hw_api {
         return a;
     }
 
+    template<typename T>
+    std::shared_ptr<DeviceTensor<T>> get_slice(
+        const std::shared_ptr<DeviceTensor<T>>& a,
+        const std::vector<SliceArg>& slices
+    ) {
+        size_t rank = a->dims.size();
+        if (slices.size() != rank) {
+            throw std::invalid_argument(
+                "get_slice: number of SliceArg entries ("
+                + std::to_string(slices.size())
+                + ") must equal tensor rank ("
+                + std::to_string(rank) + ")."
+            );
+        }
+
+        struct AxisInfo {
+            bool is_index;   // true if we hold int64_t
+            int64_t index;      // valid if is_index==true
+            int64_t start;      // valid if is_index==false
+            int64_t end;        // valid if is_index==false (exclusive)
+            int64_t step;       // valid if is_index==false (>0)
+        };
+
+        std::vector<AxisInfo> infos(rank);
+        for (size_t dim = 0; dim < rank; ++dim) {
+            if (std::holds_alternative<int64_t>(slices[dim])) {
+                // Single‐index case
+                int64_t idx = std::get<int64_t>(slices[dim]);
+                if (idx < 0 || idx >= a->dims[dim]) {
+                    throw std::out_of_range(
+                        "get_slice: index " + std::to_string(idx)
+                        + " out of range for dim " + std::to_string(dim)
+                        + " (size=" + std::to_string(a->dims[dim]) + ")"
+                    );
+                }
+                infos[dim].is_index = true;
+                infos[dim].index    = idx;
+            }
+            else {
+                // Slice case
+                const Slice& s = std::get<Slice>(slices[dim]);
+                // Validate: 0 ≤ start < end ≤ original_dim, step > 0
+                if (s.start < 0 || s.start >= a->dims[dim]) {
+                    throw std::invalid_argument(
+                        "get_slice: slice.start (" + std::to_string(s.start)
+                        + ") out of range for dim " + std::to_string(dim)
+                        + " (size=" + std::to_string(a->dims[dim]) + ")"
+                    );
+                }
+                if (s.end <= s.start || s.end > a->dims[dim]) {
+                    throw std::invalid_argument(
+                        "get_slice: slice.end (" + std::to_string(s.end)
+                        + ") must satisfy start < end ≤ dim size ("
+                        + std::to_string(a->dims[dim]) + ")."
+                    );
+                }
+                if (s.step <= 0) {
+                    throw std::invalid_argument(
+                        "get_slice: slice.step (" + std::to_string(s.step)
+                        + ") must be > 0."
+                    );
+                }
+                infos[dim].is_index = false;
+                infos[dim].start    = s.start;
+                infos[dim].end      = s.end;
+                infos[dim].step     = s.step;
+            }
+        }
+
+        std::vector<int64_t> new_dims;
+        std::vector<int64_t> new_strides;
+        for (size_t dim = 0; dim < rank; ++dim) {
+            if (!infos[dim].is_index) {
+                // compute the output length along this axis
+                int64_t span = infos[dim].end - infos[dim].start;
+                int64_t len  = (span + infos[dim].step - 1) / infos[dim].step;
+                new_dims.push_back(len);
+
+                // compute the new stride = old_stride * step
+                int64_t orig_stride = a->strides[dim];
+                int64_t step        = infos[dim].step;
+                new_strides.push_back(orig_stride * step);
+            }
+        }
+
+        int64_t total_out_elems = 1;
+        for (auto d : new_dims) total_out_elems *= d;
+
+        int64_t base_offset_in_elems = 0;
+        for (size_t dim = 0; dim < rank; ++dim) {
+            if (infos[dim].is_index) {
+                base_offset_in_elems += infos[dim].index * a->strides[dim];
+            } else {
+                base_offset_in_elems += infos[dim].start * a->strides[dim];
+            }
+        }
+
+        T* orig_raw = reinterpret_cast<T*>( a->data.get() );
+        T* sliced_raw = orig_raw + base_offset_in_elems;
+        std::shared_ptr<void> alias_data(a->data, static_cast<void*>(sliced_raw));
+
+        a->dims    = std::move(new_dims);
+        a->strides = std::move(new_strides);
+        a->data    = std::move(alias_data);
+
+        return a;
+    }
+
     // Explicit template instantiations
     #define INSTANTIATE_MEMORY_OPS(T) \
         template std::shared_ptr<DeviceTensor<T>> expand<T>(const std::shared_ptr<DeviceTensor<T>>&, int64_t, int64_t); \
         template std::shared_ptr<DeviceTensor<T>> squeeze<T>(const std::shared_ptr<DeviceTensor<T>>&, int64_t); \
-        template std::shared_ptr<DeviceTensor<T>> unsqueeze<T>(const std::shared_ptr<DeviceTensor<T>>&, int64_t);
+        template std::shared_ptr<DeviceTensor<T>> unsqueeze<T>(const std::shared_ptr<DeviceTensor<T>>&, int64_t); \
+        template std::shared_ptr<DeviceTensor<T>> get_slice<T>(const std::shared_ptr<DeviceTensor<T>>&, const std::vector<SliceArg>&);
 
     INSTANTIATE_MEMORY_OPS(int32_t)
     INSTANTIATE_MEMORY_OPS(int64_t)
