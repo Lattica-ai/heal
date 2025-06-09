@@ -46,6 +46,11 @@ _unsqueeze_impls = {
     DeviceTensorfloat64: lhw.unsqueeze_float64
 }
 
+_get_slice_impls = {
+    DeviceTensor32: lhw.get_slice_32,
+    DeviceTensor64: lhw.get_slice_64,
+}
+
 _contiguous_impls = {
     DeviceTensor32: lhw.make_contiguous_32,
     DeviceTensor64: lhw.make_contiguous_64,
@@ -168,6 +173,9 @@ class PythonToCppDispatcher(ABC):
 
     def unsqueeze(self, a, axis):
         return _dispatch(type(a), a, axis, impls=_unsqueeze_impls)
+
+    def get_slice(self, a, sliceList):
+        return _dispatch(type(a), a, sliceList, impls=_get_slice_impls)
 
     def contiguous(self, a):
         return _dispatch(type(a), a, impls=_contiguous_impls)

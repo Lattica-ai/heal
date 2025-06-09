@@ -52,6 +52,11 @@ void bind_memory_ops(py::module_& m, const std::string& suffix) {
           &unsqueeze<T>,
           py::arg("tensor"), py::arg("axis"),
           "Inserts a singleton dimension at the specified axis.");
+
+    m.def(("get_slice_" + suffix).c_str(),
+          &get_slice<T>,
+          py::arg("tensor"), py::arg("sliceList"),
+          "Returns a slice of the tensor based on the provided slice list.");
 }
 
 template <typename T>
