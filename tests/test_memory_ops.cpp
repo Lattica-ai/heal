@@ -56,7 +56,7 @@ TEST(MemoryOpsTests, UnsqueezeThrowsOnOutOfRangeAxis) {
 /****************************************************************************************
  ****************************************************************************************
  ****                                                                                ****
- ****                             MOVEAXIS  TESTS                                   ****
+ ****                             MOVEAXIS  TESTS                                    ****
  ****                                                                                ****
  ****************************************************************************************
  ****************************************************************************************/
@@ -405,3 +405,172 @@ TEST(GetSliceTests, InvalidStepThrows) {
     std::vector<SliceArg> slices = { Slice(0, 5, 0) };
     EXPECT_THROW(get_slice<int64_t>(a_hw, slices), std::invalid_argument);
 }
+
+/***************************************************************************************
+****************************************************************************************
+****                                                                                ****
+****                             FLATTEN TESTS                                      ****
+****                                                                                ****
+****************************************************************************************
+****************************************************************************************/
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Basic test: flatten a 2D tensor into 1D
+// ──────────────────────────────────────────────────────────────────────────────
+
+TEST(FlattenTests, FlattenMiddleDims2D) {
+    // a = [[ 0,  1,  2],
+    //      [ 3,  4,  5]]
+    auto a = torch::arange(0, 6, torch::kInt64).reshape({2,3});
+    // flatten dims [0..1] → single dim of size 6
+    auto a_hw = host_to_device<int64_t>(a);
+    auto out_hw = flatten<int64_t>(a_hw, 0, 1);
+    auto out = device_to_host<int64_t>(out_hw);
+
+    // expected = a.view({6})
+    auto expected = a.view({6});
+    ASSERT_TRUE(torch::equal(out, expected))
+        << "Flattening both dims into one did not match expected shape or values.";
+    ASSERT_EQ(out.dim(), 1)
+        << "Result should be a 1D tensor.";
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Basic test: flatten a 2D tensor into 1D int32_t
+// ────────────────────────────────────────────────────────────────────────────────
+
+TEST(FlattenTests, ProducesContiguousOutput) {
+    auto a = torch::arange(0, 6, torch::kInt32).reshape({2,3});
+    auto a_hw = host_to_device<int32_t>(a);
+
+    auto out_hw = flatten<int32_t>(a_hw, 0, 1);
+    auto out = device_to_host<int32_t>(out_hw);
+
+    auto expected = a.reshape({6});
+    ASSERT_TRUE(torch::equal(out, expected))
+        << "Flatten should preserve element order.";
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Flatten only a single dimension (no-op)
+// ──────────────────────────────────────────────────────────────────────────────
+
+TEST(FlattenTests, FlattenSingleDimNoOp) {
+    // a = [[1,2],[3,4]]
+    auto a = torch::tensor({{1,2},{3,4}}, torch::kInt64);
+    // flatten only dim 1..1 → shape unchanged
+    auto a_hw = host_to_device<int64_t>(a);
+    auto out_hw = flatten<int64_t>(a_hw, 1, 1);
+    auto out = device_to_host<int64_t>(out_hw);
+
+    ASSERT_EQ(out.sizes(), a.sizes())
+        << "Flattening a single dimension range should leave the shape unchanged.";
+    ASSERT_TRUE(torch::equal(out, a))
+        << "Values must remain identical when flattening a single-dim range.";
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Flatten leading dims in a 3D tensor
+// ──────────────────────────────────────────────────────────────────────────────
+
+TEST(FlattenTests, FlattenLeadingDims3D) {
+    // a.shape = [2,3,4]
+    auto a = torch::arange(0, 24, torch::kInt64).reshape({2,3,4});
+    // flatten dims [0..1] → new shape [6,4]
+    auto a_hw = host_to_device<int64_t>(a);
+    auto out_hw = flatten<int64_t>(a_hw, 0, 1);
+    auto out = device_to_host<int64_t>(out_hw);
+
+    auto expected = a.reshape({6,4});
+    ASSERT_EQ(out.sizes(), expected.sizes())
+        << "Flattening first two dims did not yield [6,4].";
+    ASSERT_TRUE(torch::equal(out, expected))
+        << "Flattened values do not match expected ordering.";
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Flatten trailing dims in a 4D tensor
+// ──────────────────────────────────────────────────────────────────────────────
+
+TEST(FlattenTests, FlattenTrailingDims4D) {
+    // a.shape = [2, 3, 4, 5]
+    auto a = torch::arange(0, 2*3*4*5, torch::kInt64).reshape({2,3,4,5});
+    // flatten dims [2..3] → new shape [2,3,20]
+    auto a_hw = host_to_device<int64_t>(a);
+    auto out_hw = flatten<int64_t>(a_hw, 2, 3);
+    auto out = device_to_host<int64_t>(out_hw);
+
+    auto expected = a.reshape({2,3,20});
+    ASSERT_EQ(out.sizes(), expected.sizes())
+        << "Flattening last two dims did not yield [2,3,20].";
+    ASSERT_TRUE(torch::equal(out, expected))
+        << "Flattened values do not match expected ordering.";
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Flatten with negative indices
+// ──────────────────────────────────────────────────────────────────────────────
+
+TEST(FlattenTests, FlattenNegativeIndices) {
+    // a.shape = [4,5,6]
+    auto a = torch::arange(0, 4*5*6, torch::kInt64).reshape({4,5,6});
+    // flatten dims [-3..-2] == [0..1] → [20,6]
+    auto a_hw = host_to_device<int64_t>(a);
+    auto out_hw = flatten<int64_t>(a_hw, -3, -2);
+    auto out = device_to_host<int64_t>(out_hw);
+
+    auto expected = a.reshape({20,6});
+    ASSERT_EQ(out.sizes(), expected.sizes())
+        << "Flattening with negative indices did not yield expected shape.";
+    ASSERT_TRUE(torch::equal(out, expected))
+        << "Flattened values via negative indices do not match expected.";
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Flatten including singleton dims
+// ──────────────────────────────────────────────────────────────────────────────
+
+TEST(FlattenTests, FlattenIncludingOnes) {
+    // shape = [2,1,3,1,4]
+    auto a = torch::arange(0, 2*1*3*1*4, torch::kInt64).reshape({2,1,3,1,4});
+    // flatten dims [1..3] (1 * 3 * 1 = 3) → new shape [2,3,4]
+    auto a_hw = host_to_device<int64_t>(a);
+    auto out_hw = flatten<int64_t>(a_hw, 1, 3);
+    auto out = device_to_host<int64_t>(out_hw);
+
+    auto expected = a.reshape({2,3,4});
+    ASSERT_EQ(out.sizes(), (std::vector<int64_t>{2,3,4}))
+        << "Flattening over singleton dims should collapse [1,3,1] → 3.";
+    ASSERT_TRUE(torch::equal(out, expected))
+        << "Values after flattening singleton dims aren’t in the expected order.";
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Error cases
+// ──────────────────────────────────────────────────────────────────────────────
+
+TEST(FlattenTests, InvalidStartEndThrows) {
+    auto a = torch::randint(0, 10, {3,4,5}, torch::kInt64);
+    auto a_hw = host_to_device<int64_t>(a);
+
+    // start_dim < 0 after wrap
+    EXPECT_THROW(flatten<int64_t>(a_hw, -4, 1), std::invalid_argument);
+
+    // end_dim < start_dim
+    EXPECT_THROW(flatten<int64_t>(a_hw, 2, 1), std::invalid_argument);
+
+    // end_dim >= ndim
+    EXPECT_THROW(flatten<int64_t>(a_hw, 1, 3), std::invalid_argument);
+}
+
+TEST(FlattenTests, OutOfRangeDimsThrows) {
+    auto a = torch::zeros({5,5}, torch::kInt64);
+    auto a_hw = host_to_device<int64_t>(a);
+
+    // start_dim too large
+    EXPECT_THROW(flatten<int64_t>(a_hw, 2, 2), std::invalid_argument);
+
+    // end_dim too small
+    EXPECT_THROW(flatten<int64_t>(a_hw, 0, -3), std::invalid_argument);
+}
+

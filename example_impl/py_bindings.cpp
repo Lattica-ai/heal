@@ -82,6 +82,11 @@ void bind_memory_ops(py::module_& m, const std::string& suffix) {
           py::arg("tensor"), py::arg("axis_src"), py::arg("axis_dst"),
           "Moves an axis from axis_src to axis_dst.");
 
+    m.def(("flatten_" + suffix).c_str(),
+          &flatten<T>,
+          py::arg("tensor"), py::arg("start_axis"), py::arg("end_axis"),
+          "Flattens the tensor between start_axis and end_axis, inclusive.");
+
     m.def(("get_slice_" + suffix).c_str(),
           // [tensor, sliceList] → vector<SliceArg> → get_slice<T>
           [](const std::shared_ptr<DeviceTensor<T>>& tensor,

@@ -86,6 +86,33 @@ namespace lattica_hw_api {
         int64_t axis
     );
 
+    /**
+     * @brief Flattens a tensor into a contiguous one by collapsing dimensions
+     *        in the range [start_axis, end_axis] into a single dimension.
+     *
+     * Example:
+     * Given a tensor of shape [2, 3, 4, 5]:
+     * - flatten(tensor, 1, 2) → shape [2, 12, 5]
+     * - flatten(tensor, 0, -1) → shape [120]
+     *
+     * Preconditions:
+     * - start_axis and end_axis must be in [-ndim, ndim-1]
+     * - end_axis >= start_axis (after wrapping negatives)
+     *
+     * @tparam T The element type.
+     * @param a The input tensor to flatten. Its dims and strides will be modified.
+     * @param start_axis The first dimension to flatten.
+     * @param end_axis The last dimension to flatten (inclusive).
+     * @return A pointer to the modified tensor.
+     */
+
+     template <typename T>
+     std::shared_ptr<DeviceTensor<T>> flatten(
+         const std::shared_ptr<DeviceTensor<T>>& a,
+         int64_t start_axis,
+         int64_t end_axis
+     );
+	 
 
     /**
      * @brief Moves an existing dimension from axis_src to axis_dst in-place.

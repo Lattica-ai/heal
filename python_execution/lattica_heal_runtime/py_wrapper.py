@@ -56,6 +56,11 @@ _set_const_val_impls = {
     DeviceTensor64: lhw.set_const_val_64,
 }
 
+_flatten_impls = {
+    DeviceTensor32: lhw.flatten_32,
+    DeviceTensor64: lhw.flatten_64,
+}
+
 _contiguous_impls = {
     DeviceTensor32: lhw.contiguous_32,
     DeviceTensor64: lhw.contiguous_64,
@@ -259,6 +264,9 @@ class PythonToCppDispatcher(ABC):
     def set_const_val(self, a, value):
         return _dispatch(type(a), a, value, impls=_set_const_val_impls)
 
+    def flatten(self, a, start_dim, end_dim):
+        return _dispatch(type(a), a, start_dim, end_dim, impls=_flatten_impls)
+		
     def contiguous(self, a):
         return _dispatch(type(a), a, impls=_contiguous_impls)
 
