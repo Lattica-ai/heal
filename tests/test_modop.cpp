@@ -484,3 +484,214 @@ TEST(ModCTTests, ShapeMismatchThrows) {
     auto result_hw = empty<int64_t>({3,2});     // wrong result shape
     EXPECT_THROW(mod_ct<int64_t>(5, b_hw, result_hw), std::invalid_argument);
 }
+
+
+/***************************************************************************************
+****************************************************************************************
+****                                                                                ****
+****                             MODNEG_TT TESTS                                    ****
+****                                                                                ****
+****************************************************************************************
+****************************************************************************************/
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Basic functionality
+// ──────────────────────────────────────────────────────────────────────────────
+
+TEST(ModNegTTTests, BasicTensorTensor) {
+    auto a = torch::tensor({{8, 3, 5}, {4, 10, 7}}, torch::kInt64);
+    auto p = torch::tensor({{3, 5, 7}, {4, 6, 8}},  torch::kInt64);
+    std::vector<int64_t> shape = {2, 3};
+
+    auto a_hw      = host_to_device<int64_t>(a);
+    auto p_hw      = host_to_device<int64_t>(p);
+    auto result_hw = allocate_on_hardware<int64_t>(shape);
+
+    modneg_tt<int64_t>(a_hw, p_hw, result_hw);
+    auto result = device_to_host<int64_t>(result_hw);
+    auto expected = torch::remainder(-a, p);
+
+    ASSERT_TRUE(torch::equal(result, expected))
+        << "modneg_tt basic tensor-tensor failed.";
+}
+
+TEST(ModNegTTTests, ZeroTensorNumerator) {
+    auto a = torch::zeros({2, 2}, torch::kInt64);
+    auto p = torch::tensor({{1, 2}, {3, 4}}, torch::kInt64);
+    std::vector<int64_t> shape = {2, 2};
+
+    auto a_hw      = host_to_device<int64_t>(a);
+    auto p_hw      = host_to_device<int64_t>(p);
+    auto result_hw = allocate_on_hardware<int64_t>(shape);
+
+    modneg_tt<int64_t>(a_hw, p_hw, result_hw);
+    auto result = device_to_host<int64_t>(result_hw);
+    auto expected = torch::remainder(-a, p);
+
+    ASSERT_TRUE(torch::equal(result, expected))
+        << "modneg_tt zero-numerator tensor-tensor failed.";
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// int32 and non-contiguous
+// ──────────────────────────────────────────────────────────────────────────────
+
+TEST(ModNegTTTests, Int32Tensor) {
+    // int32 support and multi-dimensional
+    auto a = torch::randint(1, 20, {2,3,2,2}, torch::kInt32);
+    auto p = torch::randint(1, 20, {2,3,2,2}, torch::kInt32);
+    std::vector<int64_t> shape = {2,3,2,2};
+
+    auto a_hw      = host_to_device<int32_t>(a);
+    auto p_hw      = host_to_device<int32_t>(p);
+    auto result_hw = allocate_on_hardware<int32_t>(shape);
+
+    modneg_tt<int32_t>(a_hw, p_hw, result_hw);
+    auto result = device_to_host<int32_t>(result_hw);
+    auto expected = torch::remainder(-a, p);
+
+    ASSERT_TRUE(torch::equal(result, expected))
+        << "modneg_tt int32 tensor-tensor failed.";
+}
+
+TEST(ModNegTTTests, NonContiguousTensorTensor) {
+    // a is non-contiguous, p is full
+    auto base = torch::arange(1, 19, torch::kInt64).reshape({2,3,3});
+    auto a    = base.transpose(0,2);                      // [3,3,2]
+    auto p    = torch::full(a.sizes(), 4, torch::kInt64);
+    std::vector<int64_t> shape(a.sizes().begin(), a.sizes().end());
+
+    auto a_hw      = host_to_device<int64_t>(a);
+    auto p_hw      = host_to_device<int64_t>(p);
+    auto result_hw = allocate_on_hardware<int64_t>(shape);
+
+    modneg_tt<int64_t>(a_hw, p_hw, result_hw);
+    auto result = device_to_host<int64_t>(result_hw);
+    auto expected = torch::remainder(-a, p);
+
+    ASSERT_TRUE(torch::equal(result, expected))
+        << "modneg_tt non-contiguous tensor-tensor failed.";
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Error conditions
+// ──────────────────────────────────────────────────────────────────────────────
+
+TEST(ModNegTTTests, ShapeMismatchResultThrows) {
+    // result shape wrong
+    auto a = torch::randint(1, 10, {2,3}, torch::kInt64);
+    auto p = torch::randint(1, 10, {2,3}, torch::kInt64);
+    auto a_hw = host_to_device<int64_t>(a);
+    auto p_hw = host_to_device<int64_t>(p);
+    auto result_hw = allocate_on_hardware<int64_t>({3,2});  // mismatched
+
+    EXPECT_THROW(modneg_tt<int64_t>(a_hw, p_hw, result_hw), std::invalid_argument);
+}
+
+TEST(ModNegTTTests, InputShapeMismatchThrows) {
+    // a and p shapes differ
+    auto a = torch::randint(1, 10, {2,3}, torch::kInt64);
+    auto p = torch::randint(1, 10, {2,4}, torch::kInt64);
+    auto a_hw = host_to_device<int64_t>(a);
+    auto p_hw = host_to_device<int64_t>(p);
+    auto result_hw = allocate_on_hardware<int64_t>({2,3});
+
+    EXPECT_THROW(modneg_tt<int64_t>(a_hw, p_hw, result_hw), std::invalid_argument);
+}
+
+
+/***************************************************************************************
+****************************************************************************************
+****                                                                                ****
+****                             MODNEG_TC TESTS                                    ****
+****                                                                                ****
+****************************************************************************************
+****************************************************************************************/
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Basic functionality
+// ──────────────────────────────────────────────────────────────────────────────
+
+TEST(ModNegTCTests, BasicTensorScalar) {
+    auto a = torch::tensor({{8, 3, 5}, {4, 10, 7}}, torch::kInt64);
+    int64_t p_scalar = 6;
+    std::vector<int64_t> shape = {2, 3};
+
+    auto a_hw      = host_to_device<int64_t>(a);
+    auto result_hw = allocate_on_hardware<int64_t>(shape);
+
+    modneg_tc<int64_t>(a_hw, p_scalar, result_hw);
+    auto result   = device_to_host<int64_t>(result_hw);
+
+    auto expected = torch::remainder(-a, p_scalar);
+    ASSERT_TRUE(torch::equal(result, expected))
+        << "modneg_tc basic tensor-scalar failed.";
+}
+
+TEST(ModNegTCTests, ZeroTensorNumerator) {
+    auto a = torch::zeros({2, 2}, torch::kInt64);
+    int64_t p_scalar = 5;
+    std::vector<int64_t> shape = {2, 2};
+
+    auto a_hw      = host_to_device<int64_t>(a);
+    auto result_hw = allocate_on_hardware<int64_t>(shape);
+
+    modneg_tc<int64_t>(a_hw, p_scalar, result_hw);
+    auto result   = device_to_host<int64_t>(result_hw);
+
+    auto expected = torch::remainder(-a, p_scalar);
+    ASSERT_TRUE(torch::equal(result, expected))
+        << "modneg_tc zero-numerator tensor-scalar failed.";
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// int32 and non-contiguous
+// ──────────────────────────────────────────────────────────────────────────────
+
+TEST(ModNegTCTests, Int32Tensor) {
+    // int32 support and multi-dimensional
+    auto a = torch::randint(1, 20, {2,3,2,2}, torch::kInt32);
+    int32_t p_scalar = 9;
+    std::vector<int64_t> shape = {2,3,2,2};
+
+    auto a_hw      = host_to_device<int32_t>(a);
+    auto result_hw = allocate_on_hardware<int32_t>(shape);
+
+    modneg_tc<int32_t>(a_hw, p_scalar, result_hw);
+    auto result   = device_to_host<int32_t>(result_hw);
+
+    auto expected = torch::remainder(-a, p_scalar);
+    ASSERT_TRUE(torch::equal(result, expected))
+        << "modneg_tc int32 tensor-scalar failed.";
+}
+
+TEST(ModNegTCTests, NonContiguousATensor) {
+    // a is non-contiguous, scalar modulus
+    auto base = torch::arange(1, 19, torch::kInt64).reshape({2,3,3});  // [2,3,3]
+    auto a    = base.transpose(0,2);                                   // [3,3,2]
+    int64_t p_scalar = 4;
+    std::vector<int64_t> shape(a.sizes().begin(), a.sizes().end());
+
+    auto a_hw      = host_to_device<int64_t>(a);
+    auto result_hw = allocate_on_hardware<int64_t>(shape);
+
+    modneg_tc<int64_t>(a_hw, p_scalar, result_hw);
+    auto result   = device_to_host<int64_t>(result_hw);
+    auto expected = torch::remainder(-a, p_scalar);
+    ASSERT_TRUE(torch::equal(result, expected))
+        << "modneg_tc non-contiguous tensor-scalar failed.";
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Error conditions
+// ──────────────────────────────────────────────────────────────────────────────
+
+TEST(ModNegTCTests, ShapeMismatchResultThrows) {
+    // result shape wrong
+    auto a = torch::randint(1, 10, {2,3}, torch::kInt64);
+    int64_t p_scalar = 7;
+    auto a_hw      = host_to_device<int64_t>(a);
+    auto result_hw = allocate_on_hardware<int64_t>({3,2});  // mismatched
+
+    EXPECT_THROW(modneg_tc<int64_t>(a_hw, p_scalar, result_hw), std::invalid_argument);
+}

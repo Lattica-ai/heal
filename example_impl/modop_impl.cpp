@@ -234,10 +234,47 @@ void OPNAME##_ct( \
     ); \
 }
 
+#define DEFINE_MODULAR_NEGATION_WRAPPER(OPNAME) \
+template <typename T> \
+void OPNAME##_tt( \
+    const std::shared_ptr<DeviceTensor<T>>& a, \
+    const std::shared_ptr<DeviceTensor<T>>& p, \
+    std::shared_ptr<DeviceTensor<T>>& result)  \
+{ \
+    CHECK_SAME_DIMS(a, result, "a"); \
+    CHECK_SAME_DIMS(p, result, "p"); \
+    elementwise_modred<T>( \
+        [a](auto& coord) { return a->at(coord); }, \
+        [p](auto& coord) { return p->at(coord); }, \
+        result, \
+        [](T a_val, T p_val) { \
+            return static_cast<T>((-(a_val % p_val) + p_val) % p_val); \
+        } \
+    ); \
+} \
+template <typename T> \
+void OPNAME##_tc( \
+    const std::shared_ptr<DeviceTensor<T>>& a, \
+    T p_scalar, \
+    std::shared_ptr<DeviceTensor<T>>& result) \
+{ \
+    CHECK_SAME_DIMS(a, result, "a"); \
+    elementwise_modred<T>( \
+        [a](auto& coord) { return a->at(coord); }, \
+        [&](auto&) { return p_scalar; }, \
+        result, \
+        [](T a_val, T p_val) { \
+            return static_cast<T>((-(a_val % p_val) + p_val) % p_val); \
+        } \
+    ); \
+} \
+
+
 
 DEFINE_MODULAR_ARITHMETIC_WRAPPER(modsum, static_cast<T_DP<T>>(a) + static_cast<T_DP<T>>(b))
 DEFINE_MODULAR_ARITHMETIC_WRAPPER(modmul, static_cast<T_DP<T>>(a) * static_cast<T_DP<T>>(b))
 DEFINE_SIMPLE_MOD_WRAPPER(mod)
+DEFINE_MODULAR_NEGATION_WRAPPER(modneg)
 
 // Explicit instantiations
 #define INSTANTIATE_ALL(T) \
@@ -252,6 +289,8 @@ template void modmul_tcc<T>(const std::shared_ptr<DeviceTensor<T>>&, T, T, std::
 template void mod_tt<T>(const std::shared_ptr<DeviceTensor<T>>&, const std::shared_ptr<DeviceTensor<T>>&, std::shared_ptr<DeviceTensor<T>>&); \
 template void mod_tc<T>(const std::shared_ptr<DeviceTensor<T>>&, int64_t, std::shared_ptr<DeviceTensor<T>>&); \
 template void mod_ct<T>(int64_t, const std::shared_ptr<DeviceTensor<T>>&, std::shared_ptr<DeviceTensor<T>>&); \
+template void modneg_tt<T>(const std::shared_ptr<DeviceTensor<T>>&, const std::shared_ptr<DeviceTensor<T>>&, std::shared_ptr<DeviceTensor<T>>&); \
+template void modneg_tc<T>(const std::shared_ptr<DeviceTensor<T>>&, T, std::shared_ptr<DeviceTensor<T>>&); \
 
 INSTANTIATE_ALL(int32_t)
 INSTANTIATE_ALL(int64_t)
