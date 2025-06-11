@@ -206,7 +206,7 @@ void OPNAME##_tt( \
 template <typename T> \
 void OPNAME##_tc( \
     const std::shared_ptr<DeviceTensor<T>>& a, \
-    int64_t b_scalar, \
+    T b_scalar, \
     std::shared_ptr<DeviceTensor<T>>& result) \
 { \
     CHECK_NOT_NULL(a, "a"); \
@@ -220,7 +220,7 @@ void OPNAME##_tc( \
 } \
 template <typename T> \
 void OPNAME##_ct( \
-    int64_t a_scalar, \
+    T a_scalar, \
     const std::shared_ptr<DeviceTensor<T>>& b, \
     std::shared_ptr<DeviceTensor<T>>& result) \
 { \
@@ -287,8 +287,8 @@ template void modmul_ttc<T>(const std::shared_ptr<DeviceTensor<T>>&, const std::
 template void modmul_tct<T>(const std::shared_ptr<DeviceTensor<T>>&, T, const std::shared_ptr<DeviceTensor<T>>&, std::shared_ptr<DeviceTensor<T>>&); \
 template void modmul_tcc<T>(const std::shared_ptr<DeviceTensor<T>>&, T, T, std::shared_ptr<DeviceTensor<T>>&); \
 template void mod_tt<T>(const std::shared_ptr<DeviceTensor<T>>&, const std::shared_ptr<DeviceTensor<T>>&, std::shared_ptr<DeviceTensor<T>>&); \
-template void mod_tc<T>(const std::shared_ptr<DeviceTensor<T>>&, int64_t, std::shared_ptr<DeviceTensor<T>>&); \
-template void mod_ct<T>(int64_t, const std::shared_ptr<DeviceTensor<T>>&, std::shared_ptr<DeviceTensor<T>>&); \
+template void mod_tc<T>(const std::shared_ptr<DeviceTensor<T>>&, T, std::shared_ptr<DeviceTensor<T>>&); \
+template void mod_ct<T>(T, const std::shared_ptr<DeviceTensor<T>>&, std::shared_ptr<DeviceTensor<T>>&); \
 template void modneg_tt<T>(const std::shared_ptr<DeviceTensor<T>>&, const std::shared_ptr<DeviceTensor<T>>&, std::shared_ptr<DeviceTensor<T>>&); \
 template void modneg_tc<T>(const std::shared_ptr<DeviceTensor<T>>&, T, std::shared_ptr<DeviceTensor<T>>&); \
 

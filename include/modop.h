@@ -129,13 +129,13 @@ namespace lattica_hw_api {
     template <typename T>
     void mod_tc(
         const std::shared_ptr<DeviceTensor<T>>& a,
-        int64_t b_scalar,
+        T b_scalar,
         std::shared_ptr<DeviceTensor<T>>& result
     );
 
     template <typename T>
     void mod_ct(
-        int64_t a_scalar,
+        T a_scalar,
         const std::shared_ptr<DeviceTensor<T>>& b,
         std::shared_ptr<DeviceTensor<T>>& result
     );
