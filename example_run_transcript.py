@@ -11,7 +11,7 @@ from lattica_heal_runtime.serialization import load_transcript_from_json
 
 # Load the example transcript
 transcript = load_transcript_from_json(
-    'example_transcripts/standalone_matmul_simple.json')
+    'example_transcripts/standalone_sharpen.json')
 
 # Optionally print the transcript
 print_transcript(transcript)
