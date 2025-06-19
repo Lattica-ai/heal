@@ -146,7 +146,7 @@ namespace lattica_hw_api {
      *
      * Example:
      *   // From a [2×3×4] tensor, pick block 1, then rows [0,2), cols [1,4):
-     *   auto view = get_slice<float>(orig,
+     *   auto view = get_slice<int64_t>(orig,
      *       { int64_t(1),
      *         Slice(0,2),     // rows 0 and 1
      *         Slice(1,4) });  // cols 1,2,3

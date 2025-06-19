@@ -27,6 +27,34 @@ DeviceTensor<T>::DeviceTensor(const std::vector<int64_t>& dims,
     data.reset(buffer, free);
 }
 
+template<typename T>
+DeviceTensor<T>::DeviceTensor(
+    std::vector<int64_t> dims,
+    std::vector<int64_t> strides,
+    std::shared_ptr<void> alias_data)
+    : dims(std::move(dims)), strides(std::move(strides)), data(std::move(alias_data)) {}
+
+template<typename T>
+DeviceTensor<T> DeviceTensor<T>::slice_view(
+    const std::shared_ptr<DeviceTensor<T>>& base,
+    std::vector<int64_t> new_dims,
+    std::vector<int64_t> new_strides,
+    int64_t offset_in_elements)
+{
+    T* orig_raw = reinterpret_cast<T*>( base->data.get() );
+    T* view_raw = orig_raw + offset_in_elements;
+    std::shared_ptr<void> alias_data(
+        base->data,                  // share refcount & deleter
+        static_cast<void*>(view_raw) // new pointer into that buffer
+    );
+
+    return DeviceTensor<T>(
+        std::move(new_dims),
+        std::move(new_strides),
+        std::move(alias_data)
+    );
+}
+
 template <typename T>
 bool DeviceTensor<T>::is_contiguous() const {
     int64_t expected_stride = 1;

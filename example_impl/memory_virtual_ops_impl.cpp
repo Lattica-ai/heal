@@ -220,9 +220,6 @@ namespace lattica_hw_api {
             }
         }
 
-        int64_t total_out_elems = 1;
-        for (auto d : new_dims) total_out_elems *= d;
-
         int64_t base_offset_in_elems = 0;
         for (size_t dim = 0; dim < rank; ++dim) {
             if (infos[dim].is_index) {
@@ -232,15 +229,13 @@ namespace lattica_hw_api {
             }
         }
 
-        T* orig_raw = reinterpret_cast<T*>( a->data.get() );
-        T* sliced_raw = orig_raw + base_offset_in_elems;
-        std::shared_ptr<void> alias_data(a->data, static_cast<void*>(sliced_raw));
-
-        a->dims    = std::move(new_dims);
-        a->strides = std::move(new_strides);
-        a->data    = std::move(alias_data);
-
-        return a;
+        auto view = DeviceTensor<T>::slice_view(
+            a,
+            std::move(new_dims),
+            std::move(new_strides),
+            base_offset_in_elems
+        );
+        return std::make_shared<DeviceTensor<T>>(std::move(view));
     }
 	
     // Explicit template instantiations
