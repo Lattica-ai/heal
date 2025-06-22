@@ -32,7 +32,7 @@ void bind_modop_variants(py::module_& m, const std::string& suffix) {
 template <typename T>
 void bind_g_decomposition(py::module_& m, const std::string& suffix) {
     m.def(("g_decomposition_" + suffix).c_str(), &g_decomposition<T>,
-          py::arg("a"), py::arg("result"), py::arg("power"), py::arg("base_bits"),
+          py::arg("a"), py::arg("result"), py::arg("power"), py::arg("base_bits"), py::arg("axis"),
           "G decomposition (base 2^base_bits)");
 }
 
@@ -61,7 +61,8 @@ void bind_device_memory(py::module_& m, const std::string& suffix) {
     py::class_<DeviceMem, std::shared_ptr<DeviceMem>>(m, ("DeviceTensor" + suffix).c_str())
         .def("print", &DeviceMem::print)
         .def("print_metadata", &DeviceMem::print_metadata)
-        .def("reshape", &DeviceMem::reshape);
+        .def("reshape", &DeviceMem::reshape)
+        .def("is_contiguous", &DeviceMem::is_contiguous);
 }
 
 template <typename T>

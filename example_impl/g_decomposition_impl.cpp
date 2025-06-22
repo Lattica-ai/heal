@@ -12,7 +12,8 @@ namespace lattica_hw_api {
         const std::shared_ptr<DeviceTensor<T>>& a,      // [...], arbitrary shape
         std::shared_ptr<DeviceTensor<T>>& result,       // [..., power] (output)
         size_t power,                                   // Number of digits
-        size_t base_bits                                // Base bits (i.e. log₂ base)
+        size_t base_bits,                               // Base bits (i.e. log₂ base)
+        int64_t axis                                    // Axis of n
     ) {
         const size_t base = 1ULL << base_bits;
 
@@ -70,13 +71,15 @@ namespace lattica_hw_api {
         const std::shared_ptr<DeviceTensor<int32_t>>& a,
         std::shared_ptr<DeviceTensor<int32_t>>& result,
         size_t power,
-        size_t base_bits
+        size_t base_bits,
+        int64_t axis
     );
     template void g_decomposition<int64_t>(
         const std::shared_ptr<DeviceTensor<int64_t>>& a,
         std::shared_ptr<DeviceTensor<int64_t>>& result,
         size_t power,
-        size_t base_bits
+        size_t base_bits,
+        int64_t axis
     );
 
 } // namespace lattica_hw_api

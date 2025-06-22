@@ -52,6 +52,12 @@ _contiguous_impls = {
     DeviceTensorfloat64: lhw.make_contiguous_float64
 }
 
+_is_contiguous_impls = {
+    DeviceTensor32: lhw.make_contiguous_32,
+    DeviceTensor64: lhw.make_contiguous_64,
+    DeviceTensorfloat64: lhw.make_contiguous_float64
+}
+
 # modmul / modsum
 _modmul = {
     'ttt': {
@@ -171,6 +177,9 @@ class PythonToCppDispatcher(ABC):
 
     def contiguous(self, a):
         return _dispatch(type(a), a, impls=_contiguous_impls)
+
+    def is_contiguous(self, a):
+        return _dispatch(type(a), a, impls=_is_contiguous_impls)
 
     def ntt(self, a, perm, perm_pairs, q_list, log2p, mu_list, psi_arr, out, tile, skip_perm):
         if skip_perm:

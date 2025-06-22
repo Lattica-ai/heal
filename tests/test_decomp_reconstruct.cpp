@@ -8,11 +8,12 @@ TEST(DecompReconstructTests, DecomposeAndReconstruct_Torch) {
     torch::Tensor a_cpu = torch::tensor({51, 29, 63}, torch::dtype(torch::kInt32)); // [3]
     int64_t power = 6;
     int64_t base_bits = 1;
+    int64_t axis = -1;
 
     auto a_hw = host_to_device<int32_t>(a_cpu);
     auto a_digits_hw = allocate_on_hardware<int32_t>({3, power});
 
-    g_decomposition(a_hw, a_digits_hw, power, base_bits);
+    g_decomposition(a_hw, a_digits_hw, power, base_bits, axis);
 
     auto basis_hw = host_to_device<int32_t>(
         torch::tensor({1, 2, 4, 8, 16, 32}, torch::dtype(torch::kInt32)));

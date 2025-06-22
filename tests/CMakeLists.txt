@@ -28,6 +28,7 @@ set(TEST_SOURCES
     test_noncontiguous.cpp
     test_memory_ops.cpp
     test_contiguous.cpp
+    test_is_contiguous.cpp
 )
 
 set(TEST_NAMES
@@ -41,6 +42,7 @@ set(TEST_NAMES
     NoncontiguousTests
     MemoryOpsTests
     ContiguousTests
+    IsContiguousTests
 )
 
 # Loop through the test sources and add executables and tests
