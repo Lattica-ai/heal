@@ -181,10 +181,10 @@ class PythonToCppDispatcher(ABC):
     def is_contiguous(self, a):
         return _dispatch(type(a), a, impls=_is_contiguous_impls)
 
-    def ntt(self, a, perm, perm_pairs, q_list, log2p, mu_list, psi_arr, out, tile, skip_perm):
+    def ntt(self, a, axis, perm, perm_pairs, q_list, log2p, mu_list, psi_arr, out, tile, skip_perm):
         if skip_perm:
             raise NotImplementedError(f"skip_perm is not supported. {skip_perm=}")
         if tile:
             a = self.expand(a, 2, -1)
-        _dispatch(type(a), a, q_list, perm, psi_arr, log2p, mu_list, out, impls=_ntt)
+        _dispatch(type(a), a, q_list, perm, psi_arr, log2p, mu_list, out, axis, impls=_ntt)
         return out

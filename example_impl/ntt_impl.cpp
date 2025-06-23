@@ -74,7 +74,8 @@ void ntt(
     const std::shared_ptr<DeviceTensor<T>>& twiddles, // now [k, m]
     const std::shared_ptr<DeviceTensor<T>>& log2p_list,
     const std::shared_ptr<DeviceTensor<T>>& mu_list,
-    std::shared_ptr<DeviceTensor<T>>& result
+    std::shared_ptr<DeviceTensor<T>>& result,
+    int64_t axis
 ) {
     int64_t l, m, r, k;
     validate_ntt_inputs<T>(a, p, perm, twiddles, result, l, m, r, k);
@@ -179,7 +180,8 @@ template void ntt<int32_t>(
     const std::shared_ptr<DeviceTensor<int32_t>>& /*twiddles*/,
     const std::shared_ptr<DeviceTensor<int32_t>>& /*log2p_list*/,
     const std::shared_ptr<DeviceTensor<int32_t>>& /*mu_list*/,
-    std::shared_ptr<DeviceTensor<int32_t>>& /*result*/);
+    std::shared_ptr<DeviceTensor<int32_t>>& /*result*/,
+    int64_t /*axis*/);
 
 template void ntt<int64_t>(
     const std::shared_ptr<DeviceTensor<int64_t>>& /*a*/,
@@ -188,7 +190,8 @@ template void ntt<int64_t>(
     const std::shared_ptr<DeviceTensor<int64_t>>& /*twiddles*/,
     const std::shared_ptr<DeviceTensor<int64_t>>& /*log2p_list*/,
     const std::shared_ptr<DeviceTensor<int64_t>>& /*mu_list*/,
-    std::shared_ptr<DeviceTensor<int64_t>>& /*result*/);
+    std::shared_ptr<DeviceTensor<int64_t>>& /*result*/,
+    int64_t /*axis*/);
 
 template void intt<int32_t>(
     const std::shared_ptr<DeviceTensor<int32_t>>& /*a*/,
