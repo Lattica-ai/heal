@@ -27,7 +27,7 @@ TEST(GDecompositionEdgeCases, ScalarValues) {
 TEST(GDecompositionEdgeCases, ZeroInput) {
     torch::Tensor a_cpu = torch::zeros({5}, torch::dtype(torch::kInt32));
     auto a_hw = host_to_device<int32_t>(a_cpu);
-    auto result_hw = zeros<int32_t>({5, 4});
+    auto result_hw = empty<int32_t>({5, 4});
     apply_g_decomp<int32_t>(a_hw, result_hw, 4, 2);  // base = 4
 
     auto result = device_to_host<int32_t>(result_hw);
