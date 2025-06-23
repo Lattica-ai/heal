@@ -27,8 +27,12 @@ TEST(NTTTests, PerformNTTAndVerifyRestorationTorch) {
         {1, 241, 193, 253}
     }, torch::dtype(torch::kInt32));  // [2, 4]
 
+
+    // Move n axis
+    torch::Tensor a_permuted = a_cpu.permute({0, 2, 3, 1}); // shape: [1, 1, 2, 4]
+
     // Upload to hardware
-    auto a_hw = host_to_device<int32_t>(a_cpu);
+    auto a_hw = host_to_device<int32_t>(a_permuted);
     auto p_hw = host_to_device<int32_t>(p_cpu);
     auto m_inv_hw = host_to_device<int32_t>(m_inv_cpu);
     auto perm_hw = host_to_device<int32_t>(perm_cpu);
@@ -36,14 +40,20 @@ TEST(NTTTests, PerformNTTAndVerifyRestorationTorch) {
     auto inv_twiddles_hw = host_to_device<int32_t>(inv_twiddles_cpu);
 
     // Allocate result and restoration buffers
-    auto result_hw = allocate_on_hardware<int32_t>({1, 4, 1, 2});
+    auto result_hw = allocate_on_hardware<int32_t>({1, 1, 2, 4});
     auto restored_hw = allocate_on_hardware<int32_t>({1, 4, 1, 2});
 
     int64_t axis = -1;  // Axis of n
 
     // Perform NTT and inverse NTT
     ntt<int32_t>(a_hw, p_hw, perm_hw, twiddles_hw, nullptr, nullptr, result_hw, axis);
-    intt<int32_t>(result_hw, p_hw, perm_hw, inv_twiddles_hw, m_inv_hw, nullptr, nullptr, restored_hw);
+
+    // Apply permutation to result
+    torch::Tensor restored_result = device_to_host<int32_t>(result_hw);
+    auto result_permuted = restored_result.permute({0, 3, 1, 2});  // shape: [1, 4, 1, 2]
+    auto result_permuted_hw = host_to_device<int32_t>(result_permuted);
+
+    intt<int32_t>(result_permuted_hw, p_hw, perm_hw, inv_twiddles_hw, m_inv_hw, nullptr, nullptr, restored_hw);
 
     // Download result
     torch::Tensor restored_cpu = device_to_host<int32_t>(restored_hw);
