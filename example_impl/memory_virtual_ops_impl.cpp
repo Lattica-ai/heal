@@ -93,6 +93,5 @@ namespace lattica_hw_api {
 
     INSTANTIATE_MEMORY_OPS(int32_t)
     INSTANTIATE_MEMORY_OPS(int64_t)
-    INSTANTIATE_MEMORY_OPS(double)
 
 } // namespace lattica_hw_api

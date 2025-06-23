@@ -31,7 +31,7 @@ void bind_modop_variants(py::module_& m, const std::string& suffix) {
 
 template <typename T>
 void bind_g_decomposition(py::module_& m, const std::string& suffix) {
-    m.def(("g_decomposition_" + suffix).c_str(), &g_decomposition<T>,
+    m.def(("apply_g_decomp_" + suffix).c_str(), &apply_g_decomp<T>,
           py::arg("a"), py::arg("result"), py::arg("power"), py::arg("base_bits"), py::arg("axis"),
           "G decomposition (base 2^base_bits)");
 }
@@ -68,8 +68,11 @@ void bind_device_memory(py::module_& m, const std::string& suffix) {
 template <typename T>
 void bind_memory_helpers(py::module_& m, const std::string& suffix) {
     using namespace lattica_hw_api;
-    m.def(("allocate_on_hardware_" + suffix).c_str(),
-          &allocate_on_hardware<T>,
+    m.def(("zeros_" + suffix).c_str(),
+          &zeros<T>,
+          py::arg("dims"));
+    m.def(("empty_" + suffix).c_str(),
+          &empty<T>,
           py::arg("dims"));
     m.def(("host_to_device_" + suffix).c_str(),
           &host_to_device<T>,
@@ -81,7 +84,7 @@ void bind_memory_helpers(py::module_& m, const std::string& suffix) {
 
 template <typename T>
 void bind_contiguous(py::module_& m, const std::string& suffix) {
-    m.def(("make_contiguous_" + suffix).c_str(), &make_contiguous<T>,
+    m.def(("contiguous_" + suffix).c_str(), &contiguous<T>,
           py::arg("tensor"), "Return a contiguous version of the tensor.");
 }
 
@@ -91,12 +94,10 @@ PYBIND11_MODULE(lattica_hw, m) {
     // Bind DeviceTensor class
     bind_device_memory<int32_t>(m, "32");
     bind_device_memory<int64_t>(m, "64");
-    bind_device_memory<double>(m, "float64");
 
     // Bind memory ops
     bind_memory_helpers<int32_t>(m, "32");
     bind_memory_helpers<int64_t>(m, "64");
-    bind_memory_helpers<double>(m, "float64");
 
     // Bind modular ops
     bind_modop_variants<int32_t>(m, "32");
@@ -113,12 +114,10 @@ PYBIND11_MODULE(lattica_hw, m) {
     // bind expand, squeeze, unsqueeze
     bind_memory_ops<int32_t>(m, "32");
     bind_memory_ops<int64_t>(m, "64");
-    bind_memory_ops<double>(m, "float64");
 
     // contiguous ops
     bind_contiguous<int32_t>(m, "32");
     bind_contiguous<int64_t>(m, "64");
-    bind_contiguous<double>(m, "float64");
 
     // ntt
     m.def("ntt_32", &ntt<int32_t>, "NTT (int32)");

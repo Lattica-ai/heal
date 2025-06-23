@@ -40,8 +40,8 @@ TEST(NTTTests, PerformNTTAndVerifyRestorationTorch) {
     auto inv_twiddles_hw = host_to_device<int32_t>(inv_twiddles_cpu);
 
     // Allocate result and restoration buffers
-    auto result_hw = allocate_on_hardware<int32_t>({1, 1, 2, 4});
-    auto restored_hw = allocate_on_hardware<int32_t>({1, 4, 1, 2});
+    auto result_hw = empty<int32_t>({1, 1, 2, 4});
+    auto restored_hw = empty<int32_t>({1, 4, 1, 2});
 
     int64_t axis = -1;  // Axis of n
 
