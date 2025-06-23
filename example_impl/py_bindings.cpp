@@ -70,6 +70,9 @@ void bind_memory_helpers(py::module_& m, const std::string& suffix) {
     m.def(("zeros_" + suffix).c_str(),
           &zeros<T>,
           py::arg("dims"));
+    m.def(("empty_" + suffix).c_str(),
+          &empty<T>,
+          py::arg("dims"));
     m.def(("host_to_device_" + suffix).c_str(),
           &host_to_device<T>,
           py::arg("tensor"));
