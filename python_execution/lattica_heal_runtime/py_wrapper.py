@@ -9,18 +9,16 @@ build_dir = os.path.join(os.path.dirname(__file__), "../../build/example_impl")
 sys.path.insert(0, build_dir)
 
 import lattica_hw as lhw
-from lattica_hw import DeviceTensor32, DeviceTensor64, DeviceTensorfloat64
+from lattica_hw import DeviceTensor32, DeviceTensor64
 
 _host_to_device = {
     torch.int32: lhw.host_to_device_32,
     torch.int64: lhw.host_to_device_64,
-    torch.float64: lhw.host_to_device_float64
 }
 
 _device_to_host = {
     DeviceTensor32: lhw.device_to_host_32,
     DeviceTensor64: lhw.device_to_host_64,
-    DeviceTensorfloat64: lhw.device_to_host_float64
 }
 
 _allocate = {
@@ -31,25 +29,21 @@ _allocate = {
 _expand_impls = {
     DeviceTensor32: lhw.expand_32,
     DeviceTensor64: lhw.expand_64,
-    DeviceTensorfloat64: lhw.expand_float64
 }
 
 _squeeze_impls = {
     DeviceTensor32: lhw.squeeze_32,
     DeviceTensor64: lhw.squeeze_64,
-    DeviceTensorfloat64: lhw.squeeze_float64
 }
 
 _unsqueeze_impls = {
     DeviceTensor32: lhw.unsqueeze_32,
     DeviceTensor64: lhw.unsqueeze_64,
-    DeviceTensorfloat64: lhw.unsqueeze_float64
 }
 
 _contiguous_impls = {
     DeviceTensor32: lhw.make_contiguous_32,
     DeviceTensor64: lhw.make_contiguous_64,
-    DeviceTensorfloat64: lhw.make_contiguous_float64
 }
 
 # modmul / modsum

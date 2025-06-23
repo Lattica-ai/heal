@@ -53,7 +53,5 @@ namespace lattica_hw_api {
 
 template std::shared_ptr<DeviceTensor<int32_t>> make_contiguous<int32_t>(const std::shared_ptr<DeviceTensor<int32_t>>&);
 template std::shared_ptr<DeviceTensor<int64_t>> make_contiguous<int64_t>(const std::shared_ptr<DeviceTensor<int64_t>>&);
-template std::shared_ptr<DeviceTensor<double>> make_contiguous<double>(const std::shared_ptr<DeviceTensor<double>>&);
-
 
 } // namespace lattica_hw_api

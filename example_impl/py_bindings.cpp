@@ -90,12 +90,10 @@ PYBIND11_MODULE(lattica_hw, m) {
     // Bind DeviceTensor class
     bind_device_memory<int32_t>(m, "32");
     bind_device_memory<int64_t>(m, "64");
-    bind_device_memory<double>(m, "float64");
 
     // Bind memory ops
     bind_memory_helpers<int32_t>(m, "32");
     bind_memory_helpers<int64_t>(m, "64");
-    bind_memory_helpers<double>(m, "float64");
 
     // Bind modular ops
     bind_modop_variants<int32_t>(m, "32");
@@ -112,12 +110,10 @@ PYBIND11_MODULE(lattica_hw, m) {
     // bind expand, squeeze, unsqueeze
     bind_memory_ops<int32_t>(m, "32");
     bind_memory_ops<int64_t>(m, "64");
-    bind_memory_ops<double>(m, "float64");
 
     // contiguous ops
     bind_contiguous<int32_t>(m, "32");
     bind_contiguous<int64_t>(m, "64");
-    bind_contiguous<double>(m, "float64");
 
     // ntt
     m.def("ntt_32", &ntt<int32_t>, "NTT (int32)");
