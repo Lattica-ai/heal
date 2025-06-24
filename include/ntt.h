@@ -36,8 +36,8 @@ namespace lattica_hw_api {
         const std::shared_ptr<DeviceTensor<T>>& twiddles,   // [k, m]
         const std::shared_ptr<DeviceTensor<T>>& log2p_list, // [k]
         const std::shared_ptr<DeviceTensor<T>>& mu_list,    // [k]
-        std::shared_ptr<DeviceTensor<T>>& result,           // [l, m, r, k] (output)
-        int64_t axis                                        // Axis of n
+        int64_t axis,                                       // Axis of n
+        std::shared_ptr<DeviceTensor<T>>& result            // [l, m, r, k] (output)
     );
 
     template <typename T>

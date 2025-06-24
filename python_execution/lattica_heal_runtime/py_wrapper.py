@@ -52,9 +52,8 @@ _contiguous_impls = {
 }
 
 _is_contiguous_impls = {
-    DeviceTensor32: lhw.make_contiguous_32,
-    DeviceTensor64: lhw.make_contiguous_64,
-    DeviceTensorfloat64: lhw.make_contiguous_float64
+    DeviceTensor32: lhw.is_contiguous_32,
+    DeviceTensor64: lhw.is_contiguous_64,
 }
 
 # modmul / modsum
@@ -197,5 +196,5 @@ class PythonToCppDispatcher(ABC):
             raise NotImplementedError(f"skip_perm is not supported. {skip_perm=}")
         if tile:
             a = self.expand(a, 2, -1)
-        _dispatch(type(a), a, q_list, perm, psi_arr, log2p, mu_list, out, axis, impls=_ntt)
+        _dispatch(type(a), a, q_list, perm, psi_arr, log2p, mu_list, axis, out, impls=_ntt)
         return out

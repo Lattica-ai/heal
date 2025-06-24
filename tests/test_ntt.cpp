@@ -46,7 +46,7 @@ TEST(NTTTests, PerformNTTAndVerifyRestorationTorch) {
     int64_t axis = -1;  // Axis of n
 
     // Perform NTT and inverse NTT
-    ntt<int32_t>(a_hw, p_hw, perm_hw, twiddles_hw, nullptr, nullptr, result_hw, axis);
+    ntt<int32_t>(a_hw, p_hw, perm_hw, twiddles_hw, nullptr, nullptr, axis, result_hw);
 
     // Apply permutation to result
     torch::Tensor restored_result = device_to_host<int32_t>(result_hw);
