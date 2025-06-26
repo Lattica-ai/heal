@@ -183,9 +183,6 @@ class PythonToCppDispatcher(ABC):
     def contiguous(self, a):
         return _dispatch(type(a), a, impls=_contiguous_impls)
 
-    def is_contiguous(self, device_tensor):
-        return device_tensor.is_contiguous()
-
     def ntt(self, a, axis, perm, perm_pairs, q_list, log2p, mu_list, psi_arr, out, tile, skip_perm):
         if skip_perm:
             raise NotImplementedError(f"skip_perm is not supported. {skip_perm=}")

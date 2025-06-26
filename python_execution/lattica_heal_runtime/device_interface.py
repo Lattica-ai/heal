@@ -93,9 +93,6 @@ class DeviceDispatcher(ABC):
     def contiguous(self, *args, **kwargs):
         return self.dispatcher.contiguous(*args, **kwargs)
 
-    def is_contiguous(self, *args, **kwargs):
-        return self.dispatcher.is_contiguous(*args, **kwargs)
-
         # ================== Virtual Reshape Ops ============
 
     def get_slice(self, *args, **kwargs):

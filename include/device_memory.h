@@ -11,7 +11,6 @@
 template <typename T>
 struct DeviceTensor {
     void reshape(const std::vector<int64_t>& new_dims);
-    bool is_contiguous() const;
     void print() const;
     void print_metadata() const;
 };

@@ -61,8 +61,7 @@ void bind_device_memory(py::module_& m, const std::string& suffix) {
     py::class_<DeviceMem, std::shared_ptr<DeviceMem>>(m, ("DeviceTensor" + suffix).c_str())
         .def("print", &DeviceMem::print)
         .def("print_metadata", &DeviceMem::print_metadata)
-        .def("reshape", &DeviceMem::reshape)
-        .def("is_contiguous", &DeviceMem::is_contiguous);
+        .def("reshape", &DeviceMem::reshape);
 }
 
 template <typename T>
