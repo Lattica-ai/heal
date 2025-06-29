@@ -85,11 +85,62 @@ namespace lattica_hw_api {
         return a;
     }
 
+
+    template <typename T>
+    std::shared_ptr<DeviceTensor<T>> moveaxis(
+        const std::shared_ptr<DeviceTensor<T>>& a,
+        int64_t  axis_src,
+        int64_t  axis_dst
+    ) {
+        // ── 0. Basic sanity checks ───────────────────────────────────────────────
+        if (!a) {
+            throw std::invalid_argument("moveaxis: tensor pointer is null.");
+        }
+
+        const int64_t ndim = static_cast<int64_t>(a->dims.size());
+
+        // Normalise negative indices
+        if (axis_src < 0) axis_src += ndim;
+        if (axis_dst < 0) axis_dst += ndim;
+
+        // Validate indices
+        if (axis_src < 0 || axis_src >= ndim ||
+            axis_dst < 0 || axis_dst >= ndim) {
+            throw std::invalid_argument("moveaxis: axis index out of range.");
+        }
+
+        // No-op fast-path
+        if (axis_src == axis_dst) {
+            return a;
+        }
+
+        // ── 1. Re-order dims & strides ───────────────────────────────────────────
+        std::vector<int64_t> new_dims = a->dims;
+        std::vector<int64_t> new_strides = a->strides;
+
+        const int64_t dim_val = new_dims[axis_src];
+        const int64_t stride_val = new_strides[axis_src];
+
+        // Remove source position first
+        new_dims.erase(new_dims.begin() + axis_src);
+        new_strides.erase(new_strides.begin() + axis_src);
+
+        // Insert the axis metadata in its new place
+        new_dims.insert(new_dims.begin() + axis_dst, dim_val);
+        new_strides.insert(new_strides.begin() + axis_dst, stride_val);
+
+        // ── 2. Commit the modified metadata ──────────────────────────────────────
+        a->dims = std::move(new_dims);
+        a->strides = std::move(new_strides);
+        return a;
+    }
+
     // Explicit template instantiations
     #define INSTANTIATE_MEMORY_OPS(T) \
         template std::shared_ptr<DeviceTensor<T>> expand<T>(const std::shared_ptr<DeviceTensor<T>>&, int64_t, int64_t); \
         template std::shared_ptr<DeviceTensor<T>> squeeze<T>(const std::shared_ptr<DeviceTensor<T>>&, int64_t); \
-        template std::shared_ptr<DeviceTensor<T>> unsqueeze<T>(const std::shared_ptr<DeviceTensor<T>>&, int64_t);
+        template std::shared_ptr<DeviceTensor<T>> unsqueeze<T>(const std::shared_ptr<DeviceTensor<T>>&, int64_t); \
+        template std::shared_ptr<DeviceTensor<T>> moveaxis<T>(const std::shared_ptr<DeviceTensor<T>>&, int64_t, int64_t);
 
     INSTANTIATE_MEMORY_OPS(int32_t)
     INSTANTIATE_MEMORY_OPS(int64_t)
