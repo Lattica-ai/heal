@@ -82,6 +82,7 @@ void DeviceTensor<T>::reshape(const std::vector<int64_t>& new_dims) {
     strides = new_strides;
 }
 
+
 template <typename T>
 T& DeviceTensor<T>::at(const std::vector<int64_t>& indices) {
     return const_cast<T&>(static_cast<const DeviceTensor<T>&>(*this).at(indices));

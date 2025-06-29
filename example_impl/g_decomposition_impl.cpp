@@ -5,7 +5,6 @@
 #include <cmath>
 #include <iostream>
 #include <omp.h>
-#include <torch/torch.h>
 
 namespace lattica_hw_api {
     template <typename T>
