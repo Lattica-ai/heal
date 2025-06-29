@@ -13,14 +13,8 @@ namespace lattica_hw_api {
         const std::shared_ptr<DeviceTensor<T>>& a,      // [...], arbitrary shape
         std::shared_ptr<DeviceTensor<T>>& result,       // [..., power] (output)
         size_t power,                                   // Number of digits
-        size_t base_bits,                               // Base bits (i.e. log₂ base)
-        int64_t axis                                    // Axis of n
+        size_t base_bits                                // Base bits (i.e. log₂ base)
     ) {
-
-        if (axis == -1) {
-            result->moveaxis(-2, -1);
-        }
-
         const size_t base = 1ULL << base_bits;
 
         // Validate dimensions
@@ -71,25 +65,19 @@ namespace lattica_hw_api {
                 }
             }
         }
-
-        if (axis == -1) {
-            result->moveaxis(-1, -2);
-        }
     }
 
     template void apply_g_decomp<int32_t>(
         const std::shared_ptr<DeviceTensor<int32_t>>& a,
         std::shared_ptr<DeviceTensor<int32_t>>& result,
         size_t power,
-        size_t base_bits,
-        int64_t axis
+        size_t base_bits
     );
     template void apply_g_decomp<int64_t>(
         const std::shared_ptr<DeviceTensor<int64_t>>& a,
         std::shared_ptr<DeviceTensor<int64_t>>& result,
         size_t power,
-        size_t base_bits,
-        int64_t axis
+        size_t base_bits
     );
 
 } // namespace lattica_hw_api

@@ -32,7 +32,7 @@ void bind_modop_variants(py::module_& m, const std::string& suffix) {
 template <typename T>
 void bind_g_decomposition(py::module_& m, const std::string& suffix) {
     m.def(("apply_g_decomp_" + suffix).c_str(), &apply_g_decomp<T>,
-          py::arg("a"), py::arg("result"), py::arg("power"), py::arg("base_bits"), py::arg("axis"),
+          py::arg("a"), py::arg("result"), py::arg("power"), py::arg("base_bits"),
           "G decomposition (base 2^base_bits)");
 }
 

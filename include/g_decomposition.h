@@ -26,8 +26,7 @@ namespace lattica_hw_api {
         const std::shared_ptr<DeviceTensor<T>>& a,         // [...], arbitrary shape
         std::shared_ptr<DeviceTensor<T>>& result,          // [..., power] (output)
         size_t power,                                      // Number of digits
-        size_t base_bits,                                  // Base bits
-        int64_t axis                                       // Axis of n
+        size_t base_bits                                   // Base bits
     );
 
 }
