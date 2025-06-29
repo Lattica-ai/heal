@@ -83,29 +83,6 @@ void DeviceTensor<T>::reshape(const std::vector<int64_t>& new_dims) {
 }
 
 template <typename T>
-void DeviceTensor<T>::moveaxis(int64_t from, int64_t to) {
-    int64_t ndim = dims.size();
-
-    // Normalize negative indices
-    if (from < 0) from += ndim;
-    if (to < 0) to += ndim;
-
-    if (from < 0 || from >= ndim || to < 0 || to > ndim) {
-        throw std::out_of_range("moveaxis_inplace: 'from' or 'to' is out of range");
-    }
-
-    // Move dims[from] to dims[to]
-    auto dim_value = dims[from];
-    auto stride_value = strides[from];
-
-    dims.erase(dims.begin() + from);
-    strides.erase(strides.begin() + from);
-
-    dims.insert(dims.begin() + to, dim_value);
-    strides.insert(strides.begin() + to, stride_value);
-}
-
-template <typename T>
 T& DeviceTensor<T>::at(const std::vector<int64_t>& indices) {
     return const_cast<T&>(static_cast<const DeviceTensor<T>&>(*this).at(indices));
 }
