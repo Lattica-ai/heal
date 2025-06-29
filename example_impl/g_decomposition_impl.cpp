@@ -5,6 +5,7 @@
 #include <cmath>
 #include <iostream>
 #include <omp.h>
+#include <torch/torch.h>
 
 namespace lattica_hw_api {
     template <typename T>
@@ -15,6 +16,11 @@ namespace lattica_hw_api {
         size_t base_bits,                               // Base bits (i.e. log₂ base)
         int64_t axis                                    // Axis of n
     ) {
+
+        if (axis == -1) {
+            result->moveaxis(-2, -1);
+        }
+
         const size_t base = 1ULL << base_bits;
 
         // Validate dimensions
@@ -64,6 +70,10 @@ namespace lattica_hw_api {
                     std::cerr << "exceeds capacity with base_bits=" << base_bits << " and power=" << power << "\n";
                 }
             }
+        }
+
+        if (axis == -1) {
+            result->moveaxis(-1, -2);
         }
     }
 

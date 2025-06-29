@@ -8,7 +8,7 @@ TEST(DecompReconstructTests, DecomposeAndReconstruct_Torch) {
     torch::Tensor a_cpu = torch::tensor({51, 29, 63}, torch::dtype(torch::kInt32)); // [3]
     int64_t power = 6;
     int64_t base_bits = 1;
-    int64_t axis = -1;
+    int64_t axis = -2;
 
     auto a_hw = host_to_device<int32_t>(a_cpu);
     auto a_digits_hw = empty<int32_t>({3, power});

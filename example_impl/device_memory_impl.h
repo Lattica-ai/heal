@@ -22,6 +22,7 @@ struct DeviceTensor {
     void print() const;
     void print_metadata() const;
     bool is_contiguous() const;
+    void moveaxis(int64_t from, int64_t to);
 
 
     // Element access

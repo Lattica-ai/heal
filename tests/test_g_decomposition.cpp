@@ -8,7 +8,7 @@ TEST(GDecompositionEdgeCases, ScalarValues) {
     torch::Tensor a_cpu = torch::tensor({0, 1, 2, 3}, torch::dtype(torch::kInt32));
     int64_t power = 2;
     int64_t base_bits = 1;  // base = 2
-    int64_t axis = -1;
+    int64_t axis = -2;
 
     auto a_hw = host_to_device<int32_t>(a_cpu);
     auto result_hw = empty<int32_t>({4, power});
@@ -25,11 +25,30 @@ TEST(GDecompositionEdgeCases, ScalarValues) {
     ASSERT_TRUE(torch::equal(result, expected));
 }
 
+TEST(GDecompositionEdgeCases, ScalarValuesAxisChange) {
+    torch::Tensor a_cpu = torch::tensor({0, 1, 2, 3}, torch::dtype(torch::kInt32));
+    int64_t power = 2;
+    int64_t base_bits = 1;  // base = 2
+    int64_t axis = -1;
+
+    auto a_hw = host_to_device<int32_t>(a_cpu);
+    auto result_hw = empty<int32_t>({power, 4});
+    apply_g_decomp<int32_t>(a_hw, result_hw, power, base_bits, axis);
+
+    torch::Tensor expected = torch::tensor({
+        {0, 1, 0, 1},
+        {0, 0, 1, 1}
+    }, torch::dtype(torch::kInt32));
+
+    auto result = device_to_host<int32_t>(result_hw);
+    ASSERT_TRUE(torch::equal(result, expected));
+}
+
 TEST(GDecompositionEdgeCases, ZeroInput) {
     torch::Tensor a_cpu = torch::zeros({5}, torch::dtype(torch::kInt32));
     auto a_hw = host_to_device<int32_t>(a_cpu);
     auto result_hw = empty<int32_t>({5, 4});
-    int64_t axis = -1;
+    int64_t axis = -2;
     apply_g_decomp<int32_t>(a_hw, result_hw, 4, 2, axis);  // base = 4
 
     auto result = device_to_host<int32_t>(result_hw);
@@ -43,7 +62,7 @@ TEST(GDecompositionEdgeCases, MultiDimensionalInput) {
     }, torch::dtype(torch::kInt32));  // [2, 2, 2]
     auto a_hw = host_to_device<int32_t>(a_cpu);
     auto result_hw = empty<int32_t>({2, 2, 2, 3});  // [2,2,2,3]
-    int64_t axis = -1;
+    int64_t axis = -2;
 
     apply_g_decomp<int32_t>(a_hw, result_hw, 3, 2, axis);  // base = 4
 
@@ -66,7 +85,7 @@ TEST(GDecompositionEdgeCases, OverflowWarningCheck) {
     torch::Tensor a_cpu = torch::tensor({255}, torch::dtype(torch::kInt32));
     auto a_hw = host_to_device<int32_t>(a_cpu);
     auto result_hw = empty<int32_t>({1, 3});
-    int64_t axis = -1;
+    int64_t axis = -2;
 
     testing::internal::CaptureStderr();
     apply_g_decomp<int32_t>(a_hw, result_hw, 3, 3, axis);  // base = 8, max representable = 512
@@ -79,7 +98,7 @@ TEST(GDecompositionEdgeCases, InvalidShapeMismatch) {
     torch::Tensor a_cpu = torch::tensor({10, 20}, torch::dtype(torch::kInt32));
     auto a_hw = host_to_device<int32_t>(a_cpu);
     auto result_hw = empty<int32_t>({3, 2});
-    int64_t axis = -1;
+    int64_t axis = -2;
 
     EXPECT_THROW(
         apply_g_decomp<int32_t>(a_hw, result_hw, 2, 2, axis),
