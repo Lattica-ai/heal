@@ -52,6 +52,11 @@ void bind_memory_ops(py::module_& m, const std::string& suffix) {
           &unsqueeze<T>,
           py::arg("tensor"), py::arg("axis"),
           "Inserts a singleton dimension at the specified axis.");
+
+    m.def(("moveaxis_" + suffix).c_str(),
+          &moveaxis<T>,
+          py::arg("tensor"), py::arg("axis_src"), py::arg("axis_dst"),
+          "Moves an axis from axis_src to axis_dst.");
 }
 
 template <typename T>

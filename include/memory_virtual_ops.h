@@ -85,6 +85,31 @@ namespace lattica_hw_api {
         int64_t axis
     );
 
+
+    /**
+     * @brief Moves an existing dimension from axis_src to axis_dst in-place.
+     *        Updates dims and strides metadata so that the tensor appears to have
+     *        the same data but with one axis relocated.
+     *
+     * Example:
+     * Given a tensor of shape [2, 3, 4], moveaxis from 2 to 0 → [4, 2, 3]
+     *
+     * Preconditions:
+     * - axis_src and axis_dst must be in range [-ndim, ndim-1].
+     * - After normalization, both axes must be valid indices in [0, ndim).
+     *
+     * @tparam T The element type.
+     * @param tensor The input tensor whose metadata will be modified.
+     * @param axis_src The index of the axis to move (may be negative).
+     * @param axis_dst The target index for the axis after move (may be negative).
+     * @return A pointer to the modified tensor.
+     */
+    template <typename T>
+    std::shared_ptr<DeviceTensor<T>> moveaxis(
+        const std::shared_ptr<DeviceTensor<T>>& tensor,
+        int64_t axis_src,
+        int64_t axis_dst
+    );
 }
 
 #endif // MEMORY_OPS_H
