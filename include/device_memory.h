@@ -9,7 +9,8 @@
  * @brief Abstract device-side tensor for hardware-accelerated memory.
  */
 template <typename T>
-struct DeviceTensor {
+class DeviceTensor {
+public:
     void reshape(const std::vector<int64_t>& new_dims);
     void print() const;
     void print_metadata() const;

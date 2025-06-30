@@ -57,6 +57,42 @@ void bind_memory_ops(py::module_& m, const std::string& suffix) {
           &moveaxis<T>,
           py::arg("tensor"), py::arg("axis_src"), py::arg("axis_dst"),
           "Moves an axis from axis_src to axis_dst.");
+
+    m.def(("get_slice_" + suffix).c_str(),
+          // [tensor, sliceList] → vector<SliceArg> → get_slice<T>
+          [](const std::shared_ptr<DeviceTensor<T>>& tensor,
+             py::iterable sliceList)
+          {
+              std::vector<SliceArg> args;
+              args.reserve(std::distance(sliceList.begin(), sliceList.end()));
+
+              for (py::handle h : sliceList) {
+                  if (py::isinstance<py::int_>(h)) {
+                      // integer → int64_t
+                      args.emplace_back(h.cast<int64_t>());
+                  }
+                  else if (py::isinstance<py::slice>(h)) {
+                      // Python slice → C++ Slice(start, stop, step)
+                      py::slice sl = h.cast<py::slice>();
+                      int64_t s  = sl.attr("start").cast<int64_t>();
+                      int64_t e  = sl.attr("stop").cast<int64_t>();
+                      int64_t st = sl.attr("step").cast<int64_t>();
+                      args.emplace_back(Slice(s, e, st));
+                  }
+                  else {
+                      throw std::invalid_argument(
+                          "get_slice: sliceList must contain only ints or slices");
+                  }
+              }
+
+              return get_slice<T>(tensor, args);
+          },
+          py::arg("tensor"),
+          py::arg("sliceList"),
+          R"doc(
+            Returns a zero-copy view of `tensor` sliced along each axis.
+            Accepts a Python iterable of ints and slice(start,stop,step),
+            which are mapped into your C++ SliceArg variant.)doc");
 }
 
 template <typename T>
