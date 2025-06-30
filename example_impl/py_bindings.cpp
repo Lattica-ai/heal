@@ -75,8 +75,8 @@ void bind_memory_ops(py::module_& m, const std::string& suffix) {
                       // Python slice → C++ Slice(start, stop, step)
                       py::slice sl = h.cast<py::slice>();
                       int64_t s  = sl.attr("start").cast<int64_t>();
-                      int64_t e  = sl.attr("stop") .cast<int64_t>();
-                      int64_t st = sl.attr("step") .cast<int64_t>();
+                      int64_t e  = sl.attr("stop").cast<int64_t>();
+                      int64_t st = sl.attr("step").cast<int64_t>();
                       args.emplace_back(Slice(s, e, st));
                   }
                   else {
