@@ -11,7 +11,7 @@ namespace lattica_hw_api {
 
 namespace {
 
-// Validate and extract dimensions from a [l, m, r, k] tensor
+// Validate and extract dimensions from a [l, m, r, k] or [l, r, k, m] tensor
 template <typename T>
 void validate_ntt_inputs(
     const std::shared_ptr<DeviceTensor<T>>& a,
@@ -23,18 +23,20 @@ void validate_ntt_inputs(
     int64_t axis
 ) {
     if (a->dims.size() != 4)
-        throw std::invalid_argument("Input tensor 'a' must have shape [l, m, r, k].");
+        throw std::invalid_argument("Input tensor 'a' must have shape [l, m, r, k] or [l, r, k, m].");
 
     if (axis == -1) {
         l = a->dims[0];
         m = a->dims[3];
         r = a->dims[1];
         k = a->dims[2];
-    } else {
+    } else if (axis == -3) {
         l = a->dims[0];
         m = a->dims[1];
         r = a->dims[2];
         k = a->dims[3];
+    } else {
+        throw std::invalid_argument("Axis must be -1 or -3 for NTT.");
     }
 
     if (result->dims != a->dims)
@@ -73,7 +75,7 @@ void apply_permutation(
                 }
             }
         }
-    } else {
+    } else if (axis == -3) {
         for (int64_t i = 0; i < l; ++i) {
             for (int64_t j = 0; j < r; ++j) {
                 for (int64_t t = 0; t < k; ++t) {
@@ -88,6 +90,8 @@ void apply_permutation(
                 }
             }
         }
+    } else {
+        throw std::invalid_argument("Axis must be -1 or -3 for permutation.");
     }
 }
 
@@ -140,7 +144,7 @@ void ntt(
                 }
             }
         }
-    } else {
+    } else if (axis == -3) {
         #pragma omp parallel for collapse(2)
         for (int64_t i = 0; i < l; ++i) {
             for (int64_t j = 0; j < r; ++j) {
@@ -173,6 +177,8 @@ void ntt(
                 }
             }
         }
+    } else {
+        throw std::invalid_argument("Axis must be -1 or -3 for NTT.");
     }
 
     apply_permutation<T>(perm, result, l, r, k, m, axis);

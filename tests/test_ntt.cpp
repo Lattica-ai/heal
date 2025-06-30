@@ -115,3 +115,32 @@ TEST(NTTTests, PerformNTTOptimisedDimAndVerifyRestorationTorch) {
         << "Restored input does not match the original input.\n"
         << "Expected:\n" << a_cpu << "\nActual:\n" << restored_cpu;
 }
+
+TEST(NTTTests, WrongAxisThrows) {
+    // Input tensor a: [1, 4, 1, 2] → l = 1, m = 4, r = 1, k = 2
+    torch::Tensor a_cpu = torch::tensor(
+        {{{{1, 2}}, {{3, 4}}, {{5, 6}}, {{7, 8}}}},
+        torch::dtype(torch::kInt32)
+    ); // shape: [1, 4, 1, 2]
+
+    // Parameters
+    torch::Tensor p_cpu = torch::tensor({17, 257}, torch::dtype(torch::kInt32));         // [k]
+    torch::Tensor perm_cpu = torch::tensor({0, 2, 1, 3}, torch::dtype(torch::kInt32));   // [m]
+
+    // twiddles and inv_twiddles
+    torch::Tensor twiddles_cpu = torch::tensor({
+        {1, 4, 2, 8},
+        {1, 16, 4, 64}
+    }, torch::dtype(torch::kInt32));  // [2, 4]
+
+    // Upload to hardware
+    auto a_hw = host_to_device<int32_t>(a_cpu);
+    auto p_hw = host_to_device<int32_t>(p_cpu);
+    auto perm_hw = host_to_device<int32_t>(perm_cpu);
+    auto twiddles_hw = host_to_device<int32_t>(twiddles_cpu);
+    auto result_hw = empty<int32_t>({1, 4, 1, 2});
+
+    int64_t axis = -2;  // Wrong axis
+
+    EXPECT_THROW(ntt<int32_t>(a_hw, p_hw, perm_hw, twiddles_hw, nullptr, nullptr, axis, result_hw), std::invalid_argument);
+}
