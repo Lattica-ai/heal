@@ -81,10 +81,12 @@ void elementwise_modop(
 
 
 // ---- Wrapper Functions ----
-#define CHECK_DIMS_MATCH_LAST(tensor, result, label) \
-    if (tensor->dims.size() != 1 && tensor->dims.back() != result->dims.back()) { \
-        throw std::invalid_argument("Last dimension of " label " must match last dimension of result."); \
-    }
+#define CHECK_P_VALID(tensor, result, label) \
+    if (!(tensor->dims == result->dims || \
+        (tensor->dims.size() == 1 && tensor->dims[0] == 1) || \
+        (tensor->dims.size() == 1 && tensor->dims[0] == result->dims.back()))) { \
+            throw std::invalid_argument("Shape of " label " is not broadcastable to the shape of result."); \
+        }
 
 #define CHECK_DIMS_BROADCASTABLE(tensor, result, label) \
     { \
@@ -114,7 +116,7 @@ void OPNAME##_ttt( \
     std::shared_ptr<DeviceTensor<T>>& result) { \
     CHECK_DIMS_BROADCASTABLE(a, result, "a"); \
     CHECK_DIMS_BROADCASTABLE(b, result, "b"); \
-    CHECK_DIMS_MATCH_LAST(p, result, "p"); \
+    CHECK_P_VALID(p, result, "p"); \
     elementwise_modop<T>( \
         [a](const std::vector<int64_t>& coord) { return a->at_with_broadcast(coord); }, \
         [b](const std::vector<int64_t>& coord) { return b->at_with_broadcast(coord); }, \
@@ -150,7 +152,7 @@ void OPNAME##_tct( \
     const std::shared_ptr<DeviceTensor<T>>& p, \
     std::shared_ptr<DeviceTensor<T>>& result) { \
     CHECK_DIMS_BROADCASTABLE(a, result, "a"); \
-    CHECK_DIMS_MATCH_LAST(p, result, "p"); \
+    CHECK_P_VALID(p, result, "p"); \
     elementwise_modop<T>( \
         [a](const std::vector<int64_t>& coord) { return a->at_with_broadcast(coord); }, \
         [&](const std::vector<int64_t>&) { return b_scalar; }, \
@@ -242,10 +244,10 @@ void OPNAME##_tt( \
     std::shared_ptr<DeviceTensor<T>>& result)  \
 { \
     CHECK_SAME_DIMS(a, result, "a"); \
-    CHECK_SAME_DIMS(p, result, "p"); \
+    CHECK_P_VALID(p, result, "p"); \
     elementwise_modred<T>( \
-        [a](auto& coord) { return a->at(coord); }, \
-        [p](auto& coord) { return p->at(coord); }, \
+        [a](auto& coord) { return a->at_with_broadcast(coord); }, \
+        [p](auto& coord) { return p->at_with_broadcast(coord); }, \
         result, \
         [](T a_val, T p_val) { \
             return static_cast<T>((-(a_val % p_val) + p_val) % p_val); \

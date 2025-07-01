@@ -56,7 +56,6 @@ _contiguous_impls = {
     DeviceTensor64: lhw.contiguous_64,
 }
 
-# modmul / modsum
 _modmul = {
     'ttt': {
         DeviceTensor32: lhw.modmul_ttt_32,
@@ -92,6 +91,32 @@ _modsum = {
     'ttc': {
         DeviceTensor32: lhw.modsum_ttc_32,
         DeviceTensor64: lhw.modsum_ttc_64,
+    }
+}
+
+_mod = {
+    'tt': {
+        DeviceTensor32: lhw.mod_tt_32,
+        DeviceTensor64: lhw.mod_tt_64,
+    },
+    'tc': {
+        DeviceTensor32: lhw.mod_tc_32,
+        DeviceTensor64: lhw.mod_tc_64,
+    },
+    'ct': {
+        DeviceTensor32: lhw.mod_ct_32,
+        DeviceTensor64: lhw.mod_ct_64,
+    },
+}
+
+_modneg = {
+    'tt': {
+        DeviceTensor32: lhw.modneg_tt_32,
+        DeviceTensor64: lhw.modneg_tt_64,
+    },
+    'tc': {
+        DeviceTensor32: lhw.modneg_tc_32,
+        DeviceTensor64: lhw.modneg_tc_64,
     }
 }
 
@@ -181,6 +206,26 @@ class PythonToCppDispatcher(ABC):
         _dispatch(type(a), a, b, p, out, impls=_modsum['ttc'])
         return out
 
+    def _mod_tt(self, a, b, out):
+        _dispatch(type(a), a, b, out, impls=_mod['tt'])
+        return out
+
+    def _mod_tc(self, a, b, out):
+        _dispatch(type(a), a, b, out, impls=_mod['tc'])
+        return out
+
+    def _mod_ct(self, a, b, out):
+        _dispatch(type(a), a, b, out, impls=_mod['ct'])
+        return out
+
+    def _modneg_tt(self, a, p, out):
+        _dispatch(type(a), a, p, out, impls=_modneg['tt'])
+        return out
+
+    def _modneg_tc(self, a, p, out):
+        _dispatch(type(a), a, p, out, impls=_modneg['tc'])
+        return out
+
     def expand(self, a, repeat, axis):
         return _dispatch(type(a), a, axis, repeat, impls=_expand_impls)
 
@@ -195,7 +240,7 @@ class PythonToCppDispatcher(ABC):
 
     def get_slice(self, a, sliceList):
         return _dispatch(type(a), a, sliceList, impls=_get_slice_impls)
-		
+
     def contiguous(self, a):
         return _dispatch(type(a), a, impls=_contiguous_impls)
 

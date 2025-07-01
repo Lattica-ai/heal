@@ -25,7 +25,7 @@
  *   or exactly match `a` (negation/remainder tensor–tensor).
  * - Non-contiguous tensors are supported using internal stride-aware indexing.
  *
- * Broadcasting semantics follow PyTorch’s rules (only in multiplication and addition):
+ * Broadcasting semantics follow PyTorch’s rules (only in multiplication addition and negation):
  * - Dimensions are compared from the trailing dimensions backward.
  * - A dimension of size 1 can be expanded to match the other tensor’s size.
  * - Leading dimensions can be added implicitly.
@@ -42,7 +42,7 @@
  *   - **tc**: a is tensor, b is scalar
  *   - **ct**: a is scalar, b is tensor
  * - **modneg** (negation):
- *   - **tt**: a and p are tensors (same shape)
+ *   - **tt**: a and p are tensors 
  *   - **tc**: a is tensor, p is scalar
  */
 
