@@ -237,7 +237,7 @@ namespace lattica_hw_api {
         );
         return std::make_shared<DeviceTensor<T>>(std::move(view));
     }
-	
+
     // Explicit template instantiations
     #define INSTANTIATE_MEMORY_OPS(T) \
         template std::shared_ptr<DeviceTensor<T>> expand<T>(const std::shared_ptr<DeviceTensor<T>>&, int64_t, int64_t); \
