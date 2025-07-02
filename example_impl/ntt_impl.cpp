@@ -11,7 +11,7 @@ namespace lattica_hw_api {
 
 namespace {
 
-// Validate and extract dimensions from a [l, m, r, k] tensor
+// Validate and extract dimensions from a [l, m, r, k] or [l, r, k, m] tensor
 template <typename T>
 void validate_ntt_inputs(
     const std::shared_ptr<DeviceTensor<T>>& a,
@@ -19,15 +19,25 @@ void validate_ntt_inputs(
     const std::shared_ptr<DeviceTensor<T>>& perm,
     const std::shared_ptr<DeviceTensor<T>>& twiddles,
     const std::shared_ptr<DeviceTensor<T>>& result,
-    int64_t& l, int64_t& m, int64_t& r, int64_t& k
+    int64_t& l, int64_t& m, int64_t& r, int64_t& k,
+    int64_t axis
 ) {
     if (a->dims.size() != 4)
-        throw std::invalid_argument("Input tensor 'a' must have shape [l, m, r, k].");
+        throw std::invalid_argument("Input tensor 'a' must have shape [l, m, r, k] or [l, r, k, m].");
 
-    l = a->dims[0];
-    m = a->dims[1];
-    r = a->dims[2];
-    k = a->dims[3];
+    if (axis == -1) {
+        l = a->dims[0];
+        m = a->dims[3];
+        r = a->dims[1];
+        k = a->dims[2];
+    } else if (axis == -3) {
+        l = a->dims[0];
+        m = a->dims[1];
+        r = a->dims[2];
+        k = a->dims[3];
+    } else {
+        throw std::invalid_argument("Axis must be -1 or -3 for NTT.");
+    }
 
     if (result->dims != a->dims)
         throw std::invalid_argument("Output tensor must have the same shape as input tensor.");
@@ -46,21 +56,42 @@ template <typename T>
 void apply_permutation(
     const std::shared_ptr<DeviceTensor<T>>& perm,
     std::shared_ptr<DeviceTensor<T>>& result,
-    int64_t l, int64_t r, int64_t k, int64_t m
+    int64_t l, int64_t r, int64_t k, int64_t m,
+    int64_t axis
 ) {
-    for (int64_t i = 0; i < l; ++i) {
-        for (int64_t j = 0; j < r; ++j) {
-            for (int64_t t = 0; t < k; ++t) {
-                std::vector<T> temp(m);
-                for (int64_t u = 0; u < m; ++u) {
-                    int64_t pu = perm->at({u});
-                    temp[u] = result->at({i, pu, j, t});
-                }
-                for (int64_t u = 0; u < m; ++u) {
-                    result->at({i, u, j, t}) = temp[u];
+
+    if (axis == -1) {
+        for (int64_t i = 0; i < l; ++i) {
+            for (int64_t j = 0; j < r; ++j) {
+                for (int64_t t = 0; t < k; ++t) {
+                    std::vector<T> temp(m);
+                    for (int64_t u = 0; u < m; ++u) {
+                        int64_t pu = perm->at({u});
+                        temp[u] = result->at({i, j, t, pu});
+                    }
+                    for (int64_t u = 0; u < m; ++u) {
+                        result->at({i, j, t, u}) = temp[u];
+                    }
                 }
             }
         }
+    } else if (axis == -3) {
+        for (int64_t i = 0; i < l; ++i) {
+            for (int64_t j = 0; j < r; ++j) {
+                for (int64_t t = 0; t < k; ++t) {
+                    std::vector<T> temp(m);
+                    for (int64_t u = 0; u < m; ++u) {
+                        int64_t pu = perm->at({u});
+                        temp[u] = result->at({i, pu, j, t});
+                    }
+                    for (int64_t u = 0; u < m; ++u) {
+                        result->at({i, u, j, t}) = temp[u];
+                    }
+                }
+            }
+        }
+    } else {
+        throw std::invalid_argument("Axis must be -1 or -3 for permutation.");
     }
 }
 
@@ -74,45 +105,83 @@ void ntt(
     const std::shared_ptr<DeviceTensor<T>>& twiddles, // now [k, m]
     const std::shared_ptr<DeviceTensor<T>>& log2p_list,
     const std::shared_ptr<DeviceTensor<T>>& mu_list,
+    int64_t axis,
     std::shared_ptr<DeviceTensor<T>>& result
 ) {
     int64_t l, m, r, k;
-    validate_ntt_inputs<T>(a, p, perm, twiddles, result, l, m, r, k);
+    validate_ntt_inputs<T>(a, p, perm, twiddles, result, l, m, r, k, axis);
 
-    #pragma omp parallel for collapse(2)
-    for (int64_t i = 0; i < l; ++i) {
-        for (int64_t j = 0; j < r; ++j) {
-            for (int64_t t = 0; t < k; ++t) {
-                T mod = p->at({t});
+    if (axis == -1) {
+        #pragma omp parallel for collapse(2)
+        for (int64_t i = 0; i < l; ++i) {
+            for (int64_t j = 0; j < r; ++j) {
+                for (int64_t t = 0; t < k; ++t) {
+                    T mod = p->at({t});
 
-                for (int64_t u = 0; u < m; ++u) {
-                    result->at({i, u, j, t}) = a->at({i, u, j, t});
-                }
+                    for (int64_t u = 0; u < m; ++u) {
+                        result->at({i, j, t, u}) = a->at({i, j, t, u});
+                    }
 
-                int64_t n = m;
-                int64_t step = n;
-                for (int64_t stage = 1; stage < n; stage *= 2) {
-                    step /= 2;
-                    for (int64_t u = 0; u < stage; ++u) {
-                        int64_t j1 = 2 * u * step;
-                        int64_t j2 = j1 + step;
-                        T s = twiddles->at({t, stage + u});
+                    int64_t n = m;
+                    int64_t step = n;
+                    for (int64_t stage = 1; stage < n; stage *= 2) {
+                        step /= 2;
+                        for (int64_t u = 0; u < stage; ++u) {
+                            int64_t j1 = 2 * u * step;
+                            int64_t j2 = j1 + step;
+                            T s = twiddles->at({t, stage + u});
 
-                        for (int64_t jx = j1; jx < j2; ++jx) {
-                            T u_val = result->at({i, jx, j, t});
-                            T v_val = result->at({i, jx + step, j, t});
-                            T_DP<T> v_tw = static_cast<T_DP<T>>(v_val) * static_cast<T_DP<T>>(s);
-                            T v_mod = static_cast<T>(v_tw % static_cast<T_DP<T>>(mod));
-                            result->at({i, jx, j, t}) = (u_val + v_mod) % mod;
-                            result->at({i, jx + step, j, t}) = (u_val + mod - v_mod) % mod;
+                            for (int64_t jx = j1; jx < j2; ++jx) {
+                                T u_val = result->at({i, j, t, jx});
+                                T v_val = result->at({i, j, t, jx + step});
+                                T_DP<T> v_tw = static_cast<T_DP<T>>(v_val) * static_cast<T_DP<T>>(s);
+                                T v_mod = static_cast<T>(v_tw % static_cast<T_DP<T>>(mod));
+                                result->at({i, j, t, jx}) = (u_val + v_mod) % mod;
+                                result->at({i, j, t, jx + step}) = (u_val + mod - v_mod) % mod;
+                            }
                         }
                     }
                 }
             }
         }
+    } else if (axis == -3) {
+        #pragma omp parallel for collapse(2)
+        for (int64_t i = 0; i < l; ++i) {
+            for (int64_t j = 0; j < r; ++j) {
+                for (int64_t t = 0; t < k; ++t) {
+                    T mod = p->at({t});
+
+                    for (int64_t u = 0; u < m; ++u) {
+                        result->at({i, u, j, t}) = a->at({i, u, j, t});
+                    }
+
+                    int64_t n = m;
+                    int64_t step = n;
+                    for (int64_t stage = 1; stage < n; stage *= 2) {
+                        step /= 2;
+                        for (int64_t u = 0; u < stage; ++u) {
+                            int64_t j1 = 2 * u * step;
+                            int64_t j2 = j1 + step;
+                            T s = twiddles->at({t, stage + u});
+
+                            for (int64_t jx = j1; jx < j2; ++jx) {
+                                T u_val = result->at({i, jx, j, t});
+                                T v_val = result->at({i, jx + step, j, t});
+                                T_DP<T> v_tw = static_cast<T_DP<T>>(v_val) * static_cast<T_DP<T>>(s);
+                                T v_mod = static_cast<T>(v_tw % static_cast<T_DP<T>>(mod));
+                                result->at({i, jx, j, t}) = (u_val + v_mod) % mod;
+                                result->at({i, jx + step, j, t}) = (u_val + mod - v_mod) % mod;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    } else {
+        throw std::invalid_argument("Axis must be -1 or -3 for NTT.");
     }
 
-    apply_permutation<T>(perm, result, l, r, k, m);
+    apply_permutation<T>(perm, result, l, r, k, m, axis);
 }
 
 template <typename T>
@@ -127,7 +196,7 @@ void intt(
     std::shared_ptr<DeviceTensor<T>>& result
 ) {
     int64_t l, m, r, k;
-    validate_ntt_inputs<T>(a, p, perm, inv_twiddles, result, l, m, r, k);
+    validate_ntt_inputs<T>(a, p, perm, inv_twiddles, result, l, m, r, k, -3);
 
     for (int64_t i = 0; i < l; ++i) {
         for (int64_t j = 0; j < r; ++j) {
@@ -179,6 +248,7 @@ template void ntt<int32_t>(
     const std::shared_ptr<DeviceTensor<int32_t>>& /*twiddles*/,
     const std::shared_ptr<DeviceTensor<int32_t>>& /*log2p_list*/,
     const std::shared_ptr<DeviceTensor<int32_t>>& /*mu_list*/,
+    int64_t /*axis*/,
     std::shared_ptr<DeviceTensor<int32_t>>& /*result*/);
 
 template void ntt<int64_t>(
@@ -188,6 +258,7 @@ template void ntt<int64_t>(
     const std::shared_ptr<DeviceTensor<int64_t>>& /*twiddles*/,
     const std::shared_ptr<DeviceTensor<int64_t>>& /*log2p_list*/,
     const std::shared_ptr<DeviceTensor<int64_t>>& /*mu_list*/,
+    int64_t /*axis*/,
     std::shared_ptr<DeviceTensor<int64_t>>& /*result*/);
 
 template void intt<int32_t>(

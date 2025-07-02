@@ -10,7 +10,7 @@
  * multiplication and other applications.
  *
  * Expected Input Sizes:
- * - Input tensor `a` must have shape `[l, m, r, k]`, where:
+ * - Input tensor `a` must have shape `[l, m, r, k]` or `[l, r, k, m]`, where:
  *     - `l` is the left batch dimension.
  *     - `m` is the transform length (must be a power of 2).
  *     - `r` is the right batch dimension.
@@ -19,7 +19,8 @@
  * - Permutation tensor `perm` must have shape `[m]`.
  * - Twiddle factors `twiddles` must have shape `[k, m]`.
  * - Modular inverses of `m`, `m_inv`, must have shape `[k]`.
- * - Output tensor `result` must have shape `[l, m, r, k]`.
+ * - Axis of `m` the transform length, `axis` can be -3 (for `[l, m, r, k]`) or -1 (for `[l, r, k, m]`).
+ * - Output tensor `result` must have shape `[l, m, r, k]` or `[l, r, k, m]`.
  *
  * Optional Barrett Reduction Parameters:
  * - `log2p_list` (shape `[k]`) – precomputed ⌊log₂(pᵢ)⌋ for each modulus pᵢ.
@@ -30,13 +31,14 @@ namespace lattica_hw_api {
 
     template <typename T>
     void ntt(
-        const std::shared_ptr<DeviceTensor<T>>& a,          // [l, m, r, k]
+        const std::shared_ptr<DeviceTensor<T>>& a,          // [l, m, r, k] or [l, r, k, m]
         const std::shared_ptr<DeviceTensor<T>>& p,          // [k]
         const std::shared_ptr<DeviceTensor<T>>& perm,       // [m]
         const std::shared_ptr<DeviceTensor<T>>& twiddles,   // [k, m]
         const std::shared_ptr<DeviceTensor<T>>& log2p_list, // [k]
         const std::shared_ptr<DeviceTensor<T>>& mu_list,    // [k]
-        std::shared_ptr<DeviceTensor<T>>& result            // [l, m, r, k] (output)
+        int64_t axis,                                       // Axis of m
+        std::shared_ptr<DeviceTensor<T>>& result            // [l, m, r, k] or [l, r, k, m] (output)
     );
 
     template <typename T>
