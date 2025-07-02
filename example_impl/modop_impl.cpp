@@ -82,11 +82,14 @@ void elementwise_modop(
 
 // ---- Wrapper Functions ----
 #define CHECK_P_VALID(tensor, result, label) \
-    if (!(tensor->dims == result->dims || \
-        (tensor->dims.size() == 1 && tensor->dims[0] == 1) || \
-        (tensor->dims.size() == 1 && tensor->dims[0] == result->dims.back()))) { \
-            throw std::invalid_argument("Shape of " label " is not broadcastable to the shape of result."); \
+    if (((tensor->dims.size() != 1) || !((tensor->dims[0] == 1) || (tensor->dims[0] == result->dims.back()) || (result->dims.back() == 1)))) { \
+            throw std::invalid_argument("Shape of " label " is not valid."); \
         }
+
+#define CHECK_SAME_DIMS(tensor, result, label) \
+    if ((tensor)->dims != (result)->dims) \
+        throw std::invalid_argument(std::string(label) + \
+            " must have exactly the same shape as result."); \
 
 #define CHECK_DIMS_BROADCASTABLE(tensor, result, label) \
     { \
@@ -181,12 +184,6 @@ void OPNAME##_tcc( \
         }); \
 }
 
-
-#define CHECK_SAME_DIMS(tensor, result, label) \
-    if ((tensor)->dims != (result)->dims) \
-        throw std::invalid_argument(std::string(label) + \
-            " must have exactly the same shape as result."); \
-
 #define DEFINE_SIMPLE_MOD_WRAPPER(OPNAME) \
 template <typename T> \
 void OPNAME##_tt( \
@@ -243,7 +240,7 @@ void OPNAME##_tt( \
     const std::shared_ptr<DeviceTensor<T>>& p, \
     std::shared_ptr<DeviceTensor<T>>& result)  \
 { \
-    CHECK_SAME_DIMS(a, result, "a"); \
+    CHECK_DIMS_BROADCASTABLE(a, result, "a"); \
     CHECK_P_VALID(p, result, "p"); \
     elementwise_modred<T>( \
         [a](auto& coord) { return a->at_with_broadcast(coord); }, \

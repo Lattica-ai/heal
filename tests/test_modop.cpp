@@ -498,9 +498,9 @@ TEST(ModCTTests, ShapeMismatchThrows) {
 // Basic functionality
 // ──────────────────────────────────────────────────────────────────────────────
 
-TEST(ModNegTTTests, BasicTensorTensor) {
-    auto a = torch::tensor({{8, 3, 5}, {4, 10, 7}}, torch::kInt64);
-    auto p = torch::tensor({{3, 5, 7}, {4, 6, 8}},  torch::kInt64);
+TEST(ModNegTTTests, BasicTensorTensor1DBroadcast) {
+    auto a = torch::tensor({{8, 3, 5}, {4, 10, 7}}, torch::kInt64);    // shape [2, 3]
+    auto p = torch::tensor({3, 5, 7}, torch::kInt64);                  // shape [3]
     std::vector<int64_t> shape = {2, 3};
 
     auto a_hw      = host_to_device<int64_t>(a);
@@ -509,15 +509,16 @@ TEST(ModNegTTTests, BasicTensorTensor) {
 
     modneg_tt<int64_t>(a_hw, p_hw, result_hw);
     auto result = device_to_host<int64_t>(result_hw);
-    auto expected = torch::remainder(-a, p);
+    auto expected = torch::remainder(-a, p);  // PyTorch will broadcast p as needed
 
     ASSERT_TRUE(torch::equal(result, expected))
-        << "modneg_tt basic tensor-tensor failed.";
+        << "modneg_tt failed to broadcast 1D p across 2D a.\n"
+        << " got:\n" << result << "\nexpected:\n" << expected;
 }
 
 TEST(ModNegTTTests, ZeroTensorNumerator) {
     auto a = torch::zeros({2, 2}, torch::kInt64);
-    auto p = torch::tensor({{1, 2}, {3, 4}}, torch::kInt64);
+    auto p = torch::tensor({3}, torch::kInt64);
     std::vector<int64_t> shape = {2, 2};
 
     auto a_hw      = host_to_device<int64_t>(a);
@@ -562,6 +563,34 @@ TEST(ModNegTTTests, BroadcastPToLastDim) {
         << " got:\n" << result << "\nexpected:\n" << expected;
 }
 
+TEST(ModNegTTTests, BroadcastLastDimSingleton) {
+    // a: shape [2,2,1]
+    auto a = torch::tensor({
+        { {  5 }, { -4 } },
+        { {  0 }, { 12 } }
+    }, torch::kInt64);
+
+    // p: shape [3] — will broadcast along last dim of a
+    auto p = torch::tensor({3, 5, 7}, torch::kInt64);
+
+    std::vector<int64_t> shape = {2, 2, 3}; // expected result shape
+
+    auto a_hw      = host_to_device<int64_t>(a);
+    auto p_hw      = host_to_device<int64_t>(p);
+    auto result_hw = empty<int64_t>(shape);
+
+    // call the broadcast‐aware modneg
+    modneg_tt<int64_t>(a_hw, p_hw, result_hw);
+
+    // bring back to host and compute expected with PyTorch’s broadcasting
+    auto result   = device_to_host<int64_t>(result_hw);
+    auto expected = torch::remainder(-a.broadcast_to(shape), p);
+
+    ASSERT_TRUE(torch::equal(result, expected))
+        << "modneg_tt failed to broadcast singleton last dimension.\n"
+        << " got:\n" << result << "\nexpected:\n" << expected;
+}
+
 // ──────────────────────────────────────────────────────────────────────────────
 // int32 and non-contiguous
 // ──────────────────────────────────────────────────────────────────────────────
@@ -569,7 +598,7 @@ TEST(ModNegTTTests, BroadcastPToLastDim) {
 TEST(ModNegTTTests, Int32Tensor) {
     // int32 support and multi-dimensional
     auto a = torch::randint(1, 20, {2,3,2,2}, torch::kInt32);
-    auto p = torch::randint(1, 20, {2,3,2,2}, torch::kInt32);
+    auto p = torch::randint(1, 20, {2}, torch::kInt32);
     std::vector<int64_t> shape = {2,3,2,2};
 
     auto a_hw      = host_to_device<int32_t>(a);
@@ -588,7 +617,7 @@ TEST(ModNegTTTests, NonContiguousTensorTensor) {
     // a is non-contiguous, p is full
     auto base = torch::arange(1, 19, torch::kInt64).reshape({2,3,3});
     auto a    = base.transpose(0,2);                      // [3,3,2]
-    auto p    = torch::full(a.sizes(), 4, torch::kInt64);
+    auto p    = torch::tensor({4, 5}, torch::kInt64); // shape: [2]
     std::vector<int64_t> shape(a.sizes().begin(), a.sizes().end());
 
     auto a_hw      = host_to_device<int64_t>(a);
