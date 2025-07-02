@@ -3,8 +3,6 @@
 #include "axis_modsum.h"
 
 #include <stdexcept>
-#include <algorithm>
-#include <iostream>
 #include <omp.h>
 
 namespace lattica_hw_api {
@@ -24,8 +22,13 @@ void axis_modsum(
     const int64_t ndim = in_shape.size();
     const int64_t k_dim = p->dims[0];
 
+    // ── Normalize negative axis
+    if (axis < 0) {
+        axis += ndim;
+    }
+
     if (axis < 0 || axis >= ndim - 1) {
-        throw std::invalid_argument("axis must be in range [0, ndim - 2] (can't reduce across last axis)");
+        throw std::invalid_argument("axis index out of range. (can't reduce across last axis)");
     }
 
     if (in_shape.back() != k_dim) {
