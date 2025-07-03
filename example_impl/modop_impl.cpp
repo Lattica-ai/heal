@@ -81,10 +81,15 @@ void elementwise_modop(
 
 
 // ---- Wrapper Functions ----
-#define CHECK_DIMS_MATCH_LAST(tensor, result, label) \
-    if (tensor->dims.size() != 1 && tensor->dims.back() != result->dims.back()) { \
-        throw std::invalid_argument("Last dimension of " label " must match last dimension of result."); \
-    }
+#define CHECK_P_VALID(tensor, result, label) \
+    if (((tensor->dims.size() != 1) || !((tensor->dims[0] == 1) || (tensor->dims[0] == result->dims.back()) || (result->dims.back() == 1)))) { \
+            throw std::invalid_argument("Shape of " label " is not valid."); \
+        }
+
+#define CHECK_SAME_DIMS(tensor, result, label) \
+    if ((tensor)->dims != (result)->dims) \
+        throw std::invalid_argument(std::string(label) + \
+            " must have exactly the same shape as result."); \
 
 #define CHECK_DIMS_BROADCASTABLE(tensor, result, label) \
     { \
@@ -114,7 +119,7 @@ void OPNAME##_ttt( \
     std::shared_ptr<DeviceTensor<T>>& result) { \
     CHECK_DIMS_BROADCASTABLE(a, result, "a"); \
     CHECK_DIMS_BROADCASTABLE(b, result, "b"); \
-    CHECK_DIMS_MATCH_LAST(p, result, "p"); \
+    CHECK_P_VALID(p, result, "p"); \
     elementwise_modop<T>( \
         [a](const std::vector<int64_t>& coord) { return a->at_with_broadcast(coord); }, \
         [b](const std::vector<int64_t>& coord) { return b->at_with_broadcast(coord); }, \
@@ -150,7 +155,7 @@ void OPNAME##_tct( \
     const std::shared_ptr<DeviceTensor<T>>& p, \
     std::shared_ptr<DeviceTensor<T>>& result) { \
     CHECK_DIMS_BROADCASTABLE(a, result, "a"); \
-    CHECK_DIMS_MATCH_LAST(p, result, "p"); \
+    CHECK_P_VALID(p, result, "p"); \
     elementwise_modop<T>( \
         [a](const std::vector<int64_t>& coord) { return a->at_with_broadcast(coord); }, \
         [&](const std::vector<int64_t>&) { return b_scalar; }, \
@@ -179,12 +184,6 @@ void OPNAME##_tcc( \
         }); \
 }
 
-
-#define CHECK_SAME_DIMS(tensor, result, label) \
-    if ((tensor)->dims != (result)->dims) \
-        throw std::invalid_argument(std::string(label) + \
-            " must have exactly the same shape as result."); \
-
 #define DEFINE_SIMPLE_MOD_WRAPPER(OPNAME) \
 template <typename T> \
 void OPNAME##_tt( \
@@ -206,7 +205,7 @@ void OPNAME##_tt( \
 template <typename T> \
 void OPNAME##_tc( \
     const std::shared_ptr<DeviceTensor<T>>& a, \
-    int64_t b_scalar, \
+    T b_scalar, \
     std::shared_ptr<DeviceTensor<T>>& result) \
 { \
     CHECK_NOT_NULL(a, "a"); \
@@ -220,7 +219,7 @@ void OPNAME##_tc( \
 } \
 template <typename T> \
 void OPNAME##_ct( \
-    int64_t a_scalar, \
+    T a_scalar, \
     const std::shared_ptr<DeviceTensor<T>>& b, \
     std::shared_ptr<DeviceTensor<T>>& result) \
 { \
@@ -234,10 +233,47 @@ void OPNAME##_ct( \
     ); \
 }
 
+#define DEFINE_MODULAR_NEGATION_WRAPPER(OPNAME) \
+template <typename T> \
+void OPNAME##_tt( \
+    const std::shared_ptr<DeviceTensor<T>>& a, \
+    const std::shared_ptr<DeviceTensor<T>>& p, \
+    std::shared_ptr<DeviceTensor<T>>& result)  \
+{ \
+    CHECK_DIMS_BROADCASTABLE(a, result, "a"); \
+    CHECK_P_VALID(p, result, "p"); \
+    elementwise_modred<T>( \
+        [a](auto& coord) { return a->at_with_broadcast(coord); }, \
+        [p](auto& coord) { return p->at_with_broadcast(coord); }, \
+        result, \
+        [](T a_val, T p_val) { \
+            return static_cast<T>((-(a_val % p_val) + p_val) % p_val); \
+        } \
+    ); \
+} \
+template <typename T> \
+void OPNAME##_tc( \
+    const std::shared_ptr<DeviceTensor<T>>& a, \
+    T p_scalar, \
+    std::shared_ptr<DeviceTensor<T>>& result) \
+{ \
+    CHECK_SAME_DIMS(a, result, "a"); \
+    elementwise_modred<T>( \
+        [a](auto& coord) { return a->at(coord); }, \
+        [&](auto&) { return p_scalar; }, \
+        result, \
+        [](T a_val, T p_val) { \
+            return static_cast<T>((-(a_val % p_val) + p_val) % p_val); \
+        } \
+    ); \
+} \
+
+
 
 DEFINE_MODULAR_ARITHMETIC_WRAPPER(modsum, static_cast<T_DP<T>>(a) + static_cast<T_DP<T>>(b))
 DEFINE_MODULAR_ARITHMETIC_WRAPPER(modmul, static_cast<T_DP<T>>(a) * static_cast<T_DP<T>>(b))
 DEFINE_SIMPLE_MOD_WRAPPER(mod)
+DEFINE_MODULAR_NEGATION_WRAPPER(modneg)
 
 // Explicit instantiations
 #define INSTANTIATE_ALL(T) \
@@ -250,8 +286,10 @@ template void modmul_ttc<T>(const std::shared_ptr<DeviceTensor<T>>&, const std::
 template void modmul_tct<T>(const std::shared_ptr<DeviceTensor<T>>&, T, const std::shared_ptr<DeviceTensor<T>>&, std::shared_ptr<DeviceTensor<T>>&); \
 template void modmul_tcc<T>(const std::shared_ptr<DeviceTensor<T>>&, T, T, std::shared_ptr<DeviceTensor<T>>&); \
 template void mod_tt<T>(const std::shared_ptr<DeviceTensor<T>>&, const std::shared_ptr<DeviceTensor<T>>&, std::shared_ptr<DeviceTensor<T>>&); \
-template void mod_tc<T>(const std::shared_ptr<DeviceTensor<T>>&, int64_t, std::shared_ptr<DeviceTensor<T>>&); \
-template void mod_ct<T>(int64_t, const std::shared_ptr<DeviceTensor<T>>&, std::shared_ptr<DeviceTensor<T>>&); \
+template void mod_tc<T>(const std::shared_ptr<DeviceTensor<T>>&, T, std::shared_ptr<DeviceTensor<T>>&); \
+template void mod_ct<T>(T, const std::shared_ptr<DeviceTensor<T>>&, std::shared_ptr<DeviceTensor<T>>&); \
+template void modneg_tt<T>(const std::shared_ptr<DeviceTensor<T>>&, const std::shared_ptr<DeviceTensor<T>>&, std::shared_ptr<DeviceTensor<T>>&); \
+template void modneg_tc<T>(const std::shared_ptr<DeviceTensor<T>>&, T, std::shared_ptr<DeviceTensor<T>>&); \
 
 INSTANTIATE_ALL(int32_t)
 INSTANTIATE_ALL(int64_t)
