@@ -51,6 +51,11 @@ _get_slice_impls = {
     DeviceTensor64: lhw.get_slice_64,
 }
 
+_set_const_val_impls = {
+    DeviceTensor32: lhw.set_const_val_32,
+    DeviceTensor64: lhw.set_const_val_64,
+}
+
 _contiguous_impls = {
     DeviceTensor32: lhw.contiguous_32,
     DeviceTensor64: lhw.contiguous_64,
@@ -133,6 +138,11 @@ _apply_g_decomp = {
 _ntt = {
     DeviceTensor32: lhw.ntt_32,
     DeviceTensor64: lhw.ntt_64,
+}
+
+_intt = {
+    DeviceTensor32: lhw.intt_32,
+    DeviceTensor64: lhw.intt_64,
 }
 
 _moveaxis = {
@@ -241,13 +251,22 @@ class PythonToCppDispatcher(ABC):
     def get_slice(self, a, sliceList):
         return _dispatch(type(a), a, sliceList, impls=_get_slice_impls)
 
+    def set_const_val(self, a, value):
+        return _dispatch(type(a), a, value, impls=_set_const_val_impls)
+
     def contiguous(self, a):
         return _dispatch(type(a), a, impls=_contiguous_impls)
 
-    def ntt(self, a, axis, perm, perm_pairs, q_list, log2p, mu_list, psi_arr, out, tile, skip_perm):
+    def ntt(self, a, axis, perm, perm_pairs, q_list, log2q, mu_list, psi_arr, out, tile, skip_perm):
         if skip_perm:
             raise NotImplementedError(f"skip_perm is not supported. {skip_perm=}")
         if tile:
             a = self.expand(a, 2, -1)
-        _dispatch(type(a), a, q_list, perm, psi_arr, log2p, mu_list, axis, out, impls=_ntt)
+        _dispatch(type(a), a, q_list, perm, psi_arr, log2q, mu_list, axis, out, impls=_ntt)
+        return out
+
+    def intt(self, a, perm, perm_pairs, q_list, log2q, mu_list, psi_arr, n_inv_list, out, tile):
+        if tile:
+            a = self.expand(a, 2, -1)
+        _dispatch(type(a), a, q_list, perm, psi_arr, n_inv_list, log2q, mu_list, out, impls=_intt)
         return out
