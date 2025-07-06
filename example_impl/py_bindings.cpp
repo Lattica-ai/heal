@@ -191,9 +191,9 @@ PYBIND11_MODULE(lattica_hw, m) {
     m.def("intt_32", &intt<int32_t>, "INTT (int32)");
     m.def("intt_64", &intt<int64_t>, "INTT (int64)");
 
-    // permute
-    m.def("permute_32", &permute<int32_t>, "Permute (int32)");
-    m.def("permute_64", &permute<int64_t>, "Permute (int64)");
+    // take_along_axis
+    m.def("take_along_axis_32", &take_along_axis<int32_t>, "take_along_axis (int32)");
+    m.def("take_along_axis_64", &take_along_axis<int64_t>, "take_along_axis (int64)");
 
     // set_const_val
     m.def("set_const_val_32", &set_const_val<int32_t>, py::arg("tensor"), py::arg("value"),

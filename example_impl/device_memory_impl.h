@@ -24,7 +24,6 @@ public:
     void print_metadata() const;
     bool is_contiguous() const;
 
-
     // Element access
     T& at(const std::vector<int64_t>& indices);
     const T& at(const std::vector<int64_t>& indices) const;

@@ -5,7 +5,7 @@ set(SOURCES
     axis_modsum_impl.cpp
     g_decomposition_impl.cpp
     ntt_impl.cpp
-    permute_impl.cpp
+    take_along_axis_impl.cpp
     memory_virtual_ops_impl.cpp
     contiguous_impl.cpp
     set_const_val_impl.cpp
