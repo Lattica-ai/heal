@@ -26,17 +26,6 @@ void take_along_axis(
         throw std::invalid_argument("Indices tensor rank must match input rank");
     }
 
-    // Validate indices shape against input shape
-    for (size_t i = 0; i < rank; ++i) {
-        if (i != static_cast<size_t>(axis) && indices->dims[i] != a->dims[i]) {
-            throw std::invalid_argument(
-                "take_along_axis: indices shape must match input shape on all dims except axis. "
-                "Got input shape = " + std::to_string(a->dims[i]) +
-                ", indices shape = " + std::to_string(indices->dims[i]) +
-                " at axis " + std::to_string(i));
-        }
-    }
-
     // Compute number of output elements from indices shape
     int64_t total = 1;
     for (size_t i = 0; i < rank; ++i) {

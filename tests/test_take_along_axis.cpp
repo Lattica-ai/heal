@@ -230,19 +230,3 @@ TEST(TakeAlongAxisTests, Throws_OnNegIndexOutOfBounds) {
       std::out_of_range
     );
 }
-
-// Broadcastable (but unsupported) → mismatch on non‑axis should throw
-TEST(TakeAlongAxisTests, Throws_OnBroadcastableIdx) {
-  auto t = torch::arange(2 * 3 * 4, torch::kInt64).reshape({2, 3, 4});
-  // idx is {2, 1, 4}; non‑axis dim 1 is 1 vs input’s 3
-  auto idx = torch::randint(0, 4, {2, 1, 4}, torch::kInt64);
-
-  auto hw_t = host_to_device<int64_t>(t);
-  auto hw_idx = host_to_device<int64_t>(idx);
-  auto hw_out = empty<int64_t>({ idx.size(0), idx.size(1), idx.size(2) });
-
-  EXPECT_THROW(
-      take_along_axis<int64_t>(hw_t, hw_idx, 2, hw_out),
-      std::invalid_argument
-  );
-}

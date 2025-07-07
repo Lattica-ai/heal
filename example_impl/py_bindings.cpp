@@ -192,8 +192,10 @@ PYBIND11_MODULE(lattica_hw, m) {
     m.def("intt_64", &intt<int64_t>, "INTT (int64)");
 
     // take_along_axis
-    m.def("take_along_axis_32", &take_along_axis<int32_t>, "take_along_axis (int32)");
-    m.def("take_along_axis_64", &take_along_axis<int64_t>, "take_along_axis (int64)");
+    m.def("take_along_axis_32", &take_along_axis<int32_t>, py::arg("tensor"), py::arg("indices"), py::arg("axis"), py::arg("result"),
+          "take_along_axis (int32)");
+    m.def("take_along_axis_64", &take_along_axis<int64_t>, py::arg("tensor"), py::arg("indices"), py::arg("axis"), py::arg("result"),
+          "take_along_axis (int64)");
 
     // set_const_val
     m.def("set_const_val_32", &set_const_val<int32_t>, py::arg("tensor"), py::arg("value"),
