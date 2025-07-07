@@ -238,13 +238,69 @@ namespace lattica_hw_api {
         return std::make_shared<DeviceTensor<T>>(std::move(view));
     }
 
+    template <typename T>
+    std::shared_ptr<DeviceTensor<T>> flatten(
+        const std::shared_ptr<DeviceTensor<T>>& a,
+        int64_t start_axis,
+        int64_t end_axis
+    ) {
+        if (!a->is_contiguous()) {
+            throw std::runtime_error("flatten: input tensor must be contiguous");
+        }
+
+        auto& dims = a->dims;
+        auto& strides = a->strides;
+        int64_t ndim = static_cast<int64_t>(dims.size());
+
+        // Wrap negatives
+        if (start_axis < 0) start_axis += ndim;
+        if (end_axis < 0) end_axis += ndim;
+
+        // Validate
+        if (start_axis < 0 || start_axis >= ndim || end_axis < start_axis || end_axis >= ndim) {
+            throw std::invalid_argument("flatten: invalid start_axis/end_axis");
+        }
+
+        // Compute size of the flattened dimension and its stride
+        int64_t flat_size = 1;
+        int64_t flat_stride = strides[end_axis];
+        for (int64_t i = start_axis; i <= end_axis; ++i) {
+            flat_size *= dims[i]; // The stride of the flattened dim is the stride of the first dim in the range
+        }
+
+        // Build new dims/strides
+        std::vector<int64_t> new_dims;
+        std::vector<int64_t> new_strides;
+        new_dims.reserve(ndim - (end_axis - start_axis));
+        new_strides.reserve(ndim - (end_axis - start_axis));
+
+        // Copy dims/strides before start_axis
+        new_dims.insert(new_dims.end(), dims.begin(), dims.begin() + start_axis);
+        new_strides.insert(new_strides.end(), strides.begin(), strides.begin() + start_axis);
+
+        // Insert flattened dim
+        new_dims.push_back(flat_size);
+        new_strides.push_back(flat_stride);
+
+        // Copy dims/strides after end_axis
+        new_dims.insert(new_dims.end(), dims.begin() + end_axis + 1, dims.end());
+        new_strides.insert(new_strides.end(), strides.begin() + end_axis + 1, strides.end());
+
+        // Assign back into tensor metadata
+        dims = std::move(new_dims);
+        strides = std::move(new_strides);
+
+        return a;
+    }
+
     // Explicit template instantiations
     #define INSTANTIATE_MEMORY_OPS(T) \
         template std::shared_ptr<DeviceTensor<T>> expand<T>(const std::shared_ptr<DeviceTensor<T>>&, int64_t, int64_t); \
         template std::shared_ptr<DeviceTensor<T>> squeeze<T>(const std::shared_ptr<DeviceTensor<T>>&, int64_t); \
         template std::shared_ptr<DeviceTensor<T>> unsqueeze<T>(const std::shared_ptr<DeviceTensor<T>>&, int64_t); \
         template std::shared_ptr<DeviceTensor<T>> moveaxis<T>(const std::shared_ptr<DeviceTensor<T>>&, int64_t, int64_t); \
-		template std::shared_ptr<DeviceTensor<T>> get_slice<T>(const std::shared_ptr<DeviceTensor<T>>&, const std::vector<SliceArg>&);
+		template std::shared_ptr<DeviceTensor<T>> get_slice<T>(const std::shared_ptr<DeviceTensor<T>>&, const std::vector<SliceArg>&); \
+        template std::shared_ptr<DeviceTensor<T>> flatten<T>(const std::shared_ptr<DeviceTensor<T>>&, int64_t, int64_t);
 
     INSTANTIATE_MEMORY_OPS(int32_t)
     INSTANTIATE_MEMORY_OPS(int64_t)
