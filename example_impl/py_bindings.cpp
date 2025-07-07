@@ -194,4 +194,10 @@ PYBIND11_MODULE(lattica_hw, m) {
     // permute
     m.def("permute_32", &permute<int32_t>, "Permute (int32)");
     m.def("permute_64", &permute<int64_t>, "Permute (int64)");
+
+    // set_const_val
+    m.def("set_const_val_32", &set_const_val<int32_t>, py::arg("tensor"), py::arg("value"),
+          "Set all elements of a tensor to a constant value (int32)");
+    m.def("set_const_val_64", &set_const_val<int64_t>, py::arg("tensor"), py::arg("value"),
+          "Set all elements of a tensor to a constant value (int64)");
 }
