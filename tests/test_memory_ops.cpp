@@ -418,7 +418,7 @@ TEST(GetSliceTests, InvalidStepThrows) {
 // Basic test: flatten a 2D tensor into 1D
 // ──────────────────────────────────────────────────────────────────────────────
 
-TEST(FlattenTests, FlattenMiddleDims2D) {
+TEST(FlattenTests, FlattenAllDims2D) {
     // a = [[ 0,  1,  2],
     //      [ 3,  4,  5]]
     auto a = torch::arange(0, 6, torch::kInt64).reshape({2,3});
@@ -439,7 +439,7 @@ TEST(FlattenTests, FlattenMiddleDims2D) {
 // Basic test: flatten a 2D tensor into 1D int32_t
 // ────────────────────────────────────────────────────────────────────────────────
 
-TEST(FlattenTests, ProducesContiguousOutput) {
+TEST(FlattenTests, FlattenAllDims2DInt32) {
     auto a = torch::arange(0, 6, torch::kInt32).reshape({2,3});
     auto a_hw = host_to_device<int32_t>(a);
 
