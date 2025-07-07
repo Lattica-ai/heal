@@ -13,7 +13,7 @@
 // ============ Special-purpose ops ============== //
 #include "g_decomposition.h" // Gadget decomposition
 #include "ntt.h"             // NTT and INTT
-#include "permute.h"         // Permutations
+#include "take_along_axis.h" // Permutations
 #include "set_const_val.h"   // Set constant value
 
 #endif // LATTICA_HARDWARE_API_H

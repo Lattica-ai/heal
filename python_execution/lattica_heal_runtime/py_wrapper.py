@@ -145,6 +145,11 @@ _intt = {
     DeviceTensor64: lhw.intt_64,
 }
 
+_take_along_axis = {
+    DeviceTensor32: lhw.take_along_axis_32,
+    DeviceTensor64: lhw.take_along_axis_64,
+}
+
 _moveaxis = {
     DeviceTensor32: lhw.moveaxis_32,
     DeviceTensor64: lhw.moveaxis_64,
@@ -256,6 +261,10 @@ class PythonToCppDispatcher(ABC):
 
     def contiguous(self, a):
         return _dispatch(type(a), a, impls=_contiguous_impls)
+
+    def take_along_axis(self, a, b, axis, out):
+        _dispatch(type(a), a, b, axis, out, impls=_take_along_axis)
+        return out
 
     def ntt(self, a, axis, perm, perm_pairs, q_list, log2q, mu_list, psi_arr, out, tile, skip_perm):
         if skip_perm:

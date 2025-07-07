@@ -19,7 +19,7 @@ include_directories(${GTEST_INCLUDE_DIRS} ${PROJECT_SOURCE_DIR}/include)
 # Define the list of test sources and their corresponding test names
 set(TEST_SOURCES
     test_ntt.cpp
-    test_permute.cpp
+    test_take_along_axis.cpp
     test_modop.cpp
     test_axis_modsum.cpp
     test_g_decomposition.cpp
@@ -33,7 +33,7 @@ set(TEST_SOURCES
 
 set(TEST_NAMES
     NTTTests
-    PermuteTests
+    TakeAlongAxisTests
     ModOpTests
     AxisModSumTests
     GDecompositionTests
