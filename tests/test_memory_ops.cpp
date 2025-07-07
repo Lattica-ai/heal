@@ -549,6 +549,19 @@ TEST(FlattenTests, FlattenIncludingOnes) {
 // Error cases
 // ──────────────────────────────────────────────────────────────────────────────
 
+TEST(FlattenTests, ThrowsOnNonContiguousInput) {
+    // Create a tensor and make it non-contiguous (transpose)
+    auto a = torch::arange(0, 12, torch::kInt64).reshape({3, 4}).transpose(0, 1);
+    ASSERT_FALSE(a.is_contiguous());  // PyTorch: sanity check
+
+    auto a_hw = host_to_device<int64_t>(a);
+
+    // flatten should throw
+    EXPECT_THROW({
+        flatten<int64_t>(a_hw, 0, 1);
+    }, std::runtime_error);
+}
+
 TEST(FlattenTests, InvalidStartEndThrows) {
     auto a = torch::randint(0, 10, {3,4,5}, torch::kInt64);
     auto a_hw = host_to_device<int64_t>(a);
