@@ -32,6 +32,25 @@ TEST(TakeAlongAxisTests, Basic1D) {
     ASSERT_TRUE(torch::equal(out, expected));
 }
 
+TEST(TakeAlongAxisTests, Basic1D_Int32) {
+  auto t = torch::tensor({5, 10, 15, 20}, torch::kInt32);
+  auto idx = torch::tensor({2, 0, 3, 1}, torch::kInt64);
+  // torch::take_along_dim expects indices to be int64, so cast idx if needed
+  auto idx64 = idx.to(torch::kInt64);
+  auto expected = torch::take_along_dim(t, idx64, 0);
+
+  auto hw_t = host_to_device<int32_t>(t);
+  auto hw_idx = host_to_device<int64_t>(idx);
+  // allocate output of shape {idx.size(0)}
+  auto hw_out = empty<int32_t>({ idx.size(0) });
+
+  take_along_axis<int32_t>(hw_t, hw_idx, 0, hw_out);
+  auto out = device_to_host<int32_t>(hw_out);
+
+  // Upcast out to int64 for comparison with expected
+  ASSERT_TRUE(torch::equal(out.to(torch::kInt64), expected));
+}
+
 // 2D along axis 0
 TEST(TakeAlongAxisTests, TwoDim_Axis0) {
     auto t = torch::arange(12, torch::kInt64).reshape({3,4});
