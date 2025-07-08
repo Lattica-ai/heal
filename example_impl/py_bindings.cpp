@@ -193,6 +193,10 @@ PYBIND11_MODULE(lattica_hw, m) {
           &moveaxis<int8_t>,
           py::arg("tensor"), py::arg("axis_src"), py::arg("axis_dst"),
           "Moves an axis from axis_src to axis_dst.");
+    m.def(("expand_" + std::string("8")).c_str(),
+          &expand<int8_t>,
+          py::arg("tensor"), py::arg("axis"), py::arg("repeats"),
+          "Virtually expands the tensor along the given axis by repeating elements using stride tricks.");
 
     // contiguous ops
     bind_contiguous<int8_t>(m, "8");
@@ -200,8 +204,9 @@ PYBIND11_MODULE(lattica_hw, m) {
     bind_contiguous<int64_t>(m, "64");
 
     // ntt
-    m.def("ntt_32", &ntt<int32_t>, "NTT (int32)");
-    m.def("ntt_64", &ntt<int64_t>, "NTT (int64)");
+    m.def("ntt_8", &ntt<int8_t, int64_t>, "NTT (int8)");
+    m.def("ntt_32", &ntt<int32_t, int32_t>, "NTT (int32)");
+    m.def("ntt_64", &ntt<int64_t, int64_t>, "NTT (int64)");
 
     // intt
     m.def("intt_32", &intt<int32_t>, "INTT (int32)");

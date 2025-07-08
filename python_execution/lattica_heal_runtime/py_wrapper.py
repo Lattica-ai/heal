@@ -35,6 +35,7 @@ _empty = {
 }
 
 _expand_impls = {
+    DeviceTensor8: lhw.expand_8,
     DeviceTensor32: lhw.expand_32,
     DeviceTensor64: lhw.expand_64,
 }
@@ -151,6 +152,7 @@ _apply_g_decomp = {
 }
 
 _ntt = {
+    DeviceTensor8: lhw.ntt_8,
     DeviceTensor32: lhw.ntt_32,
     DeviceTensor64: lhw.ntt_64,
 }
@@ -290,11 +292,13 @@ class PythonToCppDispatcher(ABC):
         return out
 
     def ntt(self, a, axis, perm, perm_pairs, q_list, log2q, mu_list, psi_arr, out, tile, skip_perm):
-        if skip_perm:
-            raise NotImplementedError(f"skip_perm is not supported. {skip_perm=}")
         if tile:
-            a = self.expand(a, 2, -1)
-        _dispatch(type(a), a, q_list, perm, psi_arr, log2q, mu_list, axis, out, impls=_ntt)
+            if axis == -1:
+                q_list = self.squeeze(q_list, -1)
+                a = self.expand(a, 2, -2)
+            else:
+                a = self.expand(a, 2, -1)
+        _dispatch(type(a), a, q_list, perm, psi_arr, log2q, mu_list, axis, skip_perm, out, impls=_ntt)
         return out
 
     def intt(self, a, perm, perm_pairs, q_list, log2q, mu_list, psi_arr, n_inv_list, out, tile):
