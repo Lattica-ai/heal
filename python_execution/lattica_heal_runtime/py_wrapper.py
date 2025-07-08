@@ -9,14 +9,16 @@ build_dir = os.path.join(os.path.dirname(__file__), "../../build/example_impl")
 sys.path.insert(0, build_dir)
 
 import lattica_hw as lhw
-from lattica_hw import DeviceTensor32, DeviceTensor64
+from lattica_hw import DeviceTensor8, DeviceTensor32, DeviceTensor64
 
 _host_to_device = {
+    torch.int8: lhw.host_to_device_8,
     torch.int32: lhw.host_to_device_32,
     torch.int64: lhw.host_to_device_64,
 }
 
 _device_to_host = {
+    DeviceTensor8: lhw.device_to_host_8,
     DeviceTensor32: lhw.device_to_host_32,
     DeviceTensor64: lhw.device_to_host_64,
 }
@@ -27,6 +29,7 @@ _zeros = {
 }
 
 _empty = {
+    torch.int8: lhw.empty_8,
     torch.int32: lhw.empty_32,
     torch.int64: lhw.empty_64,
 }
@@ -62,6 +65,7 @@ _flatten_impls = {
 }
 
 _contiguous_impls = {
+    DeviceTensor8: lhw.contiguous_8,
     DeviceTensor32: lhw.contiguous_32,
     DeviceTensor64: lhw.contiguous_64,
 }
@@ -141,6 +145,7 @@ _axis_modsum = {
 }
 
 _apply_g_decomp = {
+    DeviceTensor8: lhw.apply_g_decomp_8,
     DeviceTensor32: lhw.apply_g_decomp_32,
     DeviceTensor64: lhw.apply_g_decomp_64,
 }
@@ -161,6 +166,7 @@ _take_along_axis = {
 }
 
 _moveaxis = {
+    DeviceTensor8: lhw.moveaxis_8,
     DeviceTensor32: lhw.moveaxis_32,
     DeviceTensor64: lhw.moveaxis_64,
 }
@@ -196,7 +202,7 @@ class PythonToCppDispatcher(ABC):
         return out
 
     def apply_g_decomp(self, a, g_exp, g_base_bits, out):
-        _dispatch(type(a), a, out, g_exp, g_base_bits, impls=_apply_g_decomp)
+        _dispatch(type(out), a, out, g_exp, g_base_bits, impls=_apply_g_decomp)
         return out
 
     def reshape(self, device_tensor, new_shape):
@@ -275,7 +281,7 @@ class PythonToCppDispatcher(ABC):
 
     def flatten(self, a, start_dim, end_dim):
         return _dispatch(type(a), a, start_dim, end_dim, impls=_flatten_impls)
-		
+
     def contiguous(self, a):
         return _dispatch(type(a), a, impls=_contiguous_impls)
 

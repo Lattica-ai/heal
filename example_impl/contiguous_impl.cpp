@@ -51,6 +51,7 @@ namespace lattica_hw_api {
         return tensor;
     }
 
+template std::shared_ptr<DeviceTensor<int8_t>> contiguous<int8_t>(const std::shared_ptr<DeviceTensor<int8_t>>&);
 template std::shared_ptr<DeviceTensor<int32_t>> contiguous<int32_t>(const std::shared_ptr<DeviceTensor<int32_t>>&);
 template std::shared_ptr<DeviceTensor<int64_t>> contiguous<int64_t>(const std::shared_ptr<DeviceTensor<int64_t>>&);
 
