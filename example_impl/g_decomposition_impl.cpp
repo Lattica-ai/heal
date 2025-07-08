@@ -73,6 +73,13 @@ namespace lattica_hw_api {
         size_t base_bits
     );
 
+    template void apply_g_decomp<int32_t, int8_t>(
+        const std::shared_ptr<DeviceTensor<int32_t>>& a,
+        std::shared_ptr<DeviceTensor<int8_t>>& result,
+        size_t power,
+        size_t base_bits
+    );
+
     template void apply_g_decomp<int32_t, int32_t>(
         const std::shared_ptr<DeviceTensor<int32_t>>& a,
         std::shared_ptr<DeviceTensor<int32_t>>& result,

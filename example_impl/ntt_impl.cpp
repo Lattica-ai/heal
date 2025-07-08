@@ -260,6 +260,17 @@ template void ntt<int8_t, int64_t>(
     bool /*skip_perm*/,
     std::shared_ptr<DeviceTensor<int64_t>>& /*result*/);
 
+template void ntt<int8_t, int32_t>(
+    const std::shared_ptr<DeviceTensor<int8_t>>& /*a*/,
+    const std::shared_ptr<DeviceTensor<int32_t>>& /*p*/,
+    const std::shared_ptr<DeviceTensor<int32_t>>& /*perm*/,
+    const std::shared_ptr<DeviceTensor<int32_t>>& /*twiddles*/,
+    const std::shared_ptr<DeviceTensor<int32_t>>& /*log2p_list*/,
+    const std::shared_ptr<DeviceTensor<int32_t>>& /*mu_list*/,
+    int64_t /*axis*/,
+    bool /*skip_perm*/,
+    std::shared_ptr<DeviceTensor<int32_t>>& /*result*/);
+
 template void ntt<int32_t, int32_t>(
     const std::shared_ptr<DeviceTensor<int32_t>>& /*a*/,
     const std::shared_ptr<DeviceTensor<int32_t>>& /*p*/,

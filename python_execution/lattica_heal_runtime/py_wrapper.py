@@ -146,15 +146,17 @@ _axis_modsum = {
 }
 
 _apply_g_decomp = {
-    DeviceTensor8: lhw.apply_g_decomp_8,
-    DeviceTensor32: lhw.apply_g_decomp_32,
-    DeviceTensor64: lhw.apply_g_decomp_64,
+    (DeviceTensor32, DeviceTensor8): lhw.apply_g_decomp_32_8,
+    (DeviceTensor64, DeviceTensor8): lhw.apply_g_decomp_64_8,
+    (DeviceTensor32, DeviceTensor32): lhw.apply_g_decomp_32_32,
+    (DeviceTensor64, DeviceTensor64): lhw.apply_g_decomp_64_64,
 }
 
 _ntt = {
-    DeviceTensor8: lhw.ntt_8,
-    DeviceTensor32: lhw.ntt_32,
-    DeviceTensor64: lhw.ntt_64,
+    (DeviceTensor8, DeviceTensor32): lhw.ntt_8_32,
+    (DeviceTensor8, DeviceTensor64): lhw.ntt_8_64,
+    (DeviceTensor32, DeviceTensor32): lhw.ntt_32_32,
+    (DeviceTensor64, DeviceTensor64): lhw.ntt_64_64,
 }
 
 _intt = {
@@ -204,7 +206,7 @@ class PythonToCppDispatcher(ABC):
         return out
 
     def apply_g_decomp(self, a, g_exp, g_base_bits, out):
-        _dispatch(type(out), a, out, g_exp, g_base_bits, impls=_apply_g_decomp)
+        _dispatch((type(a), type(out)), a, out, g_exp, g_base_bits, impls=_apply_g_decomp)
         return out
 
     def reshape(self, device_tensor, new_shape):
@@ -298,7 +300,7 @@ class PythonToCppDispatcher(ABC):
                 a = self.expand(a, 2, -2)
             else:
                 a = self.expand(a, 2, -1)
-        _dispatch(type(a), a, q_list, perm, psi_arr, log2q, mu_list, axis, skip_perm, out, impls=_ntt)
+        _dispatch((type(a), type(out)), a, q_list, perm, psi_arr, log2q, mu_list, axis, skip_perm, out, impls=_ntt)
         return out
 
     def intt(self, a, perm, perm_pairs, q_list, log2q, mu_list, psi_arr, n_inv_list, out, tile):
