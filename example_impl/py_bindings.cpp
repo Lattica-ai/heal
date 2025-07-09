@@ -176,6 +176,10 @@ PYBIND11_MODULE(lattica_hw, m) {
     m.def("axis_modsum_32", &axis_modsum<int32_t>, "Axis-wise modular sum (int32)");
     m.def("axis_modsum_64", &axis_modsum<int64_t>, "Axis-wise modular sum (int64)");
 
+    // modmul_axis_sum
+    m.def("modmul_axis_sum_32", &modmul_axis_sum<int32_t>, "Element-wise modular multiply and sum over the specified axis (int32)");
+    m.def("modmul_axis_sum_64", &modmul_axis_sum<int64_t>, "Element-wise modular multiply and sum over the specified axis (int64)");
+
     // g_decomposition
     bind_g_decomposition<int32_t>(m, "32");
     bind_g_decomposition<int64_t>(m, "64");

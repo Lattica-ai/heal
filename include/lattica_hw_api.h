@@ -15,5 +15,6 @@
 #include "ntt.h"             // NTT and INTT
 #include "take_along_axis.h" // Permutations
 #include "set_const_val.h"   // Set constant value
+#include "modmul_axis_sum.h" // Modular multiply and sum
 
 #endif // LATTICA_HARDWARE_API_H

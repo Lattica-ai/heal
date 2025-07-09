@@ -9,6 +9,7 @@ set(SOURCES
     memory_virtual_ops_impl.cpp
     contiguous_impl.cpp
     set_const_val_impl.cpp
+    modmul_axis_sum_impl.cpp
 )
 
 # Create a static library for the Example Implementation

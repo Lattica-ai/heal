@@ -29,6 +29,7 @@ set(TEST_SOURCES
     test_memory_ops.cpp
     test_contiguous.cpp
     test_set_const_val.cpp
+    test_modmul_axis_sum.cpp
 )
 
 set(TEST_NAMES
@@ -43,6 +44,7 @@ set(TEST_NAMES
     MemoryOpsTests
     ContiguousTests
     SetConstValTests
+    ModMulAxisSumTests
 )
 
 # Loop through the test sources and add executables and tests
