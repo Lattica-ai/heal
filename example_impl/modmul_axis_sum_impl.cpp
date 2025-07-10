@@ -17,11 +17,11 @@ void validate_modmul_inputs(
     int64_t& reps, int64_t& n, int64_t& sum_size, int64_t& k
 ) {
     if (a->dims.size() != 4)
-        throw std::invalid_argument("Tensor a must have shape [d0, d1, d2, d3]");
+        throw std::invalid_argument("Tensor a must have rank 4.");
     if (b->dims.size() != 3)
-        throw std::invalid_argument("Tensor b must have shape [d1, d2, d3]");
+        throw std::invalid_argument("Tensor b must have rank 3.");
     if (result->dims.size() != 3)
-        throw std::invalid_argument("Result tensor must have shape [d0, d1, d2]");
+        throw std::invalid_argument("Result tensor must have rank 3.");
 
     reps = a->dims[0];
 
@@ -63,7 +63,7 @@ void validate_modmul_inputs(
             result->dims[1] != n ||
             result->dims[2] != k) {
             throw std::invalid_argument(
-                "Result tensor must have shape [a->dims[0], a->dims[2], a->dims[3]]"
+                "Result tensor must have shape [a->dims[0], a->dims[1], a->dims[3]]"
             );
         }
     } else {
@@ -138,7 +138,7 @@ void modmul_axis_sum(
                 }
             }
         }
-    } else if (axis == -3) {
+    } else {  // axis == -3
         // a: [reps, n, sum_size, k], b: [n, sum_size, k], result: [reps, n, k]
         for (int64_t r = 0; r < reps; ++r) {
             for (int64_t l = 0; l < n; ++l) {
@@ -157,8 +157,6 @@ void modmul_axis_sum(
                 }
             }
         }
-    } else {
-        throw std::invalid_argument("Axis must be -1 or -3 for modmul_axis_sum.");
     }
 }
 

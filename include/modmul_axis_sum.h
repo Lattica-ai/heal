@@ -49,7 +49,7 @@ namespace lattica_hw_api {
  *
  * Example usage:
  * ```
- * // a: [2, 3, 2, 4], b: [3, 2, 4], p: [2]
+ * // a: [10, 3, 2, 4], b: [3, 2, 4], p: [2]
  * modmul_axis_sum<int64_t>(a, b, p, nullptr, nullptr, nullptr, -1, false, result);
  * ```
  */
