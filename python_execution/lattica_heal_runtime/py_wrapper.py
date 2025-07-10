@@ -296,7 +296,6 @@ class PythonToCppDispatcher(ABC):
     def ntt(self, a, axis, perm, perm_pairs, q_list, log2q, mu_list, psi_arr, out, tile, skip_perm):
         if tile:
             if axis == -1:
-                q_list = self.squeeze(q_list, -1)
                 a = self.expand(a, 2, -2)
             else:
                 a = self.expand(a, 2, -1)
