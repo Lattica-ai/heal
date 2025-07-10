@@ -166,8 +166,8 @@ PYBIND11_MODULE(lattica_hw, m) {
     bind_memory_helpers<int8_t>(m, "8");
     bind_memory_helpers<int32_t>(m, "32");
     bind_memory_helpers<int64_t>(m, "64");
-    m.def(("zeros_" + std::string("32")).c_str(), &zeros<int32_t>, py::arg("dims"));
-    m.def(("zeros_" + std::string("64")).c_str(), &zeros<int64_t>, py::arg("dims"));
+    m.def("zeros_32", &zeros<int32_t>, py::arg("dims"));
+    m.def("zeros_64", &zeros<int64_t>, py::arg("dims"));
 
     // Bind modular ops
     bind_modop_variants<int32_t>(m, "32");
@@ -190,14 +190,8 @@ PYBIND11_MODULE(lattica_hw, m) {
     // bind expand, squeeze, unsqueeze
     bind_memory_ops<int32_t>(m, "32");
     bind_memory_ops<int64_t>(m, "64");
-    m.def(("moveaxis_" + std::string("8")).c_str(),
-          &moveaxis<int8_t>,
-          py::arg("tensor"), py::arg("axis_src"), py::arg("axis_dst"),
-          "Moves an axis from axis_src to axis_dst.");
-    m.def(("expand_" + std::string("8")).c_str(),
-          &expand<int8_t>,
-          py::arg("tensor"), py::arg("axis"), py::arg("repeats"),
-          "Virtually expands the tensor along the given axis by repeating elements using stride tricks.");
+    m.def("moveaxis_8", &moveaxis<int8_t>, py::arg("tensor"), py::arg("axis_src"), py::arg("axis_dst"), "Moves an axis from axis_src to axis_dst.");
+    m.def("expand_8", &expand<int8_t>, py::arg("tensor"), py::arg("axis"), py::arg("repeats"), "Virtually expands the tensor along the given axis");
 
     // contiguous ops
     bind_contiguous<int8_t>(m, "8");
