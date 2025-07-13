@@ -23,20 +23,20 @@ void validate_modmul_inputs(
     if (result->dims.size() != 3)
         throw std::invalid_argument("Result tensor must have rank 3.");
 
+    if (b->dims[0] != a->dims[1] ||
+        b->dims[1] != a->dims[2] ||
+        b->dims[2] != a->dims[3]) {
+        throw std::invalid_argument(
+            "Tensor b must have shape [a->dims[1], a->dims[2], a->dims[3]]"
+        );
+    }
+
     reps = a->dims[0];
 
     if (axis == -1) {
         sum_size = a->dims[1];
         k = a->dims[2];
         n = a->dims[3];
-
-        if (b->dims[0] != sum_size ||
-            b->dims[1] != k ||
-            b->dims[2] != n) {
-            throw std::invalid_argument(
-                "Tensor b must have shape [a->dims[1], a->dims[2], a->dims[3]]"
-            );
-        }
 
         if (result->dims[0] != reps ||
             result->dims[1] != k ||
@@ -50,14 +50,6 @@ void validate_modmul_inputs(
         n = a->dims[1];
         sum_size = a->dims[2];
         k = a->dims[3];
-
-        if (b->dims[0] != n ||
-            b->dims[1] != sum_size ||
-            b->dims[2] != k) {
-            throw std::invalid_argument(
-                "Tensor b must have shape [a->dims[1], a->dims[2], a->dims[3]]"
-            );
-        }
 
         if (result->dims[0] != reps ||
             result->dims[1] != n ||
