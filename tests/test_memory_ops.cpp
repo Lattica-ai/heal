@@ -65,16 +65,14 @@ TEST(MemoryOpsTests, UnsqueezeThrowsOnOutOfRangeAxis) {
 // Basic functionality
 // ──────────────────────────────────────────────────────────────────────────────
 
- TEST(MoveAxisTests, MoveLastToFirst3D_Int32) {
+TEST(MoveAxisTests, MoveLastToFirst3D_Int32) {
     // shape [2,3,4]  →  move axis 2 → 0  ⇒  [4,2,3]
     torch::Tensor a = torch::arange(2*3*4, torch::kInt64).reshape({2,3,4});
     torch::Tensor expected = torch::movedim(a, /*src=*/2, /*dst=*/0);
 
     auto a_hw = host_to_device<int64_t>(a);
-
-    moveaxis<int64_t>(a_hw, /*src=*/2, /*dst=*/0);
-
-    torch::Tensor result = device_to_host<int64_t>(a_hw);
+    auto b_hw = moveaxis<int64_t>(a_hw, /*src=*/2, /*dst=*/0);
+    torch::Tensor result = device_to_host<int64_t>(b_hw);
     ASSERT_TRUE(torch::equal(result, expected))
         << "Move axis 2→0 failed.";
 }
@@ -85,10 +83,9 @@ TEST(MoveAxisTests, MoveFirstToLast3D_Int32) {
     torch::Tensor expected = torch::movedim(a, /*src=*/0, /*dst=*/2);
 
     auto a_hw = host_to_device<int64_t>(a);
+    auto b_hw = moveaxis<int64_t>(a_hw, /*src=*/0, /*dst=*/2);
 
-    moveaxis<int64_t>(a_hw, /*src=*/0, /*dst=*/2);
-
-    torch::Tensor result = device_to_host<int64_t>(a_hw);
+    torch::Tensor result = device_to_host<int64_t>(b_hw);
     ASSERT_TRUE(torch::equal(result, expected))
         << "Move axis 0→2 failed.";
 }
@@ -99,10 +96,9 @@ TEST(MoveAxisTests, MoveMiddleToLast4D_Int32) {
     torch::Tensor expected = torch::movedim(a, /*src=*/1, /*dst=*/-1);
 
     auto a_hw = host_to_device<int32_t>(a);
+    auto b_hw = moveaxis<int32_t>(a_hw, /*src=*/1, /*dst=*/-1);
 
-    moveaxis<int32_t>(a_hw, /*src=*/1, /*dst=*/-1);
-
-    torch::Tensor result = device_to_host<int32_t>(a_hw);
+    torch::Tensor result = device_to_host<int32_t>(b_hw);
     ASSERT_TRUE(torch::allclose(result, expected))
         << "Move middle axis to last failed.";
 }
@@ -113,10 +109,9 @@ TEST(MoveAxisTests, MoveFirstToLast3D_NegativeSrc) {
     torch::Tensor expected = torch::movedim(a, /*src=*/0, /*dst=*/2);
 
     auto a_hw = host_to_device<int64_t>(a);
+    auto b_hw = moveaxis<int64_t>(a_hw, /*src=*/-3, /*dst=*/-1);
 
-    moveaxis<int64_t>(a_hw, /*src=*/-3, /*dst=*/-1);
-
-    torch::Tensor result = device_to_host<int64_t>(a_hw);
+    torch::Tensor result = device_to_host<int64_t>(b_hw);
     ASSERT_TRUE(torch::equal(result, expected))
         << "Negative src axis (-rank) move failed.";
 }
@@ -124,10 +119,9 @@ TEST(MoveAxisTests, MoveFirstToLast3D_NegativeSrc) {
 TEST(MoveAxisTests, NoOpWhenAxesEqual) {
     torch::Tensor a = torch::randint(0, 10, {3,4,5}, torch::kInt64);
     auto a_hw = host_to_device<int64_t>(a);
+    auto b_hw = moveaxis<int64_t>(a_hw, /*src=*/1, /*dst=*/1);
 
-    moveaxis<int64_t>(a_hw, /*src=*/1, /*dst=*/1);
-
-    torch::Tensor result = device_to_host<int64_t>(a_hw);
+    torch::Tensor result = device_to_host<int64_t>(b_hw);
     ASSERT_TRUE(torch::equal(result, a)) << "No-op moveaxis altered tensor.";
 }
 
@@ -137,9 +131,9 @@ TEST(MoveAxisTests, MoveAdjacentForward) {
     torch::Tensor expected = torch::movedim(a, /*src=*/1, /*dst=*/2);
 
     auto a_hw = host_to_device<int64_t>(a);
-    moveaxis<int64_t>(a_hw, /*src=*/1, /*dst=*/2);
+    auto b_hw = moveaxis<int64_t>(a_hw, /*src=*/1, /*dst=*/2);
 
-    torch::Tensor result = device_to_host<int64_t>(a_hw);
+    torch::Tensor result = device_to_host<int64_t>(b_hw);
     ASSERT_TRUE(torch::equal(result, expected))
         << "Adjacent forward move (1→2) failed.";
 }
@@ -150,9 +144,9 @@ TEST(MoveAxisTests, MoveAdjacentBackward) {
     torch::Tensor expected = torch::movedim(a, /*src=*/2, /*dst=*/1);
 
     auto a_hw = host_to_device<int64_t>(a);
-    moveaxis<int64_t>(a_hw, /*src=*/2, /*dst=*/1);
+    auto b_hw = moveaxis<int64_t>(a_hw, /*src=*/2, /*dst=*/1);
 
-    torch::Tensor result = device_to_host<int64_t>(a_hw);
+    torch::Tensor result = device_to_host<int64_t>(b_hw);
     ASSERT_TRUE(torch::equal(result, expected))
         << "Adjacent backward move (2→1) failed.";
 }
@@ -160,12 +154,12 @@ TEST(MoveAxisTests, MoveAdjacentBackward) {
 TEST(MoveAxisTests, NonContiguousStrides) {
     // Start with contiguous [2,3,4], transpose to make non-contiguous, then move axis 0 -> 2
     torch::Tensor a = torch::arange(24, torch::kInt64).reshape({2,3,4}).transpose(0,1); // shape [3,2,4]
-    torch::Tensor expected = torch::movedim(a, /*src=*/0, /*dst=*/2);                     // shape [2,4,3]
+    torch::Tensor expected = torch::movedim(a, /*src=*/0, /*dst=*/2);                   // shape [2,4,3]
 
     auto a_hw = host_to_device<int64_t>(a);
-    moveaxis<int64_t>(a_hw, /*src=*/0, /*dst=*/2);
+    auto b_hw = moveaxis<int64_t>(a_hw, /*src=*/0, /*dst=*/2);
 
-    torch::Tensor result = device_to_host<int64_t>(a_hw);
+    torch::Tensor result = device_to_host<int64_t>(b_hw);
     ASSERT_TRUE(torch::allclose(result, expected))
         << "Moveaxis with non-contiguous strides failed.";
 }
