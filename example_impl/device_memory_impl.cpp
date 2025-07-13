@@ -7,6 +7,7 @@
 #include <torch/torch.h>
 
 // Explicit template instantiations
+template struct DeviceTensor<int8_t>;
 template struct DeviceTensor<int32_t>;
 template struct DeviceTensor<int64_t>;
 
@@ -245,12 +246,15 @@ torch::Tensor device_to_host(const std::shared_ptr<DeviceTensor<T>>& memory) {
 template std::shared_ptr<DeviceTensor<int32_t>> zeros<int32_t>(const std::vector<int64_t>&);
 template std::shared_ptr<DeviceTensor<int64_t>> zeros<int64_t>(const std::vector<int64_t>&);
 
+template std::shared_ptr<DeviceTensor<int8_t>> empty<int8_t>(const std::vector<int64_t>&);
 template std::shared_ptr<DeviceTensor<int32_t>> empty<int32_t>(const std::vector<int64_t>&);
 template std::shared_ptr<DeviceTensor<int64_t>> empty<int64_t>(const std::vector<int64_t>&);
 
+template std::shared_ptr<DeviceTensor<int8_t>> host_to_device<int8_t>(const torch::Tensor&);
 template std::shared_ptr<DeviceTensor<int32_t>> host_to_device<int32_t>(const torch::Tensor&);
 template std::shared_ptr<DeviceTensor<int64_t>> host_to_device<int64_t>(const torch::Tensor&);
 
+template torch::Tensor device_to_host<int8_t>(const std::shared_ptr<DeviceTensor<int8_t>>&);
 template torch::Tensor device_to_host<int32_t>(const std::shared_ptr<DeviceTensor<int32_t>>&);
 template torch::Tensor device_to_host<int64_t>(const std::shared_ptr<DeviceTensor<int64_t>>&);
 

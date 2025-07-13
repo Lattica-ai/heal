@@ -12,13 +12,13 @@ namespace lattica_hw_api {
 namespace {
 
 // Validate and extract dimensions from a [l, m, r, k] or [l, r, k, m] tensor
-template <typename T>
+template <typename T, typename U>
 void validate_ntt_inputs(
     const std::shared_ptr<DeviceTensor<T>>& a,
-    const std::shared_ptr<DeviceTensor<T>>& p,
-    const std::shared_ptr<DeviceTensor<T>>& perm,
-    const std::shared_ptr<DeviceTensor<T>>& twiddles,
-    const std::shared_ptr<DeviceTensor<T>>& result,
+    const std::shared_ptr<DeviceTensor<U>>& p,
+    const std::shared_ptr<DeviceTensor<U>>& perm,
+    const std::shared_ptr<DeviceTensor<U>>& twiddles,
+    const std::shared_ptr<DeviceTensor<U>>& result,
     int64_t& l, int64_t& m, int64_t& r, int64_t& k,
     int64_t axis
 ) {
@@ -97,29 +97,31 @@ void apply_permutation(
 
 } // namespace
 
-template <typename T>
+template <typename T, typename U>
 void ntt(
     const std::shared_ptr<DeviceTensor<T>>& a,
-    const std::shared_ptr<DeviceTensor<T>>& p,
-    const std::shared_ptr<DeviceTensor<T>>& perm,
-    const std::shared_ptr<DeviceTensor<T>>& twiddles, // now [k, m]
-    const std::shared_ptr<DeviceTensor<T>>& log2p_list,
-    const std::shared_ptr<DeviceTensor<T>>& mu_list,
+    const std::shared_ptr<DeviceTensor<U>>& p,
+    const std::shared_ptr<DeviceTensor<U>>& perm,
+    const std::shared_ptr<DeviceTensor<U>>& twiddles,
+    const std::shared_ptr<DeviceTensor<U>>& log2p_list,
+    const std::shared_ptr<DeviceTensor<U>>& mu_list,
     int64_t axis,
-    std::shared_ptr<DeviceTensor<T>>& result
+    bool skip_perm,
+    std::shared_ptr<DeviceTensor<U>>& result
 ) {
     int64_t l, m, r, k;
-    validate_ntt_inputs<T>(a, p, perm, twiddles, result, l, m, r, k, axis);
+    validate_ntt_inputs<T, U>(a, p, perm, twiddles, result, l, m, r, k, axis);
 
     if (axis == -1) {
         #pragma omp parallel for collapse(2)
         for (int64_t i = 0; i < l; ++i) {
             for (int64_t j = 0; j < r; ++j) {
                 for (int64_t t = 0; t < k; ++t) {
-                    T mod = p->at({t});
+                    U mod = p->at({t});
 
+                    // Copy input to output with cast
                     for (int64_t u = 0; u < m; ++u) {
-                        result->at({i, j, t, u}) = a->at({i, j, t, u});
+                        result->at({i, j, t, u}) = static_cast<U>(a->at({i, j, t, u}));
                     }
 
                     int64_t n = m;
@@ -129,13 +131,14 @@ void ntt(
                         for (int64_t u = 0; u < stage; ++u) {
                             int64_t j1 = 2 * u * step;
                             int64_t j2 = j1 + step;
-                            T s = twiddles->at({t, stage + u});
+                            U s = twiddles->at({t, stage + u});
 
                             for (int64_t jx = j1; jx < j2; ++jx) {
-                                T u_val = result->at({i, j, t, jx});
-                                T v_val = result->at({i, j, t, jx + step});
-                                T_DP<T> v_tw = static_cast<T_DP<T>>(v_val) * static_cast<T_DP<T>>(s);
-                                T v_mod = static_cast<T>(v_tw % static_cast<T_DP<T>>(mod));
+                                U u_val = result->at({i, j, t, jx});
+                                U v_val = result->at({i, j, t, jx + step});
+                                auto v_tw = static_cast<typename std::common_type<U, U>::type>(v_val) *
+                                            static_cast<typename std::common_type<U, U>::type>(s);
+                                U v_mod = static_cast<U>(v_tw % static_cast<typename std::common_type<U, U>::type>(mod));
                                 result->at({i, j, t, jx}) = (u_val + v_mod) % mod;
                                 result->at({i, j, t, jx + step}) = (u_val + mod - v_mod) % mod;
                             }
@@ -149,10 +152,11 @@ void ntt(
         for (int64_t i = 0; i < l; ++i) {
             for (int64_t j = 0; j < r; ++j) {
                 for (int64_t t = 0; t < k; ++t) {
-                    T mod = p->at({t});
+                    U mod = p->at({t});
 
+                    // Copy input to output with cast (index order changed)
                     for (int64_t u = 0; u < m; ++u) {
-                        result->at({i, u, j, t}) = a->at({i, u, j, t});
+                        result->at({i, u, j, t}) = static_cast<U>(a->at({i, u, j, t}));
                     }
 
                     int64_t n = m;
@@ -162,13 +166,14 @@ void ntt(
                         for (int64_t u = 0; u < stage; ++u) {
                             int64_t j1 = 2 * u * step;
                             int64_t j2 = j1 + step;
-                            T s = twiddles->at({t, stage + u});
+                            U s = twiddles->at({t, stage + u});
 
                             for (int64_t jx = j1; jx < j2; ++jx) {
-                                T u_val = result->at({i, jx, j, t});
-                                T v_val = result->at({i, jx + step, j, t});
-                                T_DP<T> v_tw = static_cast<T_DP<T>>(v_val) * static_cast<T_DP<T>>(s);
-                                T v_mod = static_cast<T>(v_tw % static_cast<T_DP<T>>(mod));
+                                U u_val = result->at({i, jx, j, t});
+                                U v_val = result->at({i, jx + step, j, t});
+                                auto v_tw = static_cast<typename std::common_type<U, U>::type>(v_val) *
+                                            static_cast<typename std::common_type<U, U>::type>(s);
+                                U v_mod = static_cast<U>(v_tw % static_cast<typename std::common_type<U, U>::type>(mod));
                                 result->at({i, jx, j, t}) = (u_val + v_mod) % mod;
                                 result->at({i, jx + step, j, t}) = (u_val + mod - v_mod) % mod;
                             }
@@ -181,8 +186,11 @@ void ntt(
         throw std::invalid_argument("Axis must be -1 or -3 for NTT.");
     }
 
-    apply_permutation<T>(perm, result, l, r, k, m, axis);
+    if (!skip_perm) {
+        apply_permutation<U>(perm, result, l, r, k, m, axis);
+    }
 }
+
 
 template <typename T>
 void intt(
@@ -241,7 +249,29 @@ void intt(
 // Explicit instantiations
 // Explicit instantiations with optional Barrett‐reduction parameters
 
-template void ntt<int32_t>(
+template void ntt<int8_t, int64_t>(
+    const std::shared_ptr<DeviceTensor<int8_t>>& /*a*/,
+    const std::shared_ptr<DeviceTensor<int64_t>>& /*p*/,
+    const std::shared_ptr<DeviceTensor<int64_t>>& /*perm*/,
+    const std::shared_ptr<DeviceTensor<int64_t>>& /*twiddles*/,
+    const std::shared_ptr<DeviceTensor<int64_t>>& /*log2p_list*/,
+    const std::shared_ptr<DeviceTensor<int64_t>>& /*mu_list*/,
+    int64_t /*axis*/,
+    bool /*skip_perm*/,
+    std::shared_ptr<DeviceTensor<int64_t>>& /*result*/);
+
+template void ntt<int8_t, int32_t>(
+    const std::shared_ptr<DeviceTensor<int8_t>>& /*a*/,
+    const std::shared_ptr<DeviceTensor<int32_t>>& /*p*/,
+    const std::shared_ptr<DeviceTensor<int32_t>>& /*perm*/,
+    const std::shared_ptr<DeviceTensor<int32_t>>& /*twiddles*/,
+    const std::shared_ptr<DeviceTensor<int32_t>>& /*log2p_list*/,
+    const std::shared_ptr<DeviceTensor<int32_t>>& /*mu_list*/,
+    int64_t /*axis*/,
+    bool /*skip_perm*/,
+    std::shared_ptr<DeviceTensor<int32_t>>& /*result*/);
+
+template void ntt<int32_t, int32_t>(
     const std::shared_ptr<DeviceTensor<int32_t>>& /*a*/,
     const std::shared_ptr<DeviceTensor<int32_t>>& /*p*/,
     const std::shared_ptr<DeviceTensor<int32_t>>& /*perm*/,
@@ -249,9 +279,10 @@ template void ntt<int32_t>(
     const std::shared_ptr<DeviceTensor<int32_t>>& /*log2p_list*/,
     const std::shared_ptr<DeviceTensor<int32_t>>& /*mu_list*/,
     int64_t /*axis*/,
+    bool /*skip_perm*/,
     std::shared_ptr<DeviceTensor<int32_t>>& /*result*/);
 
-template void ntt<int64_t>(
+template void ntt<int64_t, int64_t>(
     const std::shared_ptr<DeviceTensor<int64_t>>& /*a*/,
     const std::shared_ptr<DeviceTensor<int64_t>>& /*p*/,
     const std::shared_ptr<DeviceTensor<int64_t>>& /*perm*/,
@@ -259,6 +290,7 @@ template void ntt<int64_t>(
     const std::shared_ptr<DeviceTensor<int64_t>>& /*log2p_list*/,
     const std::shared_ptr<DeviceTensor<int64_t>>& /*mu_list*/,
     int64_t /*axis*/,
+    bool /*skip_perm*/,
     std::shared_ptr<DeviceTensor<int64_t>>& /*result*/);
 
 template void intt<int32_t>(

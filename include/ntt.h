@@ -20,6 +20,7 @@
  * - Twiddle factors `twiddles` must have shape `[k, m]`.
  * - Modular inverses of `m`, `m_inv`, must have shape `[k]`.
  * - Axis of `m` the transform length, `axis` can be -3 (for `[l, m, r, k]`) or -1 (for `[l, r, k, m]`).
+ * - `skip_perm` indicates whether to skip the permutation step.
  * - Output tensor `result` must have shape `[l, m, r, k]` or `[l, r, k, m]`.
  *
  * Optional Barrett Reduction Parameters:
@@ -29,16 +30,17 @@
 
 namespace lattica_hw_api {
 
-    template <typename T>
+    template <typename T, typename U>
     void ntt(
         const std::shared_ptr<DeviceTensor<T>>& a,          // [l, m, r, k] or [l, r, k, m]
-        const std::shared_ptr<DeviceTensor<T>>& p,          // [k]
-        const std::shared_ptr<DeviceTensor<T>>& perm,       // [m]
-        const std::shared_ptr<DeviceTensor<T>>& twiddles,   // [k, m]
-        const std::shared_ptr<DeviceTensor<T>>& log2p_list, // [k]
-        const std::shared_ptr<DeviceTensor<T>>& mu_list,    // [k]
+        const std::shared_ptr<DeviceTensor<U>>& p,          // [k]
+        const std::shared_ptr<DeviceTensor<U>>& perm,       // [m]
+        const std::shared_ptr<DeviceTensor<U>>& twiddles,   // [k, m]
+        const std::shared_ptr<DeviceTensor<U>>& log2p_list, // [k]
+        const std::shared_ptr<DeviceTensor<U>>& mu_list,    // [k]
         int64_t axis,                                       // Axis of m
-        std::shared_ptr<DeviceTensor<T>>& result            // [l, m, r, k] or [l, r, k, m] (output)
+        bool skip_perm,                                     // Skip permutation step
+        std::shared_ptr<DeviceTensor<U>>& result            // [l, m, r, k] or [l, r, k, m] (output)
     );
 
     template <typename T>

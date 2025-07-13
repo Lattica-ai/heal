@@ -43,7 +43,7 @@ TEST(NTTTests, PerformNTTAndVerifyRestorationTorch) {
     int64_t axis = -3;  // Axis of n
 
     // Perform NTT and inverse NTT
-    ntt<int32_t>(a_hw, p_hw, perm_hw, twiddles_hw, nullptr, nullptr, axis, result_hw);
+    ntt<int32_t, int32_t>(a_hw, p_hw, perm_hw, twiddles_hw, nullptr, nullptr, axis, false, result_hw);
     intt<int32_t>(result_hw, p_hw, perm_hw, inv_twiddles_hw, m_inv_hw, nullptr, nullptr, restored_hw);
 
     // Download result
@@ -98,7 +98,7 @@ TEST(NTTTests, PerformNTTOptimisedDimAndVerifyRestorationTorch) {
     int64_t axis = -1;  // Axis of n
 
     // Perform NTT and inverse NTT
-    ntt<int32_t>(a_hw, p_hw, perm_hw, twiddles_hw, nullptr, nullptr, axis, result_hw);
+    ntt<int32_t, int32_t>(a_hw, p_hw, perm_hw, twiddles_hw, nullptr, nullptr, axis, false, result_hw);
 
     // Apply permutation to result
     torch::Tensor restored_result = device_to_host<int32_t>(result_hw);
@@ -142,5 +142,5 @@ TEST(NTTTests, WrongAxisThrows) {
 
     int64_t axis = -2;  // Wrong axis
 
-    EXPECT_THROW(ntt<int32_t>(a_hw, p_hw, perm_hw, twiddles_hw, nullptr, nullptr, axis, result_hw), std::invalid_argument);
+    EXPECT_THROW((ntt<int32_t, int32_t>(a_hw, p_hw, perm_hw, twiddles_hw, nullptr, nullptr, axis, false, result_hw)), std::invalid_argument);
 }

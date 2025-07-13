@@ -9,14 +9,16 @@ build_dir = os.path.join(os.path.dirname(__file__), "../../build/example_impl")
 sys.path.insert(0, build_dir)
 
 import lattica_hw as lhw
-from lattica_hw import DeviceTensor32, DeviceTensor64
+from lattica_hw import DeviceTensor8, DeviceTensor32, DeviceTensor64
 
 _host_to_device = {
+    torch.int8: lhw.host_to_device_8,
     torch.int32: lhw.host_to_device_32,
     torch.int64: lhw.host_to_device_64,
 }
 
 _device_to_host = {
+    DeviceTensor8: lhw.device_to_host_8,
     DeviceTensor32: lhw.device_to_host_32,
     DeviceTensor64: lhw.device_to_host_64,
 }
@@ -27,11 +29,13 @@ _zeros = {
 }
 
 _empty = {
+    torch.int8: lhw.empty_8,
     torch.int32: lhw.empty_32,
     torch.int64: lhw.empty_64,
 }
 
 _expand_impls = {
+    DeviceTensor8: lhw.expand_8,
     DeviceTensor32: lhw.expand_32,
     DeviceTensor64: lhw.expand_64,
 }
@@ -62,6 +66,7 @@ _flatten_impls = {
 }
 
 _contiguous_impls = {
+    DeviceTensor8: lhw.contiguous_8,
     DeviceTensor32: lhw.contiguous_32,
     DeviceTensor64: lhw.contiguous_64,
 }
@@ -141,13 +146,17 @@ _axis_modsum = {
 }
 
 _apply_g_decomp = {
-    DeviceTensor32: lhw.apply_g_decomp_32,
-    DeviceTensor64: lhw.apply_g_decomp_64,
+    (DeviceTensor32, DeviceTensor8): lhw.apply_g_decomp_32_8,
+    (DeviceTensor64, DeviceTensor8): lhw.apply_g_decomp_64_8,
+    (DeviceTensor32, DeviceTensor32): lhw.apply_g_decomp_32_32,
+    (DeviceTensor64, DeviceTensor64): lhw.apply_g_decomp_64_64,
 }
 
 _ntt = {
-    DeviceTensor32: lhw.ntt_32,
-    DeviceTensor64: lhw.ntt_64,
+    (DeviceTensor8, DeviceTensor32): lhw.ntt_8_32,
+    (DeviceTensor8, DeviceTensor64): lhw.ntt_8_64,
+    (DeviceTensor32, DeviceTensor32): lhw.ntt_32_32,
+    (DeviceTensor64, DeviceTensor64): lhw.ntt_64_64,
 }
 
 _intt = {
@@ -161,6 +170,7 @@ _take_along_axis = {
 }
 
 _moveaxis = {
+    DeviceTensor8: lhw.moveaxis_8,
     DeviceTensor32: lhw.moveaxis_32,
     DeviceTensor64: lhw.moveaxis_64,
 }
@@ -196,7 +206,7 @@ class PythonToCppDispatcher(ABC):
         return out
 
     def apply_g_decomp(self, a, g_exp, g_base_bits, out):
-        _dispatch(type(a), a, out, g_exp, g_base_bits, impls=_apply_g_decomp)
+        _dispatch((type(a), type(out)), a, out, g_exp, g_base_bits, impls=_apply_g_decomp)
         return out
 
     def reshape(self, device_tensor, new_shape):
@@ -275,7 +285,7 @@ class PythonToCppDispatcher(ABC):
 
     def flatten(self, a, start_dim, end_dim):
         return _dispatch(type(a), a, start_dim, end_dim, impls=_flatten_impls)
-		
+
     def contiguous(self, a):
         return _dispatch(type(a), a, impls=_contiguous_impls)
 
@@ -284,11 +294,13 @@ class PythonToCppDispatcher(ABC):
         return out
 
     def ntt(self, a, axis, perm, perm_pairs, q_list, log2q, mu_list, psi_arr, out, tile, skip_perm):
-        if skip_perm:
-            raise NotImplementedError(f"skip_perm is not supported. {skip_perm=}")
         if tile:
-            a = self.expand(a, 2, -1)
-        _dispatch(type(a), a, q_list, perm, psi_arr, log2q, mu_list, axis, out, impls=_ntt)
+            if axis == -1:
+                q_list = self.squeeze(q_list, -1)
+                a = self.expand(a, 2, -2)
+            else:
+                a = self.expand(a, 2, -1)
+        _dispatch((type(a), type(out)), a, q_list, perm, psi_arr, log2q, mu_list, axis, skip_perm, out, impls=_ntt)
         return out
 
     def intt(self, a, perm, perm_pairs, q_list, log2q, mu_list, psi_arr, n_inv_list, out, tile):

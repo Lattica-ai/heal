@@ -21,10 +21,10 @@
 
 namespace lattica_hw_api {
 
-    template <typename T>
+    template <typename T, typename U>
     void apply_g_decomp(
         const std::shared_ptr<DeviceTensor<T>>& a,         // [...], arbitrary shape
-        std::shared_ptr<DeviceTensor<T>>& result,          // [..., power] (output)
+        std::shared_ptr<DeviceTensor<U>>& result,          // [..., power] (output)
         size_t power,                                      // Number of digits
         size_t base_bits                                   // Base bits
     );

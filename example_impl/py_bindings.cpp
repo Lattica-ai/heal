@@ -53,9 +53,9 @@ void bind_modop_variants(py::module_& m, const std::string& suffix) {
           "Elementwise modular negation: ([...,k] % scalar)");
 }
 
-template <typename T>
+template <typename T, typename U>
 void bind_g_decomposition(py::module_& m, const std::string& suffix) {
-    m.def(("apply_g_decomp_" + suffix).c_str(), &apply_g_decomp<T>,
+    m.def(("apply_g_decomp_" + suffix).c_str(), &apply_g_decomp<T,U>,
           py::arg("a"), py::arg("result"), py::arg("power"), py::arg("base_bits"),
           "G decomposition (base 2^base_bits)");
 }
@@ -137,9 +137,6 @@ void bind_device_memory(py::module_& m, const std::string& suffix) {
 template <typename T>
 void bind_memory_helpers(py::module_& m, const std::string& suffix) {
     using namespace lattica_hw_api;
-    m.def(("zeros_" + suffix).c_str(),
-          &zeros<T>,
-          py::arg("dims"));
     m.def(("empty_" + suffix).c_str(),
           &empty<T>,
           py::arg("dims"));
@@ -161,12 +158,16 @@ PYBIND11_MODULE(lattica_hw, m) {
     m.doc() = "Lattica Hardware API Python bindings";
 
     // Bind DeviceTensor class
+    bind_device_memory<int8_t>(m, "8");
     bind_device_memory<int32_t>(m, "32");
     bind_device_memory<int64_t>(m, "64");
 
     // Bind memory ops
+    bind_memory_helpers<int8_t>(m, "8");
     bind_memory_helpers<int32_t>(m, "32");
     bind_memory_helpers<int64_t>(m, "64");
+    m.def("zeros_32", &zeros<int32_t>, py::arg("dims"));
+    m.def("zeros_64", &zeros<int64_t>, py::arg("dims"));
 
     // Bind modular ops
     bind_modop_variants<int32_t>(m, "32");
@@ -181,20 +182,27 @@ PYBIND11_MODULE(lattica_hw, m) {
     m.def("modmul_axis_sum_64", &modmul_axis_sum<int64_t>, "Element-wise modular multiply and sum over the specified axis (int64)");
 
     // g_decomposition
-    bind_g_decomposition<int32_t>(m, "32");
-    bind_g_decomposition<int64_t>(m, "64");
+    bind_g_decomposition<int32_t, int8_t>(m, "32_8");
+    bind_g_decomposition<int64_t, int8_t>(m, "64_8");
+    bind_g_decomposition<int32_t, int32_t>(m, "32_32");
+    bind_g_decomposition<int64_t, int64_t>(m, "64_64");
 
     // bind expand, squeeze, unsqueeze
     bind_memory_ops<int32_t>(m, "32");
     bind_memory_ops<int64_t>(m, "64");
+    m.def("moveaxis_8", &moveaxis<int8_t>, py::arg("tensor"), py::arg("axis_src"), py::arg("axis_dst"), "Moves an axis from axis_src to axis_dst.");
+    m.def("expand_8", &expand<int8_t>, py::arg("tensor"), py::arg("axis"), py::arg("repeats"), "Virtually expands the tensor along the given axis");
 
     // contiguous ops
+    bind_contiguous<int8_t>(m, "8");
     bind_contiguous<int32_t>(m, "32");
     bind_contiguous<int64_t>(m, "64");
 
     // ntt
-    m.def("ntt_32", &ntt<int32_t>, "NTT (int32)");
-    m.def("ntt_64", &ntt<int64_t>, "NTT (int64)");
+    m.def("ntt_8_32", &ntt<int8_t, int32_t>, "NTT (int8)");
+    m.def("ntt_8_64", &ntt<int8_t, int64_t>, "NTT (int8)");
+    m.def("ntt_32_32", &ntt<int32_t, int32_t>, "NTT (int32)");
+    m.def("ntt_64_64", &ntt<int64_t, int64_t>, "NTT (int64)");
 
     // intt
     m.def("intt_32", &intt<int32_t>, "INTT (int32)");

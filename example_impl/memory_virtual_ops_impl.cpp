@@ -305,4 +305,7 @@ namespace lattica_hw_api {
     INSTANTIATE_MEMORY_OPS(int32_t)
     INSTANTIATE_MEMORY_OPS(int64_t)
 
+    template std::shared_ptr<DeviceTensor<int8_t>> moveaxis<int8_t>(const std::shared_ptr<DeviceTensor<int8_t>>&, int64_t, int64_t); \
+    template std::shared_ptr<DeviceTensor<int8_t>> expand<int8_t>(const std::shared_ptr<DeviceTensor<int8_t>>&, int64_t, int64_t); \
+
 } // namespace lattica_hw_api
