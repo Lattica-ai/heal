@@ -195,6 +195,33 @@ namespace lattica_hw_api {
         const std::vector<SliceArg>& slices
 );
 
+    /**
+     * @brief Changes the shape of the tensor without copying data.
+     *
+     * Reshapes the tensor to new dimensions, as long as the total number
+     * of elements (ignoring broadcasted dimensions) matches. If the tensor is
+     * broadcasted, the new shape will attempt to preserve
+     * broadcast semantics by setting appropriate strides to zero, or default
+     * to a C-contiguous layout where possible.
+     *
+     * Example:
+     * Given a tensor of shape [2, 3, 4], reshape to [6, 4] → shape [6, 4].
+     * For a broadcasted tensor with shape [1, 3, 4] (stride 0 for axis 0),
+     * reshape will preserve broadcast behavior where possible.
+     *
+     * Preconditions:
+     * - The product of `new_dims` must equal the number of elements in the
+     *   original tensor, **excluding broadcasted (stride=0) dimensions**.
+     * - If any strides are zero (broadcasted), new strides will be set to
+     *   maintain correct broadcast semantics where possible.
+     *
+     * @tparam T The element type.
+     * @param a The input tensor to reshape. Its metadata is not modified.
+     * @param new_dims The target dimensions for the reshaped tensor.
+     * @return A new DeviceTensor pointer with updated shape and strides,
+     *         sharing the original data.
+     * @throws std::invalid_argument if the total number of elements does not match.
+     */
     template <typename T>
     std::shared_ptr<DeviceTensor<T>> reshape(
         const std::shared_ptr<DeviceTensor<T>>& a,
