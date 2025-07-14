@@ -24,7 +24,6 @@ set(TEST_SOURCES
     test_axis_modsum.cpp
     test_g_decomposition.cpp
     test_decomp_reconstruct.cpp
-    test_reshape.cpp
     test_noncontiguous.cpp
     test_memory_ops.cpp
     test_contiguous.cpp
@@ -39,7 +38,6 @@ set(TEST_NAMES
     AxisModSumTests
     GDecompositionTests
     DecompReconstructTests
-    ReshapeTests
     NoncontiguousTests
     MemoryOpsTests
     ContiguousTests

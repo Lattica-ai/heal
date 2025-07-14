@@ -11,7 +11,6 @@
 template <typename T>
 class DeviceTensor {
 public:
-    void reshape(const std::vector<int64_t>& new_dims);
     void print() const;
     void print_metadata() const;
 };

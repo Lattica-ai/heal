@@ -112,7 +112,7 @@ namespace lattica_hw_api {
          int64_t start_axis,
          int64_t end_axis
      );
-	 
+
 
     /**
      * @brief Moves an existing dimension from axis_src to axis_dst in-place.
@@ -195,6 +195,11 @@ namespace lattica_hw_api {
         const std::vector<SliceArg>& slices
 );
 
+    template <typename T>
+    std::shared_ptr<DeviceTensor<T>> reshape(
+        const std::shared_ptr<DeviceTensor<T>>& a,
+        const std::vector<int64_t>& new_dims
+);
 }
 
 #endif // MEMORY_OPS_H

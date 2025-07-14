@@ -175,6 +175,12 @@ _moveaxis = {
     DeviceTensor64: lhw.moveaxis_64,
 }
 
+_reshape = {
+    DeviceTensor8: lhw.reshape_8,
+    DeviceTensor32: lhw.reshape_32,
+    DeviceTensor64: lhw.reshape_64,
+}
+
 def _dispatch(key, *args, impls):
     try:
         return impls[key](*args)
@@ -210,8 +216,7 @@ class PythonToCppDispatcher(ABC):
         return out
 
     def reshape(self, device_tensor, new_shape):
-        device_tensor.reshape(new_shape)
-        return device_tensor
+        return _dispatch(type(device_tensor), device_tensor, new_shape, impls=_reshape)
 
     def _modmul_ttt(self, a, b, p, out):
         _dispatch(type(a), a, b, p, out, impls=_modmul['ttt'])

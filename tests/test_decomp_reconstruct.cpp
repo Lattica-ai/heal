@@ -23,14 +23,14 @@ TEST(DecompReconstructTests, DecomposeAndReconstruct_Torch) {
     modmul_ttt(a_digits_hw, basis_hw, p6_hw, a_digits_hw);
 
     // Reshape to [3, 6, 1] to match axis_modsum API
-    a_digits_hw->reshape({3, power, 1});
+    a_digits_hw = reshape(a_digits_hw, {3, power, 1});
 
     // Reconstruct
     auto a_recon_hw = empty<int32_t>({3, 1});
     auto p1_hw = host_to_device<int32_t>(torch::tensor({1024}, torch::dtype(torch::kInt32)));
 
     axis_modsum(a_digits_hw, p1_hw, a_recon_hw, 1);
-    a_recon_hw->reshape({3});
+    a_recon_hw = reshape(a_recon_hw, {3});
 
     torch::Tensor recon_cpu = device_to_host<int32_t>(a_recon_hw);
 

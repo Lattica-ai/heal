@@ -130,8 +130,7 @@ void bind_device_memory(py::module_& m, const std::string& suffix) {
 
     py::class_<DeviceMem, std::shared_ptr<DeviceMem>>(m, ("DeviceTensor" + suffix).c_str())
         .def("print", &DeviceMem::print)
-        .def("print_metadata", &DeviceMem::print_metadata)
-        .def("reshape", &DeviceMem::reshape);
+        .def("print_metadata", &DeviceMem::print_metadata);
 }
 
 template <typename T>
@@ -192,6 +191,9 @@ PYBIND11_MODULE(lattica_hw, m) {
     bind_memory_ops<int64_t>(m, "64");
     m.def("moveaxis_8", &moveaxis<int8_t>, py::arg("tensor"), py::arg("axis_src"), py::arg("axis_dst"), "Moves an axis from axis_src to axis_dst.");
     m.def("expand_8", &expand<int8_t>, py::arg("tensor"), py::arg("axis"), py::arg("repeats"), "Virtually expands the tensor along the given axis");
+    m.def("reshape_8", &reshape<int8_t>, py::arg("tensor"), py::arg("new_shape"), "Reshapes the tensor to the new shape");
+    m.def("reshape_32", &reshape<int32_t>, py::arg("tensor"), py::arg("new_shape"), "Reshapes the tensor to the new shape");
+    m.def("reshape_64", &reshape<int64_t>, py::arg("tensor"), py::arg("new_shape"), "Reshapes the tensor to the new shape");
 
     // contiguous ops
     bind_contiguous<int8_t>(m, "8");
