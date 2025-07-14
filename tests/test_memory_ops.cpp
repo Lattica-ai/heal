@@ -72,7 +72,7 @@ TEST(MemoryOpsTests, UnsqueezeThrowsOnOutOfRangeAxis) {
 
     auto a_hw = host_to_device<int64_t>(a);
 
-    moveaxis<int64_t>(a_hw, /*src=*/2, /*dst=*/0);
+    a_hw = moveaxis<int64_t>(a_hw, /*src=*/2, /*dst=*/0);
 
     torch::Tensor result = device_to_host<int64_t>(a_hw);
     ASSERT_TRUE(torch::equal(result, expected))
@@ -86,7 +86,7 @@ TEST(MoveAxisTests, MoveFirstToLast3D_Int32) {
 
     auto a_hw = host_to_device<int64_t>(a);
 
-    moveaxis<int64_t>(a_hw, /*src=*/0, /*dst=*/2);
+    a_hw = moveaxis<int64_t>(a_hw, /*src=*/0, /*dst=*/2);
 
     torch::Tensor result = device_to_host<int64_t>(a_hw);
     ASSERT_TRUE(torch::equal(result, expected))
@@ -100,7 +100,7 @@ TEST(MoveAxisTests, MoveMiddleToLast4D_Int32) {
 
     auto a_hw = host_to_device<int32_t>(a);
 
-    moveaxis<int32_t>(a_hw, /*src=*/1, /*dst=*/-1);
+    a_hw = moveaxis<int32_t>(a_hw, /*src=*/1, /*dst=*/-1);
 
     torch::Tensor result = device_to_host<int32_t>(a_hw);
     ASSERT_TRUE(torch::allclose(result, expected))
@@ -114,7 +114,7 @@ TEST(MoveAxisTests, MoveFirstToLast3D_NegativeSrc) {
 
     auto a_hw = host_to_device<int64_t>(a);
 
-    moveaxis<int64_t>(a_hw, /*src=*/-3, /*dst=*/-1);
+    a_hw = moveaxis<int64_t>(a_hw, /*src=*/-3, /*dst=*/-1);
 
     torch::Tensor result = device_to_host<int64_t>(a_hw);
     ASSERT_TRUE(torch::equal(result, expected))
@@ -125,7 +125,7 @@ TEST(MoveAxisTests, NoOpWhenAxesEqual) {
     torch::Tensor a = torch::randint(0, 10, {3,4,5}, torch::kInt64);
     auto a_hw = host_to_device<int64_t>(a);
 
-    moveaxis<int64_t>(a_hw, /*src=*/1, /*dst=*/1);
+    a_hw = moveaxis<int64_t>(a_hw, /*src=*/1, /*dst=*/1);
 
     torch::Tensor result = device_to_host<int64_t>(a_hw);
     ASSERT_TRUE(torch::equal(result, a)) << "No-op moveaxis altered tensor.";
@@ -137,7 +137,7 @@ TEST(MoveAxisTests, MoveAdjacentForward) {
     torch::Tensor expected = torch::movedim(a, /*src=*/1, /*dst=*/2);
 
     auto a_hw = host_to_device<int64_t>(a);
-    moveaxis<int64_t>(a_hw, /*src=*/1, /*dst=*/2);
+    a_hw = moveaxis<int64_t>(a_hw, /*src=*/1, /*dst=*/2);
 
     torch::Tensor result = device_to_host<int64_t>(a_hw);
     ASSERT_TRUE(torch::equal(result, expected))
@@ -150,7 +150,7 @@ TEST(MoveAxisTests, MoveAdjacentBackward) {
     torch::Tensor expected = torch::movedim(a, /*src=*/2, /*dst=*/1);
 
     auto a_hw = host_to_device<int64_t>(a);
-    moveaxis<int64_t>(a_hw, /*src=*/2, /*dst=*/1);
+    a_hw = moveaxis<int64_t>(a_hw, /*src=*/2, /*dst=*/1);
 
     torch::Tensor result = device_to_host<int64_t>(a_hw);
     ASSERT_TRUE(torch::equal(result, expected))
@@ -163,7 +163,7 @@ TEST(MoveAxisTests, NonContiguousStrides) {
     torch::Tensor expected = torch::movedim(a, /*src=*/0, /*dst=*/2);                     // shape [2,4,3]
 
     auto a_hw = host_to_device<int64_t>(a);
-    moveaxis<int64_t>(a_hw, /*src=*/0, /*dst=*/2);
+    a_hw = moveaxis<int64_t>(a_hw, /*src=*/0, /*dst=*/2);
 
     torch::Tensor result = device_to_host<int64_t>(a_hw);
     ASSERT_TRUE(torch::allclose(result, expected))
@@ -175,10 +175,7 @@ TEST(MoveAxisTests, NonContiguousStrides) {
 // ──────────────────────────────────────────────────────────────────────────────
 
 TEST(MoveAxisTests, NullPointerThrows) {
-    EXPECT_THROW(
-        moveaxis<int32_t>(/*a=*/nullptr, 0, 1),
-        std::invalid_argument
-    );
+    EXPECT_THROW(moveaxis<int32_t>(/*a=*/nullptr, 0, 1), std::invalid_argument);
 }
 
 TEST(MoveAxisTests, SrcAxisOutOfRangeThrows) {
