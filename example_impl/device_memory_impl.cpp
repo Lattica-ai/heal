@@ -35,27 +35,6 @@ DeviceTensor<T>::DeviceTensor(
     std::shared_ptr<void> alias_data)
     : dims(std::move(dims)), strides(std::move(strides)), data(std::move(alias_data)) {}
 
-template<typename T>
-DeviceTensor<T> DeviceTensor<T>::slice_view(
-    const std::shared_ptr<DeviceTensor<T>>& base,
-    std::vector<int64_t> new_dims,
-    std::vector<int64_t> new_strides,
-    int64_t offset_in_elements)
-{
-    T* orig_raw = reinterpret_cast<T*>( base->data.get() );
-    T* view_raw = orig_raw + offset_in_elements;
-    std::shared_ptr<void> alias_data(
-        base->data,                  // share refcount & deleter
-        static_cast<void*>(view_raw) // new pointer into that buffer
-    );
-
-    return DeviceTensor<T>(
-        std::move(new_dims),
-        std::move(new_strides),
-        std::move(alias_data)
-    );
-}
-
 template <typename T>
 bool DeviceTensor<T>::is_contiguous() const {
     int64_t expected_stride = 1;
@@ -66,51 +45,6 @@ bool DeviceTensor<T>::is_contiguous() const {
     }
     return true;
 }
-
-template <typename T>
-void DeviceTensor<T>::reshape(const std::vector<int64_t>& new_dims) {
-    int64_t new_total = std::accumulate(new_dims.begin(), new_dims.end(), int64_t(1), std::multiplies<int64_t>());
-    int64_t current_total = 1;
-    for (size_t i = 0; i < dims.size(); ++i) {
-        if (strides[i] != 0) {
-            current_total *= dims[i];
-        }
-    }
-
-    if (new_total != current_total) {
-        throw std::invalid_argument("Total size of new shape must match number of elements (excluding broadcasted dims).");
-    }
-
-    // Generate new strides
-    std::vector<int64_t> new_strides(new_dims.size());
-    int64_t stride = 1;
-    for (int64_t i = new_dims.size() - 1; i >= 0; --i) {
-        new_strides[i] = stride;
-        stride *= new_dims[i];
-    }
-
-    // If this is a broadcasted tensor (has zero strides), keep them zero in broadcasted dimensions
-    // and otherwise use normal C-contiguous layout
-    bool has_broadcast = std::any_of(strides.begin(), strides.end(), [](int64_t s) { return s == 0; });
-
-    if (has_broadcast) {
-        // Fallback: zero all strides if any broadcasting involved
-        // More precise reuse of original strides would require complex mapping
-        for (int64_t i = 0; i < static_cast<int64_t>(new_strides.size()); ++i) {
-            if (new_dims[i] != 1) {
-                new_strides[i] = 1;
-                for (int64_t j = i + 1; j < static_cast<int64_t>(new_dims.size()); ++j) {
-                    new_strides[i] *= new_dims[j];
-                }
-                break; // Keep only one base dimension
-            }
-        }
-    }
-
-    dims = new_dims;
-    strides = new_strides;
-}
-
 
 template <typename T>
 T& DeviceTensor<T>::at(const std::vector<int64_t>& indices) {

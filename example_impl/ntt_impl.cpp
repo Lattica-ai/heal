@@ -209,15 +209,22 @@ void intt(
     for (int64_t i = 0; i < l; ++i) {
         for (int64_t j = 0; j < r; ++j) {
             for (int64_t t = 0; t < k; ++t) {
-                T mod = p->at({t});
-                T m_inv_t = m_inv->at({t});
+                T_DP<T> mod = static_cast<T_DP<T>>(p->at({t}));
+                T_DP<T> m_inv_t = static_cast<T_DP<T>>(m_inv->at({t}));
+
+                std::vector<T> temp_row(m);  // small local temporary
 
                 for (int64_t u = 0; u < m; ++u) {
-                    int64_t pu = perm->at({u});
-                    result->at({i, pu, j, t}) = a->at({i, u, j, t});
+                    int64_t src = perm->at({u});
+                    temp_row[u] = static_cast<T>(a->at({i, src, j, t}) % mod);
+                }
+                for (int64_t u = 0; u < m; ++u) {
+                    result->at({i, u, j, t}) = temp_row[u];
                 }
 
-                int64_t n = m, t_stride = 1, half = n / 2;
+                int64_t n = m;
+                int64_t t_stride = 1;
+                int64_t half = n / 2;
                 while (half >= 1) {
                     for (int64_t tid = 0; tid < n / 2; ++tid) {
                         int64_t group = tid / t_stride;
@@ -225,21 +232,30 @@ void intt(
                         int64_t idx_v = idx_u + t_stride;
                         int64_t idx_psi = half + group;
 
-                        T u_val = result->at({i, idx_u, j, t});
-                        T v_val = result->at({i, idx_v, j, t});
-                        T s = inv_twiddles->at({t, idx_psi});
+                        T_DP<T> u_val = static_cast<T_DP<T>>(result->at({i, idx_u, j, t}));
+                        T_DP<T> v_val = static_cast<T_DP<T>>(result->at({i, idx_v, j, t}));
+                        T_DP<T> s = static_cast<T_DP<T>>(inv_twiddles->at({t, idx_psi}));
 
-                        result->at({i, idx_u, j, t}) = (u_val + v_val) % mod;
-                        T_DP<T> diff = static_cast<T_DP<T>>(u_val + mod - v_val) * static_cast<T_DP<T>>(s);
-                        result->at({i, idx_v, j, t}) = static_cast<T>(diff % static_cast<T_DP<T>>(mod));
+                        // Modular add
+                        T_DP<T> add = u_val + v_val;
+                        result->at({i, idx_u, j, t}) = static_cast<T>(add % mod);
+
+                        // Modular sub
+                        T_DP<T> sub = (u_val >= v_val) ? (u_val - v_val) : (u_val + mod - v_val);
+
+                        // Modular mul
+                        T_DP<T> prod = sub * s;
+                        result->at({i, idx_v, j, t}) = static_cast<T>(prod % mod);
                     }
+
                     t_stride *= 2;
                     half /= 2;
                 }
 
                 for (int64_t u = 0; u < m; ++u) {
-                    T val = result->at({i, u, j, t});
-                    result->at({i, u, j, t}) = (val * m_inv_t) % mod;
+                    T_DP<T> val = static_cast<T_DP<T>>(result->at({i, u, j, t}));
+                    T_DP<T> scaled = val * m_inv_t;
+                    result->at({i, u, j, t}) = static_cast<T>(scaled % mod);
                 }
             }
         }

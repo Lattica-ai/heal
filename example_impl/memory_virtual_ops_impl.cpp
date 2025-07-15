@@ -1,7 +1,9 @@
 #include "device_memory_impl.h"
 #include "memory_virtual_ops.h"
 #include <stdexcept>
-
+#include <iostream>
+#include <functional>
+#include <numeric>
 namespace lattica_hw_api {
 
     template <typename T>
@@ -33,10 +35,7 @@ namespace lattica_hw_api {
         new_strides[axis] = 0;
 
         // Share the underlying data pointer, just modify metadata
-        a->dims = new_dims;
-        a->strides = new_strides;
-
-        return a;
+        return std::make_shared<DeviceTensor<T>>(new_dims, new_strides, a->data);
     }
 
     template <typename T>
@@ -59,9 +58,7 @@ namespace lattica_hw_api {
         new_dims.erase(new_dims.begin() + axis);
         new_strides.erase(new_strides.begin() + axis);
 
-        a->dims = new_dims;
-        a->strides = new_strides;
-        return a;
+        return std::make_shared<DeviceTensor<T>>(new_dims, new_strides, a->data);
     }
 
     template <typename T>
@@ -80,9 +77,7 @@ namespace lattica_hw_api {
         new_dims.insert(new_dims.begin() + axis, 1);
         new_strides.insert(new_strides.begin() + axis, 0);
 
-        a->dims = new_dims;
-        a->strides = new_strides;
-        return a;
+        return std::make_shared<DeviceTensor<T>>(new_dims, new_strides, a->data);
     }
 
 
@@ -130,9 +125,7 @@ namespace lattica_hw_api {
         new_strides.insert(new_strides.begin() + axis_dst, stride_val);
 
         // ── 2. Commit the modified metadata ──────────────────────────────────────
-        a->dims = std::move(new_dims);
-        a->strides = std::move(new_strides);
-        return a;
+        return std::make_shared<DeviceTensor<T>>(new_dims, new_strides, a->data);
     }
 
     template<typename T>
@@ -229,13 +222,18 @@ namespace lattica_hw_api {
             }
         }
 
-        auto view = DeviceTensor<T>::slice_view(
-            a,
+        T* orig_raw = reinterpret_cast<T*>(a->data.get());
+        T* view_raw = orig_raw + base_offset_in_elems;
+        std::shared_ptr<void> alias_data(
+            a->data,                  // share refcount & deleter
+            static_cast<void*>(view_raw) // new pointer into that buffer
+        );
+
+        return std::make_shared<DeviceTensor<T>>(
             std::move(new_dims),
             std::move(new_strides),
-            base_offset_in_elems
+            std::move(alias_data)
         );
-        return std::make_shared<DeviceTensor<T>>(std::move(view));
     }
 
     template <typename T>
@@ -248,8 +246,8 @@ namespace lattica_hw_api {
             throw std::runtime_error("flatten: input tensor must be contiguous");
         }
 
-        auto& dims = a->dims;
-        auto& strides = a->strides;
+        const auto& dims = a->dims;
+        const auto& strides = a->strides;
         int64_t ndim = static_cast<int64_t>(dims.size());
 
         // Wrap negatives
@@ -265,7 +263,7 @@ namespace lattica_hw_api {
         int64_t flat_size = 1;
         int64_t flat_stride = strides[end_axis];
         for (int64_t i = start_axis; i <= end_axis; ++i) {
-            flat_size *= dims[i]; // The stride of the flattened dim is the stride of the first dim in the range
+            flat_size *= dims[i];
         }
 
         // Build new dims/strides
@@ -286,11 +284,54 @@ namespace lattica_hw_api {
         new_dims.insert(new_dims.end(), dims.begin() + end_axis + 1, dims.end());
         new_strides.insert(new_strides.end(), strides.begin() + end_axis + 1, strides.end());
 
-        // Assign back into tensor metadata
-        dims = std::move(new_dims);
-        strides = std::move(new_strides);
+        // Return a new tensor view (sharing the same data)
+        return std::make_shared<DeviceTensor<T>>(new_dims, new_strides, a->data);
+    }
 
-        return a;
+
+    template <typename T>
+    std::shared_ptr<DeviceTensor<T>> reshape(
+        const std::shared_ptr<DeviceTensor<T>>& a,
+        const std::vector<int64_t>& new_dims) {
+        int64_t new_total = std::accumulate(new_dims.begin(), new_dims.end(), int64_t(1), std::multiplies<int64_t>());
+        int64_t current_total = 1;
+        for (size_t i = 0; i < a->dims.size(); ++i) {
+            if (a->strides[i] != 0) {
+                current_total *= a->dims[i];
+            }
+        }
+
+        if (new_total != current_total) {
+            throw std::invalid_argument("Total size of new shape must match number of elements (excluding broadcasted dims).");
+        }
+
+        // Generate new strides
+        std::vector<int64_t> new_strides(new_dims.size());
+        int64_t stride = 1;
+        for (int64_t i = new_dims.size() - 1; i >= 0; --i) {
+            new_strides[i] = stride;
+            stride *= new_dims[i];
+        }
+
+        // If this is a broadcasted tensor (has zero strides), keep them zero in broadcasted dimensions
+        // and otherwise use normal C-contiguous layout
+        bool has_broadcast = std::any_of(a->strides.begin(), a->strides.end(), [](int64_t s) { return s == 0; });
+
+        if (has_broadcast) {
+            // Fallback: zero all strides if any broadcasting involved
+            // More precise reuse of original strides would require complex mapping
+            for (int64_t i = 0; i < static_cast<int64_t>(new_strides.size()); ++i) {
+                if (new_dims[i] != 1) {
+                    new_strides[i] = 1;
+                    for (int64_t j = i + 1; j < static_cast<int64_t>(new_dims.size()); ++j) {
+                        new_strides[i] *= new_dims[j];
+                    }
+                    break; // Keep only one base dimension
+                }
+            }
+        }
+
+        return std::make_shared<DeviceTensor<T>>(new_dims, new_strides, a->data);
     }
 
     // Explicit template instantiations
@@ -300,12 +341,13 @@ namespace lattica_hw_api {
         template std::shared_ptr<DeviceTensor<T>> unsqueeze<T>(const std::shared_ptr<DeviceTensor<T>>&, int64_t); \
         template std::shared_ptr<DeviceTensor<T>> moveaxis<T>(const std::shared_ptr<DeviceTensor<T>>&, int64_t, int64_t); \
 		template std::shared_ptr<DeviceTensor<T>> get_slice<T>(const std::shared_ptr<DeviceTensor<T>>&, const std::vector<SliceArg>&); \
-        template std::shared_ptr<DeviceTensor<T>> flatten<T>(const std::shared_ptr<DeviceTensor<T>>&, int64_t, int64_t);
+        template std::shared_ptr<DeviceTensor<T>> flatten<T>(const std::shared_ptr<DeviceTensor<T>>&, int64_t, int64_t); \
+        template std::shared_ptr<DeviceTensor<T>> reshape<T>(const std::shared_ptr<DeviceTensor<T>>&, const std::vector<int64_t>&); \
 
     INSTANTIATE_MEMORY_OPS(int32_t)
     INSTANTIATE_MEMORY_OPS(int64_t)
 
     template std::shared_ptr<DeviceTensor<int8_t>> moveaxis<int8_t>(const std::shared_ptr<DeviceTensor<int8_t>>&, int64_t, int64_t); \
     template std::shared_ptr<DeviceTensor<int8_t>> expand<int8_t>(const std::shared_ptr<DeviceTensor<int8_t>>&, int64_t, int64_t); \
-
+    template std::shared_ptr<DeviceTensor<int8_t>> reshape<int8_t>(const std::shared_ptr<DeviceTensor<int8_t>>&, const std::vector<int64_t>&); \
 } // namespace lattica_hw_api

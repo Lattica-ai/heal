@@ -15,6 +15,9 @@ public:
     std::vector<int64_t> strides;
     std::shared_ptr<void> data;
 
+    DeviceTensor(std::vector<int64_t> dims,
+        std::vector<int64_t> strides,
+        std::shared_ptr<void> alias_data);
     DeviceTensor(const std::vector<int64_t>& dims,
                  const std::vector<int64_t>& strides,
                  const void* src_data);
@@ -31,16 +34,6 @@ public:
     // Broadcast-aware access
     T& at_with_broadcast(const std::vector<int64_t>& full_indices);
     const T& at_with_broadcast(const std::vector<int64_t>& full_indices) const;
-
-    static DeviceTensor<T> slice_view(const std::shared_ptr<DeviceTensor<T>>& base,
-                                                    std::vector<int64_t> new_dims,
-                                                    std::vector<int64_t> new_strides,
-                                                    int64_t offset_in_elements);
-
-private:
-    DeviceTensor(std::vector<int64_t> dims,
-        std::vector<int64_t> strides,
-        std::shared_ptr<void> alias_data);
 };
 
 #endif // DeviceTensorIMPL_H
