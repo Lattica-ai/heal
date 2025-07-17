@@ -1,8 +1,8 @@
 #include "device_memory_impl.h"
 #include "modmul_axis_sum.h"
+#include "typing.h"
 #include <stdexcept>
 #include <array>
-
 namespace lattica_hw_api {
 
 template <typename T>
@@ -106,8 +106,8 @@ void modmul_axis_sum(
     validate_modmul_inputs(a, b, p, perm, result, axis, apply_perm, reps, n, sum_size, k);
 
     // Lambda for modular multiplication
-    auto modmul = [](T x, T y, T mod) -> T {
-        return static_cast<T>((static_cast<uint64_t>(x) * static_cast<uint64_t>(y)) % static_cast<uint64_t>(mod));
+    auto modmul = [](T_DP<T> x, T_DP<T> y, T_DP<T> mod) -> T_DP<T> {
+        return (x * y) % mod;
     };
 
     // Main computation
@@ -116,17 +116,20 @@ void modmul_axis_sum(
         for (int64_t r = 0; r < reps; ++r) {
             for (int64_t j = 0; j < k; ++j) {
                 for (int64_t l = 0; l < n; ++l) {
-                    T sum = 0;
-                    for (int64_t i = 0; i < sum_size; ++i) {
-                        int64_t l_idx = l;
-                        if (apply_perm) {
-                            l_idx = perm->at({l});
-                        }
-                        T aa = a->at({r, i, j, l_idx});
-                        T bb = b->at({i, j, l_idx});
-                        sum = (sum + modmul(aa, bb, p->at({j}))) % p->at({j});
+                    T_DP<T> sum = 0;
+                    int64_t l_idx = l;
+                    if (apply_perm) {
+                        l_idx = perm->at({l});
                     }
-                    result->at({r, j, l}) = sum;
+                    T_DP<T> pp = p->at({j});
+                    for (int64_t i = 0; i < sum_size; ++i) {
+                        T_DP<T> aa = a->at({r, i, j, l});
+                        T_DP<T> bb = b->at({i, j, l_idx});
+                        sum = (sum + modmul(aa, bb, pp)) % pp;
+                    }
+                    T_DP<T> prev = result->at({r, j, l_idx});
+                    T_DP<T> new_val = (prev + sum) % pp;
+                    result->at({r, j, l_idx}) = static_cast<T>(new_val);
                 }
             }
         }
@@ -134,18 +137,22 @@ void modmul_axis_sum(
         // a: [reps, n, sum_size, k], b: [n, sum_size, k], result: [reps, n, k]
         for (int64_t r = 0; r < reps; ++r) {
             for (int64_t l = 0; l < n; ++l) {
+                int64_t l_idx = l;
+                if (apply_perm) {
+                    l_idx = perm->at({l});
+                }
                 for (int64_t j = 0; j < k; ++j) {
-                    T sum = 0;
-                    int64_t l_idx = l;
-                    if (apply_perm) {
-                        l_idx = perm->at({l});
-                    }
+                    T_DP<T> sum = 0;
+                    T_DP<T> pp = p->at({j});
                     for (int64_t i = 0; i < sum_size; ++i) {
-                        T aa = a->at({r, l_idx, i, j});
-                        T bb = b->at({l_idx, i, j});
-                        sum = (sum + modmul(aa, bb, p->at({j}))) % p->at({j});
+                        T_DP<T> aa = a->at({r, l, i, j});
+                        T_DP<T> bb = b->at({l_idx, i, j});
+                        sum = (sum + modmul(aa, bb, pp)) % pp;
                     }
-                    result->at({r, l, j}) = sum;
+
+                    T_DP<T> prev = result->at({r, l_idx, j});
+                    T_DP<T> new_val = (prev + sum) % pp;
+                    result->at({r, l_idx, j}) = static_cast<T>(new_val);
                 }
             }
         }

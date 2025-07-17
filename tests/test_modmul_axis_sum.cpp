@@ -41,7 +41,7 @@ TEST(ModMulAxisSumTests, BasicNoPerm_AxisMinus1) {
     auto p = torch::tensor({13, 17}, torch::kInt64);
 
     // result: [reps, k, n] = [2, 2, 4]
-    auto result = torch::empty({2, 2, 4}, torch::kInt64);
+    auto result = torch::zeros({2, 2, 4}, torch::kInt64);
 
     // call wrapper
     auto a_dev = host_to_device<int64_t>(a);
@@ -90,7 +90,7 @@ TEST(ModMulAxisSumTests, BasicInt32_NoPerm_AxisMinus1) {
     }, torch::kInt32); // [2,1,3]
 
     auto p = torch::tensor({97}, torch::kInt32); // [1] (arbitrary small modulus)
-    auto result = torch::empty({1,1,3}, torch::kInt32);
+    auto result = torch::zeros({1,1,3}, torch::kInt32);
 
     auto a_dev = host_to_device<int32_t>(a);
     auto b_dev = host_to_device<int32_t>(b);
@@ -122,7 +122,7 @@ TEST(ModMulAxisSumTests, Permutation_AxisMinus3) {
     auto b = torch::arange(101, 113, torch::kInt64).reshape({3,2,2});
     auto p = torch::tensor({7,11}, torch::kInt64);
     auto perm = torch::tensor({2,0,1}, torch::kInt64); // permutes n: 0→2, 1→0, 2→1
-    auto result = torch::empty({1,3,2}, torch::kInt64);
+    auto result = torch::zeros({1,3,2}, torch::kInt64);
 
     auto a_dev = host_to_device<int64_t>(a);
     auto b_dev = host_to_device<int64_t>(b);
@@ -146,9 +146,10 @@ TEST(ModMulAxisSumTests, Permutation_AxisMinus3) {
         for (int k = 0; k < 2; ++k) {
             int64_t sum = 0;
             for (int i = 0; i < 2; ++i) {
-                sum += a[rep][n_idx][i][k].item<int64_t>() * b[n_idx][i][k].item<int64_t>();
+                sum += a[rep][n][i][k].item<int64_t>() * b[n_idx][i][k].item<int64_t>();
             }
-            expected[rep][n][k] = sum % p[k].item<int64_t>();
+            // Write result at permuted location
+            expected[rep][n_idx][k] = sum % p[k].item<int64_t>();
         }
     }
 
@@ -169,7 +170,7 @@ TEST(ModMulAxisSumTests, NonContiguousInputs) {
     ASSERT_FALSE(b.is_contiguous());
 
     auto p = torch::tensor({13, 17}, torch::kInt64);
-    auto result = torch::empty({2,2,4}, torch::kInt64);
+    auto result = torch::zeros({2,2,4}, torch::kInt64);
 
     auto a_dev = host_to_device<int64_t>(a);
     auto b_dev = host_to_device<int64_t>(b);
@@ -213,7 +214,7 @@ TEST(ModMulAxisSumTests, HandlesInt64OverflowCorrectly) {
     auto a = torch::full({1,1,1,1}, large1, torch::kInt64);
     auto b = torch::full({1,1,1}, large2, torch::kInt64);
     auto p = torch::tensor({small_mod}, torch::kInt64);
-    auto result = torch::empty({1,1,1}, torch::kInt64);
+    auto result = torch::zeros({1,1,1}, torch::kInt64);
 
     auto a_dev = host_to_device<int64_t>(a);
     auto b_dev = host_to_device<int64_t>(b);
@@ -228,9 +229,52 @@ TEST(ModMulAxisSumTests, HandlesInt64OverflowCorrectly) {
 
     auto result_cpu = device_to_host<int64_t>(result_dev);
 
-    // Compute expected value using uint64_t
-    uint64_t exp = (uint64_t(large1) * uint64_t(large2)) % uint64_t(small_mod);
-    ASSERT_EQ(result_cpu[0][0][0].item<int64_t>(), int64_t(exp));
+    __int128 exp = (__int128(large1) * __int128(large2)) % __int128(small_mod);
+    int64_t ref = static_cast<int64_t>(exp);
+    ASSERT_EQ(result_cpu[0][0][0].item<int64_t>(), ref);
+
+}
+
+TEST(ModMulAxisSumTests, AccumulatesAcrossRepeatedCalls) {
+    // Simple example: [reps, sum_size, k, n] = [1, 1, 1, 2]
+    auto a1 = torch::tensor({{{{1, 2}}}}, torch::kInt64);  // [1,1,1,2]
+    auto b1 = torch::tensor({{{3, 4}}}, torch::kInt64);    // [1,1,2]
+    auto a2 = torch::tensor({{{{5, 6}}}}, torch::kInt64);  // [1,1,1,2]
+    auto b2 = torch::tensor({{{7, 8}}}, torch::kInt64);    // [1,1,2]
+    auto p = torch::tensor({13}, torch::kInt64);           // modulus [1]
+    auto result = torch::zeros({1,1,2}, torch::kInt64);    // [1,1,2]
+
+    // Device copies
+    auto a1_dev = host_to_device<int64_t>(a1);
+    auto b1_dev = host_to_device<int64_t>(b1);
+    auto a2_dev = host_to_device<int64_t>(a2);
+    auto b2_dev = host_to_device<int64_t>(b2);
+    auto p_dev = host_to_device<int64_t>(p);
+    std::shared_ptr<DeviceTensor<int64_t>> perm_dev = nullptr;
+    std::shared_ptr<DeviceTensor<int64_t>> log2p_list = nullptr;
+    std::shared_ptr<DeviceTensor<int64_t>> mu_list = nullptr;
+    auto result_dev = host_to_device<int64_t>(result);
+
+    // First call
+    modmul_axis_sum<int64_t>(a1_dev, b1_dev, p_dev, perm_dev, log2p_list, mu_list, -1, false, result_dev);
+
+    // Second call (accumulates!)
+    modmul_axis_sum<int64_t>(a2_dev, b2_dev, p_dev, perm_dev, log2p_list, mu_list, -1, false, result_dev);
+
+    // Fetch result back
+    auto result_cpu = device_to_host<int64_t>(result_dev);
+
+    // Manual reference computation (accumulation modulo 13)
+    // First call:
+    // [0,0,0] = (1*3) % 13 = 3
+    // [0,0,1] = (2*4) % 13 = 8
+    // Second call, add to previous:
+    // [0,0,0] += (5*7) = 3 + 35 = 38 % 13 = 12
+    // [0,0,1] += (6*8) = 8 + 48 = 56 % 13 = 4
+    auto expected = torch::tensor({{{12, 4}}}, torch::kInt64);
+
+    ASSERT_TRUE(torch::equal(result_cpu, expected));
+    ASSERT_EQ(result_cpu.sizes(), std::vector<int64_t>({1,1,2}));
 }
 
 /************************************************************************************************
@@ -241,7 +285,7 @@ TEST(ModMulAxisSumTests, Throws_BadShape) {
     auto a = torch::empty({2,3,2,4}, torch::kInt64);
     auto b = torch::empty({2,2,4}, torch::kInt64); // bad shape
     auto p = torch::ones({2}, torch::kInt64);
-    auto result = torch::empty({2,2,4}, torch::kInt64);
+    auto result = torch::zeros({2,2,4}, torch::kInt64);
 
     auto a_dev = host_to_device<int64_t>(a);
     auto b_dev = host_to_device<int64_t>(b);
@@ -263,7 +307,7 @@ TEST(ModMulAxisSumTests, Throws_BadAxis) {
     auto a = torch::empty({2,3,2,4}, torch::kInt64);
     auto b = torch::empty({3,2,4}, torch::kInt64);
     auto p = torch::ones({2}, torch::kInt64);
-    auto result = torch::empty({2,2,4}, torch::kInt64);
+    auto result = torch::zeros({2,2,4}, torch::kInt64);
 
     auto a_dev = host_to_device<int64_t>(a);
     auto b_dev = host_to_device<int64_t>(b);
@@ -285,7 +329,7 @@ TEST(ModMulAxisSumTests, Throws_NegativeModulus) {
     auto a = torch::empty({1,1,1,1}, torch::kInt64);
     auto b = torch::empty({1,1,1}, torch::kInt64);
     auto p = torch::tensor({-1}, torch::kInt64);
-    auto result = torch::empty({1,1,1}, torch::kInt64);
+    auto result = torch::zeros({1,1,1}, torch::kInt64);
 
     auto a_dev = host_to_device<int64_t>(a);
     auto b_dev = host_to_device<int64_t>(b);
@@ -308,7 +352,7 @@ TEST(ModMulAxisSumTests, Throws_PermWrongShape) {
     auto a = torch::ones({1,2,2,2}, torch::kInt64);
     auto b = torch::ones({2,2,2}, torch::kInt64);
     auto p = torch::ones({2}, torch::kInt64);
-    auto result = torch::ones({1,2,2}, torch::kInt64);
+    auto result = torch::zeros({1,2,2}, torch::kInt64);
 
     // Perm tensor with wrong length (should be n=2)
     auto perm = torch::tensor({0,1,2}, torch::kInt64); // length 3, should be 2
@@ -334,7 +378,7 @@ TEST(ModMulAxisSumTests, Throws_PermOutOfBounds) {
     auto a = torch::ones({1,2,2,2}, torch::kInt64);
     auto b = torch::ones({2,2,2}, torch::kInt64);
     auto p = torch::ones({2}, torch::kInt64);
-    auto result = torch::ones({1,2,2}, torch::kInt64);
+    auto result = torch::zeros({1,2,2}, torch::kInt64);
 
     // Perm tensor with out-of-bounds index
     auto perm = torch::tensor({0, 5}, torch::kInt64); // 5 >= n=2
