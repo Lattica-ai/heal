@@ -10,5 +10,5 @@ setup(
         "torch~=2.5.1",
         "numpy~=2.0.1"
     ],
-    python_requires=">=3.7",
+    python_requires=">=3.10",
 )
