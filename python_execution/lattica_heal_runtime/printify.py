@@ -15,7 +15,7 @@ def _print_arg(arg, indent):
                     f"\n{prop_indent}shape{list(arg.tensor.shape)}"
                     f"\n{prop_indent}dtype[{arg.tensor.dtype}] ")
         case DeviceOpArgType.SHAPE:
-            return 'Shape: {' + f"{', '.join([_print_arg(a, "") for a in arg])}" + '}'
+            return f"Shape: {{{', '.join(_print_arg(a, '') for a in arg)}}}"
         case DeviceOpArgType.INT:
             return str(arg)
         case DeviceOpArgType.NONE:
