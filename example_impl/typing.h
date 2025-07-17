@@ -5,10 +5,6 @@ template <typename T>
 struct TypeMapper;
 
 // Specialize the mapper for specific types
-template <>
-struct TypeMapper<int8_t> {
-    using type = int16_t;
-};
 
 template <>
 struct TypeMapper<int32_t> {

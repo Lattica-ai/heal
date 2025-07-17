@@ -1,7 +1,6 @@
 #include "device_memory_impl.h"
 #include "ntt.h"
 #include "typing.h"
-
 #include <stdexcept>
 #include <vector>
 #include <iostream>
@@ -113,7 +112,7 @@ void ntt(
         for (int64_t i = 0; i < l; ++i) {
             for (int64_t j = 0; j < r; ++j) {
                 for (int64_t t = 0; t < k; ++t) {
-                    T_DP<T> mod = p->at({t});
+                    T_DP<U> mod = p->at({t});
 
                     // Copy input to output with cast
                     for (int64_t u = 0; u < m; ++u) {
@@ -127,13 +126,12 @@ void ntt(
                         for (int64_t u = 0; u < stage; ++u) {
                             int64_t j1 = 2 * u * step;
                             int64_t j2 = j1 + step;
-                            T_DP<T> s = twiddles->at({t, stage + u});
-
+                            T_DP<U> s = twiddles->at({t, stage + u});
                             for (int64_t jx = j1; jx < j2; ++jx) {
-                                T_DP<T> u_val = result->at({i, j, t, jx});
-                                T_DP<T> v_val = result->at({i, j, t, jx + step});
-                                T_DP<T> v_tw = v_val * s;
-                                T_DP<T> v_mod = v_tw % mod;
+                                T_DP<U> u_val = result->at({i, j, t, jx});
+                                T_DP<U> v_val = result->at({i, j, t, jx + step});
+                                T_DP<U> v_tw = v_val * s;
+                                T_DP<U> v_mod = v_tw % mod;
                                 result->at({i, j, t, jx}) = (u_val + v_mod) % mod;
                                 result->at({i, j, t, jx + step}) = (u_val + mod - v_mod) % mod;
                             }
@@ -147,7 +145,7 @@ void ntt(
         for (int64_t i = 0; i < l; ++i) {
             for (int64_t j = 0; j < r; ++j) {
                 for (int64_t t = 0; t < k; ++t) {
-                    T_DP<T> mod = p->at({t});
+                    T_DP<U> mod = p->at({t});
 
                     // Copy input to output with cast (index order changed)
                     for (int64_t u = 0; u < m; ++u) {
@@ -161,13 +159,12 @@ void ntt(
                         for (int64_t u = 0; u < stage; ++u) {
                             int64_t j1 = 2 * u * step;
                             int64_t j2 = j1 + step;
-                            T_DP<T> s = twiddles->at({t, stage + u});
-
+                            T_DP<U> s = twiddles->at({t, stage + u});
                             for (int64_t jx = j1; jx < j2; ++jx) {
-                                T_DP<T> u_val = result->at({i, jx, j, t});
-                                T_DP<T> v_val = result->at({i, jx + step, j, t});
-                                T_DP<T> v_tw = v_val * s;
-                                T_DP<T> v_mod = v_tw % mod;
+                                T_DP<U> u_val = result->at({i, jx, j, t});
+                                T_DP<U> v_val = result->at({i, jx + step, j, t});
+                                T_DP<U> v_tw = v_val * s;
+                                T_DP<U> v_mod = v_tw % mod;
                                 result->at({i, jx, j, t}) = (u_val + v_mod) % mod;
                                 result->at({i, jx + step, j, t}) = (u_val + mod - v_mod) % mod;
                             }
