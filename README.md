@@ -40,7 +40,7 @@ example_run_transcript.py  # Entry point to run a test workload
 
 - C++17 or later
 - CMake ≥ 3.14
-- Python ≥ 3.8
+- Python ≥ 3.10
 - Pybind11 (auto-installed by CMake)
 - A C++ compiler (GCC recommended, e.g., g++. Note: clang++ may cause build issues)
 
