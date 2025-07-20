@@ -61,12 +61,51 @@ void bind_g_decomposition(py::module_& m, const std::string& suffix) {
 }
 
 template <typename T>
-void bind_memory_ops(py::module_& m, const std::string& suffix) {
+void bind_common_memory_ops(py::module_& m, const std::string& suffix) {
     m.def(("expand_" + suffix).c_str(),
           &expand<T>,
           py::arg("tensor"), py::arg("axis"), py::arg("repeats"),
           "Virtually expands the tensor along the given axis by repeating elements using stride tricks.");
 
+    m.def(("moveaxis_" + suffix).c_str(),
+          &moveaxis<T>,
+          py::arg("tensor"), py::arg("axis_src"), py::arg("axis_dst"),
+          "Moves an axis from axis_src to axis_dst.");
+
+    m.def(("reshape_" + suffix).c_str(),
+          &reshape<T>,
+          py::arg("tensor"), py::arg("new_shape"),
+          "Reshapes the tensor to the new shape.");
+
+    m.def(("get_slice_" + suffix).c_str(),
+        [](const std::shared_ptr<DeviceTensor<T>>& tensor, py::iterable sliceList) {
+            std::vector<SliceArg> args;
+            args.reserve(std::distance(sliceList.begin(), sliceList.end()));
+
+            for (py::handle h : sliceList) {
+                if (py::isinstance<py::int_>(h)) {
+                    args.emplace_back(h.cast<int64_t>());
+                } else if (py::isinstance<py::slice>(h)) {
+                    py::slice sl = h.cast<py::slice>();
+                    int64_t s  = sl.attr("start").cast<int64_t>();
+                    int64_t e  = sl.attr("stop").cast<int64_t>();
+                    int64_t st = sl.attr("step").cast<int64_t>();
+                    args.emplace_back(Slice(s, e, st));
+                } else {
+                    throw std::invalid_argument("get_slice: sliceList must contain only ints or slices");
+                }
+            }
+            return get_slice<T>(tensor, args);
+        },
+        py::arg("tensor"), py::arg("sliceList"),
+        R"doc(
+            Returns a zero-copy view of `tensor` sliced along each axis.
+            Accepts a Python iterable of ints and slice(start,stop,step),
+            which are mapped into your C++ SliceArg variant.)doc");
+}
+
+template <typename T>
+void bind_extra_memory_ops(py::module_& m, const std::string& suffix) {
     m.def(("squeeze_" + suffix).c_str(),
           &squeeze<T>,
           py::arg("tensor"), py::arg("axis"),
@@ -77,52 +116,12 @@ void bind_memory_ops(py::module_& m, const std::string& suffix) {
           py::arg("tensor"), py::arg("axis"),
           "Inserts a singleton dimension at the specified axis.");
 
-    m.def(("moveaxis_" + suffix).c_str(),
-          &moveaxis<T>,
-          py::arg("tensor"), py::arg("axis_src"), py::arg("axis_dst"),
-          "Moves an axis from axis_src to axis_dst.");
-
     m.def(("flatten_" + suffix).c_str(),
           &flatten<T>,
           py::arg("tensor"), py::arg("start_axis"), py::arg("end_axis"),
           "Flattens the tensor between start_axis and end_axis, inclusive.");
-
-    m.def(("get_slice_" + suffix).c_str(),
-          // [tensor, sliceList] → vector<SliceArg> → get_slice<T>
-          [](const std::shared_ptr<DeviceTensor<T>>& tensor,
-             py::iterable sliceList)
-          {
-              std::vector<SliceArg> args;
-              args.reserve(std::distance(sliceList.begin(), sliceList.end()));
-
-              for (py::handle h : sliceList) {
-                  if (py::isinstance<py::int_>(h)) {
-                      // integer → int64_t
-                      args.emplace_back(h.cast<int64_t>());
-                  }
-                  else if (py::isinstance<py::slice>(h)) {
-                      // Python slice → C++ Slice(start, stop, step)
-                      py::slice sl = h.cast<py::slice>();
-                      int64_t s  = sl.attr("start").cast<int64_t>();
-                      int64_t e  = sl.attr("stop").cast<int64_t>();
-                      int64_t st = sl.attr("step").cast<int64_t>();
-                      args.emplace_back(Slice(s, e, st));
-                  }
-                  else {
-                      throw std::invalid_argument(
-                          "get_slice: sliceList must contain only ints or slices");
-                  }
-              }
-
-              return get_slice<T>(tensor, args);
-          },
-          py::arg("tensor"),
-          py::arg("sliceList"),
-          R"doc(
-            Returns a zero-copy view of `tensor` sliced along each axis.
-            Accepts a Python iterable of ints and slice(start,stop,step),
-            which are mapped into your C++ SliceArg variant.)doc");
 }
+
 
 template <typename T>
 void bind_device_memory(py::module_& m, const std::string& suffix) {
@@ -186,14 +185,13 @@ PYBIND11_MODULE(lattica_hw, m) {
     bind_g_decomposition<int32_t, int32_t>(m, "32_32");
     bind_g_decomposition<int64_t, int64_t>(m, "64_64");
 
-    // bind expand, squeeze, unsqueeze
-    bind_memory_ops<int32_t>(m, "32");
-    bind_memory_ops<int64_t>(m, "64");
-    m.def("moveaxis_8", &moveaxis<int8_t>, py::arg("tensor"), py::arg("axis_src"), py::arg("axis_dst"), "Moves an axis from axis_src to axis_dst.");
-    m.def("expand_8", &expand<int8_t>, py::arg("tensor"), py::arg("axis"), py::arg("repeats"), "Virtually expands the tensor along the given axis");
-    m.def("reshape_8", &reshape<int8_t>, py::arg("tensor"), py::arg("new_shape"), "Reshapes the tensor to the new shape");
-    m.def("reshape_32", &reshape<int32_t>, py::arg("tensor"), py::arg("new_shape"), "Reshapes the tensor to the new shape");
-    m.def("reshape_64", &reshape<int64_t>, py::arg("tensor"), py::arg("new_shape"), "Reshapes the tensor to the new shape");
+    // For int32 and int64
+    bind_common_memory_ops<int8_t>(m, "8");
+    bind_common_memory_ops<int32_t>(m, "32");
+    bind_extra_memory_ops<int32_t>(m, "32");
+
+    bind_common_memory_ops<int64_t>(m, "64");
+    bind_extra_memory_ops<int64_t>(m, "64");
 
     // contiguous ops
     bind_contiguous<int8_t>(m, "8");
@@ -221,4 +219,10 @@ PYBIND11_MODULE(lattica_hw, m) {
           "Set all elements of a tensor to a constant value (int32)");
     m.def("set_const_val_64", &set_const_val<int64_t>, py::arg("tensor"), py::arg("value"),
           "Set all elements of a tensor to a constant value (int64)");
+
+    // pad_single_axis
+    m.def("pad_single_axis_32", &pad_single_axis<int32_t>, py::arg("tensor"), py::arg("pad"), py::arg("axis"), py::arg("result"),
+          "Pad a single axis of a tensor with zeros (int32)");
+    m.def("pad_single_axis_64", &pad_single_axis<int64_t>, py::arg("tensor"), py::arg("pad"), py::arg("axis"), py::arg("result"),
+          "Pad a single axis of a tensor with zeros (int64)");
 }
