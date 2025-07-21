@@ -12,9 +12,8 @@ namespace lattica_hw_api {
  *
  * Expected Input/Output Shapes:
  * - Input tensor `a`: Arbitrary shape `[d0, ..., dn]`
- * - Indices tensor `indices`: Shape matches `a`, except at dimension `axis`, where
- *   it specifies which elements to take: `a.shape[:axis] + [k] + a.shape[axis+1:]`
- * - Output tensor `result`: Shape matches `indices`
+ * - Indices tensor `indices`: Broadcast-compatible with `a` (same shape, or any dimension is 1), except at dimension `axis`, where
+ *   it may be either 1 or match `a.shape[axis]`.
  *
  * Arguments:
  * - `a` (input): Tensor to gather values from.
@@ -24,7 +23,8 @@ namespace lattica_hw_api {
  *
  * Notes:
  * - Each value in `indices` must be in the valid range for the dimension of `a` along `axis`.
- * - `result` must be preallocated with the correct shape (matching `indices`).
+ * - `indices` must be broadcast-compatible with `a` (all dims either 1 or matching, and at the gather axis, 1 or matching).
+ * - `result` must be preallocated with the correct shape.
  * - All tensors must reside on compatible devices.
  */
 
