@@ -350,4 +350,5 @@ namespace lattica_hw_api {
     template std::shared_ptr<DeviceTensor<int8_t>> moveaxis<int8_t>(const std::shared_ptr<DeviceTensor<int8_t>>&, int64_t, int64_t); \
     template std::shared_ptr<DeviceTensor<int8_t>> expand<int8_t>(const std::shared_ptr<DeviceTensor<int8_t>>&, int64_t, int64_t); \
     template std::shared_ptr<DeviceTensor<int8_t>> reshape<int8_t>(const std::shared_ptr<DeviceTensor<int8_t>>&, const std::vector<int64_t>&); \
+    template std::shared_ptr<DeviceTensor<int8_t>> get_slice<int8_t>(const std::shared_ptr<DeviceTensor<int8_t>>&, const std::vector<SliceArg>&); \
 } // namespace lattica_hw_api

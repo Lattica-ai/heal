@@ -51,6 +51,7 @@ _unsqueeze_impls = {
 }
 
 _get_slice_impls = {
+    DeviceTensor8: lhw.get_slice_8,
     DeviceTensor32: lhw.get_slice_32,
     DeviceTensor64: lhw.get_slice_64,
 }
@@ -162,6 +163,11 @@ _ntt = {
 _intt = {
     DeviceTensor32: lhw.intt_32,
     DeviceTensor64: lhw.intt_64,
+}
+
+_pad_single_axis_impls = {
+    DeviceTensor32: lhw.pad_single_axis_32,
+    DeviceTensor64: lhw.pad_single_axis_64,
 }
 
 _take_along_axis = {
@@ -293,6 +299,10 @@ class PythonToCppDispatcher(ABC):
 
     def contiguous(self, a):
         return _dispatch(type(a), a, impls=_contiguous_impls)
+
+    def pad_single_axis(self, a, pad, axis, out):
+        _dispatch(type(a), a, pad, axis, out, impls=_pad_single_axis_impls)
+        return out
 
     def take_along_axis(self, a, b, axis, out):
         _dispatch(type(a), a, b, axis, out, impls=_take_along_axis)
