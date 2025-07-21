@@ -1,19 +1,7 @@
-#ifndef DeviceTensor_H
-#define DeviceTensor_H
+#pragma once
 
-#include <vector>
-#include <memory>
+#include "device_tensor_ex_impl.h"
 #include <torch/torch.h>
-
-/**
- * @brief Abstract device-side tensor for hardware-accelerated memory.
- */
-template <typename T>
-class DeviceTensor {
-public:
-    void print() const;
-    void print_metadata() const;
-};
 
 namespace lattica_hw_api {
 
@@ -46,5 +34,3 @@ template <typename T>
 torch::Tensor device_to_host(const std::shared_ptr<DeviceTensor<T>>& memory);
 
 } // namespace lattica_hw_api
-
-#endif // DeviceTensor_H

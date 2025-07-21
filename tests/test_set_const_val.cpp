@@ -1,5 +1,6 @@
+#include "device_memory.h"
+#include "set_const_val.h"
 #include "gtest/gtest.h"
-#include "lattica_hw_api.h"
 
 using namespace lattica_hw_api;
 

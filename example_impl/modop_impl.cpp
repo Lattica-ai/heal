@@ -1,12 +1,7 @@
-#include "device_memory_impl.h"
 #include "modop.h"
 #include "typing.h"
-#include <numeric>
 #include <stdexcept>
-#include <functional>
-#include <type_traits>
 #include <iostream>
-#include <omp.h>
 
 namespace lattica_hw_api {
 

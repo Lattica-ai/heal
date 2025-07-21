@@ -1,7 +1,8 @@
-#ifndef MEMORY_OPS_H
-#define MEMORY_OPS_H
+#pragma once
 
+#include "device_tensor_ex_impl.h"
 #include <variant>
+
 /**
  * @file memory_ops.h
  * @brief Provides virtual and utility memory operations for DeviceTensor tensors.
@@ -228,5 +229,3 @@ namespace lattica_hw_api {
         const std::vector<int64_t>& new_dims
 );
 }
-
-#endif // MEMORY_OPS_H

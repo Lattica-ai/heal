@@ -1,4 +1,3 @@
-#include "device_memory_impl.h"
 #include "set_const_val.h"
 #include <stdexcept>
 

@@ -1,5 +1,6 @@
-#ifndef MODOP_H
-#define MODOP_H
+#pragma once
+
+#include "device_tensor_ex_impl.h"
 
 /**
  * @file modop.h
@@ -42,7 +43,7 @@
  *   - **tc**: a is tensor, b is scalar
  *   - **ct**: a is scalar, b is tensor
  * - **modneg** (negation):
- *   - **tt**: a and p are tensors 
+ *   - **tt**: a and p are tensors
  *   - **tc**: a is tensor, p is scalar
  */
 
@@ -157,4 +158,3 @@ namespace lattica_hw_api {
     );
 }
 
-#endif // MODOP_H

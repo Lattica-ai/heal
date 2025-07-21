@@ -1,9 +1,5 @@
-#include "device_memory_impl.h"
-
 #include "axis_modsum.h"
-
 #include <stdexcept>
-#include <omp.h>
 
 namespace lattica_hw_api {
 

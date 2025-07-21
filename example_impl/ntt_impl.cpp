@@ -1,10 +1,7 @@
-#include "device_memory_impl.h"
 #include "ntt.h"
 #include "typing.h"
 #include <stdexcept>
-#include <vector>
 #include <iostream>
-#include <omp.h>
 
 namespace lattica_hw_api {
 
@@ -195,6 +192,7 @@ void intt(
     int64_t l, m, r, k;
     validate_ntt_inputs<T>(a, p, perm, inv_twiddles, result, l, m, r, k, -3);
 
+    #pragma omp parallel for collapse(2)
     for (int64_t i = 0; i < l; ++i) {
         for (int64_t j = 0; j < r; ++j) {
             for (int64_t t = 0; t < k; ++t) {

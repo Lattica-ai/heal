@@ -1,6 +1,9 @@
+#include "g_decomposition.h"
+#include "device_memory.h"
+#include "memory_virtual_ops.h"
+#include "axis_modsum.h"
+#include "modop.h"
 #include "gtest/gtest.h"
-#include "lattica_hw_api.h"
-#include <torch/torch.h>
 
 using namespace lattica_hw_api;
 

@@ -1,5 +1,6 @@
-#ifndef AXIS_MODSUM_H
-#define AXIS_MODSUM_H
+#pragma once
+
+#include "device_tensor_ex_impl.h"
 
 /**
  * @file axis_modsum.h
@@ -30,5 +31,3 @@ namespace lattica_hw_api {
     );
 
 }
-
-#endif // AXIS_MODSUM_H

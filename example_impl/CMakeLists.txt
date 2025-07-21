@@ -1,5 +1,6 @@
 # Specify the library source files
 set(SOURCES
+    device_tensor_ex_impl.cpp
     device_memory_impl.cpp
     modop_impl.cpp
     axis_modsum_impl.cpp

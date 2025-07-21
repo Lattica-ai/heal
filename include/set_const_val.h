@@ -1,5 +1,6 @@
-#ifndef SET_CONST_VAL_H
-#define SET_CONST_VAL_H
+#pragma once
+
+#include "device_tensor_ex_impl.h"
 
 namespace lattica_hw_api {
 
@@ -51,4 +52,3 @@ void pad_single_axis(
 
 }; // namespace lattica_hw_api
 
-#endif // SET_CONST_VAL_H

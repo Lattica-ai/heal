@@ -1,8 +1,5 @@
-#include "device_memory_impl.h"
 #include "contiguous.h"
-#include <numeric>
 #include <stdexcept>
-#include <omp.h>
 
 namespace lattica_hw_api {
 
@@ -10,22 +7,22 @@ template <typename T>
 std::shared_ptr<DeviceTensor<T>> contiguous(const std::shared_ptr<DeviceTensor<T>>& tensor) {
     if (tensor->is_contiguous()) return tensor;
 
-    int64_t total = std::accumulate(
-        tensor->dims.begin(), tensor->dims.end(), int64_t(1), std::multiplies<>());
+    auto& dims = tensor->dims;
+    int64_t total = 1;
+    for (int64_t d : dims) total *= d;
 
     std::shared_ptr<void> new_data = std::shared_ptr<void>(
         operator new(total * sizeof(T)),
         [](void* ptr) { operator delete(ptr); }
     );
 
-    int64_t ndim = tensor->dims.size();
+    int64_t ndim = dims.size();
     T* dst_ptr = reinterpret_cast<T*>(new_data.get());
 
     // Compute strides for index-to-coord mapping
-    std::vector<int64_t> shape = tensor->dims;
     std::vector<int64_t> flat_strides(ndim, 1);
     for (int64_t i = ndim - 2; i >= 0; --i) {
-        flat_strides[i] = flat_strides[i + 1] * shape[i + 1];
+        flat_strides[i] = flat_strides[i + 1] * dims[i + 1];
     }
 
     #pragma omp parallel for

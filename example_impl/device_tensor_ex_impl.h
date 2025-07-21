@@ -1,5 +1,4 @@
-#ifndef DeviceTensorIMPL_H
-#define DeviceTensorIMPL_H
+#pragma once
 
 #include <vector>
 #include <memory>
@@ -35,5 +34,3 @@ public:
     T& at_with_broadcast(const std::vector<int64_t>& full_indices);
     const T& at_with_broadcast(const std::vector<int64_t>& full_indices) const;
 };
-
-#endif // DeviceTensorIMPL_H

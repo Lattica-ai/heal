@@ -1,5 +1,7 @@
+#include "contiguous.h"
+#include "device_memory.h"
+#include "modop.h"
 #include "gtest/gtest.h"
-#include "lattica_hw_api.h"
 
 using namespace lattica_hw_api;
 
