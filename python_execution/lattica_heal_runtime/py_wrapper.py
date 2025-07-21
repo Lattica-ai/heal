@@ -292,8 +292,9 @@ class PythonToCppDispatcher(ABC):
         return _dispatch(type(a), a, sliceList, impls=_get_slice_impls)
 
     def set_const_val(self, a, value):
-        return _dispatch(type(a), a, value, impls=_set_const_val_impls)
-
+        _dispatch(type(a), a, value, impls=_set_const_val_impls)
+        return a
+    
     def flatten(self, a, start_dim, end_dim):
         return _dispatch(type(a), a, start_dim, end_dim, impls=_flatten_impls)
 
