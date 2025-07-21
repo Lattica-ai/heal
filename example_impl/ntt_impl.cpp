@@ -1,7 +1,6 @@
 #include "device_memory_impl.h"
 #include "ntt.h"
 #include "typing.h"
-
 #include <stdexcept>
 #include <vector>
 #include <iostream>
@@ -25,19 +24,17 @@ void validate_ntt_inputs(
     if (a->dims.size() != 4)
         throw std::invalid_argument("Input tensor 'a' must have shape [l, m, r, k] or [l, r, k, m].");
 
+    l = a->dims[0];
     if (axis == -1) {
-        l = a->dims[0];
         m = a->dims[3];
         r = a->dims[1];
         k = a->dims[2];
     } else if (axis == -3) {
-        l = a->dims[0];
         m = a->dims[1];
         r = a->dims[2];
         k = a->dims[3];
-    } else {
+    } else
         throw std::invalid_argument("Axis must be -1 or -3 for NTT.");
-    }
 
     if (result->dims != a->dims)
         throw std::invalid_argument("Output tensor must have the same shape as input tensor.");
@@ -75,7 +72,7 @@ void apply_permutation(
                 }
             }
         }
-    } else if (axis == -3) {
+    } else { // axis == -3
         for (int64_t i = 0; i < l; ++i) {
             for (int64_t j = 0; j < r; ++j) {
                 for (int64_t t = 0; t < k; ++t) {
@@ -90,8 +87,6 @@ void apply_permutation(
                 }
             }
         }
-    } else {
-        throw std::invalid_argument("Axis must be -1 or -3 for permutation.");
     }
 }
 
@@ -117,7 +112,7 @@ void ntt(
         for (int64_t i = 0; i < l; ++i) {
             for (int64_t j = 0; j < r; ++j) {
                 for (int64_t t = 0; t < k; ++t) {
-                    U mod = p->at({t});
+                    T_DP<U> mod = p->at({t});
 
                     // Copy input to output with cast
                     for (int64_t u = 0; u < m; ++u) {
@@ -131,14 +126,12 @@ void ntt(
                         for (int64_t u = 0; u < stage; ++u) {
                             int64_t j1 = 2 * u * step;
                             int64_t j2 = j1 + step;
-                            U s = twiddles->at({t, stage + u});
-
+                            T_DP<U> s = twiddles->at({t, stage + u});
                             for (int64_t jx = j1; jx < j2; ++jx) {
-                                U u_val = result->at({i, j, t, jx});
-                                U v_val = result->at({i, j, t, jx + step});
-                                auto v_tw = static_cast<typename std::common_type<U, U>::type>(v_val) *
-                                            static_cast<typename std::common_type<U, U>::type>(s);
-                                U v_mod = static_cast<U>(v_tw % static_cast<typename std::common_type<U, U>::type>(mod));
+                                T_DP<U> u_val = result->at({i, j, t, jx});
+                                T_DP<U> v_val = result->at({i, j, t, jx + step});
+                                T_DP<U> v_tw = v_val * s;
+                                T_DP<U> v_mod = v_tw % mod;
                                 result->at({i, j, t, jx}) = (u_val + v_mod) % mod;
                                 result->at({i, j, t, jx + step}) = (u_val + mod - v_mod) % mod;
                             }
@@ -147,12 +140,12 @@ void ntt(
                 }
             }
         }
-    } else if (axis == -3) {
+    } else { // axis == -3
         #pragma omp parallel for collapse(2)
         for (int64_t i = 0; i < l; ++i) {
             for (int64_t j = 0; j < r; ++j) {
                 for (int64_t t = 0; t < k; ++t) {
-                    U mod = p->at({t});
+                    T_DP<U> mod = p->at({t});
 
                     // Copy input to output with cast (index order changed)
                     for (int64_t u = 0; u < m; ++u) {
@@ -166,14 +159,12 @@ void ntt(
                         for (int64_t u = 0; u < stage; ++u) {
                             int64_t j1 = 2 * u * step;
                             int64_t j2 = j1 + step;
-                            U s = twiddles->at({t, stage + u});
-
+                            T_DP<U> s = twiddles->at({t, stage + u});
                             for (int64_t jx = j1; jx < j2; ++jx) {
-                                U u_val = result->at({i, jx, j, t});
-                                U v_val = result->at({i, jx + step, j, t});
-                                auto v_tw = static_cast<typename std::common_type<U, U>::type>(v_val) *
-                                            static_cast<typename std::common_type<U, U>::type>(s);
-                                U v_mod = static_cast<U>(v_tw % static_cast<typename std::common_type<U, U>::type>(mod));
+                                T_DP<U> u_val = result->at({i, jx, j, t});
+                                T_DP<U> v_val = result->at({i, jx + step, j, t});
+                                T_DP<U> v_tw = v_val * s;
+                                T_DP<U> v_mod = v_tw % mod;
                                 result->at({i, jx, j, t}) = (u_val + v_mod) % mod;
                                 result->at({i, jx + step, j, t}) = (u_val + mod - v_mod) % mod;
                             }
@@ -182,8 +173,6 @@ void ntt(
                 }
             }
         }
-    } else {
-        throw std::invalid_argument("Axis must be -1 or -3 for NTT.");
     }
 
     if (!skip_perm) {

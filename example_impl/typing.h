@@ -5,6 +5,7 @@ template <typename T>
 struct TypeMapper;
 
 // Specialize the mapper for specific types
+
 template <>
 struct TypeMapper<int32_t> {
     using type = int64_t;
