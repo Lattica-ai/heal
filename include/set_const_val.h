@@ -14,7 +14,7 @@ namespace lattica_hw_api {
  * @param val The constant value to set for all elements.
  */
 template <typename T>
-std::shared_ptr<DeviceTensor<T>> set_const_val(
+void set_const_val(
     const std::shared_ptr<DeviceTensor<T>>& a,
     T val
 );

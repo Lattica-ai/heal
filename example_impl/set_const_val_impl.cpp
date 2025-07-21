@@ -5,7 +5,7 @@
 namespace lattica_hw_api {
 
 template <typename T>
-std::shared_ptr<DeviceTensor<T>> set_const_val(
+void set_const_val(
     const std::shared_ptr<DeviceTensor<T>>& a,
     T val
 ) {
@@ -38,8 +38,6 @@ std::shared_ptr<DeviceTensor<T>> set_const_val(
         // set to constant
         a->at(idx) = val;
     }
-
-    return a;
 }
 
 
@@ -112,8 +110,8 @@ void pad_single_axis(
 }
 
 
-template std::shared_ptr<DeviceTensor<int32_t>> set_const_val<int32_t>(const std::shared_ptr<DeviceTensor<int32_t>>&, int32_t);
-template std::shared_ptr<DeviceTensor<int64_t>> set_const_val<int64_t>(const std::shared_ptr<DeviceTensor<int64_t>>&, int64_t);
+template void set_const_val<int32_t>(const std::shared_ptr<DeviceTensor<int32_t>>&, int32_t);
+template void set_const_val<int64_t>(const std::shared_ptr<DeviceTensor<int64_t>>&, int64_t);
 template void pad_single_axis<int32_t>(const std::shared_ptr<DeviceTensor<int32_t>>&, int64_t, int64_t, std::shared_ptr<DeviceTensor<int32_t>>&);
 template void pad_single_axis<int64_t>(const std::shared_ptr<DeviceTensor<int64_t>>&, int64_t, int64_t, std::shared_ptr<DeviceTensor<int64_t>>&);
 
