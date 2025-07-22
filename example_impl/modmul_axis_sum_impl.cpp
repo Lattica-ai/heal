@@ -1,4 +1,5 @@
 #include "modmul_axis_sum.h"
+#include "device_tensor_ex_impl.h"
 #include "typing.h"
 #include <stdexcept>
 

@@ -1,4 +1,5 @@
 #include "modop.h"
+#include "device_tensor_ex_impl.h"
 #include "typing.h"
 #include <stdexcept>
 #include <iostream>

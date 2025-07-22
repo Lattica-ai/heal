@@ -1,7 +1,11 @@
 #pragma once
 
-#include "device_tensor_ex_impl.h"
+#include <memory>
 #include <variant>
+#include <vector>
+
+template <typename T>
+class DeviceTensor;
 
 /**
  * @file memory_ops.h

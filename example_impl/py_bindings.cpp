@@ -1,6 +1,3 @@
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
-#include <torch/extension.h>
 #include "contiguous.h"
 #include "modop.h"
 #include "g_decomposition.h"
@@ -11,6 +8,10 @@
 #include "ntt.h"
 #include "modmul_axis_sum.h"
 #include "axis_modsum.h"
+#include "device_tensor_ex_impl.h"
+#include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
+#include <torch/extension.h>
 
 namespace py = pybind11;
 using namespace lattica_hw_api;

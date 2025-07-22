@@ -1,4 +1,5 @@
 #include "memory_virtual_ops.h"
+#include "device_tensor_ex_impl.h"
 #include <stdexcept>
 #include <functional>
 

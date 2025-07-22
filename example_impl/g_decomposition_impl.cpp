@@ -1,5 +1,6 @@
 
 #include "g_decomposition.h"
+#include "device_tensor_ex_impl.h"
 #include <stdexcept>
 #include <iostream>
 

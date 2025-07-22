@@ -1,6 +1,9 @@
 #pragma once
 
-#include "device_tensor_ex_impl.h"
+#include <memory>
+
+template <typename T>
+class DeviceTensor;
 
 /**
  * @file g_decomposition.h

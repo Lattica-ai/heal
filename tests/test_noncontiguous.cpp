@@ -24,8 +24,6 @@ TEST(NonContiguousTests, TransposeAndAddWithStrides) {
     // Perform modular multiplication: result = a * a_t mod 100
     modmul_ttt(a_hw, a_t_hw, p_hw, result_hw);
 
-    result_hw->print();
-
     // Verify
     torch::Tensor expected = (a * a_t).remainder(100);
     torch::Tensor result = device_to_host<int32_t>(result_hw);

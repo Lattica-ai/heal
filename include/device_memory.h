@@ -1,7 +1,10 @@
 #pragma once
 
-#include "device_tensor_ex_impl.h"
+#include <memory>
 #include <torch/torch.h>
+
+template <typename T>
+class DeviceTensor;
 
 namespace lattica_hw_api {
 

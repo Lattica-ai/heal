@@ -1,11 +1,10 @@
 #include "ntt.h"
 #include "typing.h"
+#include "device_tensor_ex_impl.h"
 #include <stdexcept>
 #include <iostream>
 
 namespace lattica_hw_api {
-
-namespace {
 
 // Validate and extract dimensions from a [l, m, r, k] or [l, r, k, m] tensor
 template <typename T, typename U>
@@ -86,8 +85,6 @@ void apply_permutation(
         }
     }
 }
-
-} // namespace
 
 template <typename T, typename U>
 void ntt(
