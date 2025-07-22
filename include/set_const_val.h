@@ -1,9 +1,7 @@
 #pragma once
 
+#include "device_tensor.h"
 #include <memory>
-
-template <typename T>
-class DeviceTensor;
 
 namespace lattica_hw_api {
 
