@@ -8,7 +8,8 @@ setup(
     packages=find_packages(),
     install_requires=[
         "torch~=2.5.1",
-        "numpy~=2.0.1"
+        "numpy~=2.0.1",
+        "pybind11[global]",
     ],
     python_requires=">=3.10",
 )
