@@ -21,6 +21,18 @@ template <typename T>
 std::shared_ptr<DeviceTensor<T>> empty(const std::vector<int64_t>& dims);
 
 /**
+ * @brief Returns a contiguous version of the input tensor.
+ * If the tensor is already contiguous, returns the same tensor.
+ * Otherwise, allocates a new buffer and copies data.
+ *
+ * @tparam T Element type.
+ * @param tensor Input tensor.
+ * @return A contiguous version of the tensor.
+ */
+template <typename T>
+std::shared_ptr<DeviceTensor<T>> contiguous(const std::shared_ptr<DeviceTensor<T>>& tensor);
+
+/**
  * @brief Upload a PyTorch tensor to device memory.
  * @param tensor A contiguous torch::Tensor of type T.
  */

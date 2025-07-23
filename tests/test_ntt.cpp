@@ -1,5 +1,5 @@
 #include "ntt.h"
-#include "device_memory.h"
+#include "memory_management.h"
 #include "gtest/gtest.h"
 
 using namespace lattica_hw_api;

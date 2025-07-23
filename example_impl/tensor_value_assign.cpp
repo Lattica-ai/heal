@@ -1,5 +1,5 @@
-#include "set_const_val.h"
-#include "device_tensor_ex_impl.h"
+#include "tensor_value_assign.h"
+#include "device_tensor_ex.h"
 #include <stdexcept>
 
 namespace lattica_hw_api {

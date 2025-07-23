@@ -1,5 +1,5 @@
-#include "device_memory.h"
-#include "set_const_val.h"
+#include "memory_management.h"
+#include "tensor_value_assign.h"
 #include "gtest/gtest.h"
 
 using namespace lattica_hw_api;
