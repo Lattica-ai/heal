@@ -1,5 +1,7 @@
-#ifndef MODMUL_AXIS_SUM_H
-#define MODMUL_AXIS_SUM_H
+#pragma once
+
+#include "device_tensor.h"
+#include <memory>
 
 namespace lattica_hw_api {
 
@@ -78,5 +80,3 @@ void modmul_axis_sum(
 );
 
 } // namespace lattica_hw_api
-
-#endif // MODMUL_AXIS_SUM_H

@@ -1,6 +1,6 @@
+#include "modop.h"
+#include "device_memory.h"
 #include "gtest/gtest.h"
-#include "lattica_hw_api.h"
-#include <torch/torch.h>
 
 using namespace lattica_hw_api;
 
@@ -503,8 +503,8 @@ TEST(ModNegTTTests, BasicTensorTensor1DBroadcast) {
     auto p = torch::tensor({3, 5, 7}, torch::kInt64);                  // shape [3]
     std::vector<int64_t> shape = {2, 3};
 
-    auto a_hw      = host_to_device<int64_t>(a);
-    auto p_hw      = host_to_device<int64_t>(p);
+    auto a_hw = host_to_device<int64_t>(a);
+    auto p_hw = host_to_device<int64_t>(p);
     auto result_hw = empty<int64_t>(shape);
 
     modneg_tt<int64_t>(a_hw, p_hw, result_hw);
@@ -521,8 +521,8 @@ TEST(ModNegTTTests, ZeroTensorNumerator) {
     auto p = torch::tensor({3}, torch::kInt64);
     std::vector<int64_t> shape = {2, 2};
 
-    auto a_hw      = host_to_device<int64_t>(a);
-    auto p_hw      = host_to_device<int64_t>(p);
+    auto a_hw = host_to_device<int64_t>(a);
+    auto p_hw = host_to_device<int64_t>(p);
     auto result_hw = empty<int64_t>(shape);
 
     modneg_tt<int64_t>(a_hw, p_hw, result_hw);
@@ -547,15 +547,15 @@ TEST(ModNegTTTests, BroadcastPToLastDim) {
 
     std::vector<int64_t> shape = {2, 2, 3};
 
-    auto a_hw      = host_to_device<int64_t>(a);
-    auto p_hw      = host_to_device<int64_t>(p);
+    auto a_hw = host_to_device<int64_t>(a);
+    auto p_hw = host_to_device<int64_t>(p);
     auto result_hw = empty<int64_t>(shape);
 
     // call the broadcast‐aware modneg
     modneg_tt<int64_t>(a_hw, p_hw, result_hw);
 
     // bring back to host and compute expected with PyTorch’s broadcasting
-    auto result   = device_to_host<int64_t>(result_hw);
+    auto result = device_to_host<int64_t>(result_hw);
     auto expected = torch::remainder(-a, p);
 
     ASSERT_TRUE(torch::equal(result, expected))
@@ -575,15 +575,15 @@ TEST(ModNegTTTests, BroadcastLastDimSingleton) {
 
     std::vector<int64_t> shape = {2, 2, 3}; // expected result shape
 
-    auto a_hw      = host_to_device<int64_t>(a);
-    auto p_hw      = host_to_device<int64_t>(p);
+    auto a_hw = host_to_device<int64_t>(a);
+    auto p_hw = host_to_device<int64_t>(p);
     auto result_hw = empty<int64_t>(shape);
 
     // call the broadcast‐aware modneg
     modneg_tt<int64_t>(a_hw, p_hw, result_hw);
 
     // bring back to host and compute expected with PyTorch’s broadcasting
-    auto result   = device_to_host<int64_t>(result_hw);
+    auto result = device_to_host<int64_t>(result_hw);
     auto expected = torch::remainder(-a.broadcast_to(shape), p);
 
     ASSERT_TRUE(torch::equal(result, expected))
@@ -601,8 +601,8 @@ TEST(ModNegTTTests, Int32Tensor) {
     auto p = torch::randint(1, 20, {2}, torch::kInt32);
     std::vector<int64_t> shape = {2,3,2,2};
 
-    auto a_hw      = host_to_device<int32_t>(a);
-    auto p_hw      = host_to_device<int32_t>(p);
+    auto a_hw = host_to_device<int32_t>(a);
+    auto p_hw = host_to_device<int32_t>(p);
     auto result_hw = empty<int32_t>(shape);
 
     modneg_tt<int32_t>(a_hw, p_hw, result_hw);
@@ -616,12 +616,12 @@ TEST(ModNegTTTests, Int32Tensor) {
 TEST(ModNegTTTests, NonContiguousTensorTensor) {
     // a is non-contiguous, p is full
     auto base = torch::arange(1, 19, torch::kInt64).reshape({2,3,3});
-    auto a    = base.transpose(0,2);                      // [3,3,2]
-    auto p    = torch::tensor({4, 5}, torch::kInt64); // shape: [2]
+    auto a = base.transpose(0,2);                      // [3,3,2]
+    auto p = torch::tensor({4, 5}, torch::kInt64); // shape: [2]
     std::vector<int64_t> shape(a.sizes().begin(), a.sizes().end());
 
-    auto a_hw      = host_to_device<int64_t>(a);
-    auto p_hw      = host_to_device<int64_t>(p);
+    auto a_hw = host_to_device<int64_t>(a);
+    auto p_hw = host_to_device<int64_t>(p);
     auto result_hw = empty<int64_t>(shape);
 
     modneg_tt<int64_t>(a_hw, p_hw, result_hw);
@@ -653,8 +653,8 @@ TEST(ModNegTTTests, BroadcastMismatchThrows) {
     // here p is 1-D length 4 → not broadcastable onto last dim of a (3)
     auto p = torch::randint(1, 10, {4},   torch::kInt64);
 
-    auto a_hw      = host_to_device<int64_t>(a);
-    auto p_hw      = host_to_device<int64_t>(p);
+    auto a_hw = host_to_device<int64_t>(a);
+    auto p_hw = host_to_device<int64_t>(p);
     auto result_hw = empty<int64_t>({2,3});
 
     EXPECT_THROW(
@@ -681,11 +681,11 @@ TEST(ModNegTCTests, BasicTensorScalar) {
     int64_t p_scalar = 6;
     std::vector<int64_t> shape = {2, 3};
 
-    auto a_hw      = host_to_device<int64_t>(a);
+    auto a_hw = host_to_device<int64_t>(a);
     auto result_hw = empty<int64_t>(shape);
 
     modneg_tc<int64_t>(a_hw, p_scalar, result_hw);
-    auto result   = device_to_host<int64_t>(result_hw);
+    auto result = device_to_host<int64_t>(result_hw);
 
     auto expected = torch::remainder(-a, p_scalar);
     ASSERT_TRUE(torch::equal(result, expected))
@@ -697,11 +697,11 @@ TEST(ModNegTCTests, ZeroTensorNumerator) {
     int64_t p_scalar = 5;
     std::vector<int64_t> shape = {2, 2};
 
-    auto a_hw      = host_to_device<int64_t>(a);
+    auto a_hw = host_to_device<int64_t>(a);
     auto result_hw = empty<int64_t>(shape);
 
     modneg_tc<int64_t>(a_hw, p_scalar, result_hw);
-    auto result   = device_to_host<int64_t>(result_hw);
+    auto result = device_to_host<int64_t>(result_hw);
 
     auto expected = torch::remainder(-a, p_scalar);
     ASSERT_TRUE(torch::equal(result, expected))
@@ -718,11 +718,11 @@ TEST(ModNegTCTests, Int32Tensor) {
     int32_t p_scalar = 9;
     std::vector<int64_t> shape = {2,3,2,2};
 
-    auto a_hw      = host_to_device<int32_t>(a);
+    auto a_hw = host_to_device<int32_t>(a);
     auto result_hw = empty<int32_t>(shape);
 
     modneg_tc<int32_t>(a_hw, p_scalar, result_hw);
-    auto result   = device_to_host<int32_t>(result_hw);
+    auto result = device_to_host<int32_t>(result_hw);
 
     auto expected = torch::remainder(-a, p_scalar);
     ASSERT_TRUE(torch::equal(result, expected))
@@ -732,15 +732,15 @@ TEST(ModNegTCTests, Int32Tensor) {
 TEST(ModNegTCTests, NonContiguousATensor) {
     // a is non-contiguous, scalar modulus
     auto base = torch::arange(1, 19, torch::kInt64).reshape({2,3,3});  // [2,3,3]
-    auto a    = base.transpose(0,2);                                   // [3,3,2]
+    auto a = base.transpose(0,2);                                   // [3,3,2]
     int64_t p_scalar = 4;
     std::vector<int64_t> shape(a.sizes().begin(), a.sizes().end());
 
-    auto a_hw      = host_to_device<int64_t>(a);
+    auto a_hw = host_to_device<int64_t>(a);
     auto result_hw = empty<int64_t>(shape);
 
     modneg_tc<int64_t>(a_hw, p_scalar, result_hw);
-    auto result   = device_to_host<int64_t>(result_hw);
+    auto result = device_to_host<int64_t>(result_hw);
     auto expected = torch::remainder(-a, p_scalar);
     ASSERT_TRUE(torch::equal(result, expected))
         << "modneg_tc non-contiguous tensor-scalar failed.";
@@ -754,7 +754,7 @@ TEST(ModNegTCTests, ShapeMismatchResultThrows) {
     // result shape wrong
     auto a = torch::randint(1, 10, {2,3}, torch::kInt64);
     int64_t p_scalar = 7;
-    auto a_hw      = host_to_device<int64_t>(a);
+    auto a_hw = host_to_device<int64_t>(a);
     auto result_hw = empty<int64_t>({3,2});  // mismatched
 
     EXPECT_THROW(modneg_tc<int64_t>(a_hw, p_scalar, result_hw), std::invalid_argument);

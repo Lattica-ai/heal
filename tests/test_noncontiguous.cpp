@@ -1,5 +1,7 @@
+#include "contiguous.h"
+#include "device_memory.h"
+#include "modop.h"
 #include "gtest/gtest.h"
-#include "lattica_hw_api.h"
 
 using namespace lattica_hw_api;
 
@@ -21,8 +23,6 @@ TEST(NonContiguousTests, TransposeAndAddWithStrides) {
 
     // Perform modular multiplication: result = a * a_t mod 100
     modmul_ttt(a_hw, a_t_hw, p_hw, result_hw);
-
-    result_hw->print();
 
     // Verify
     torch::Tensor expected = (a * a_t).remainder(100);

@@ -1,5 +1,7 @@
-#ifndef CONTIGUOUS_H
-#define CONTIGUOUS_H
+#pragma once
+
+#include "device_tensor.h"
+#include <memory>
 
 /**
  * @file contiguous.h
@@ -20,5 +22,3 @@ namespace lattica_hw_api {
     std::shared_ptr<DeviceTensor<T>> contiguous(const std::shared_ptr<DeviceTensor<T>>& tensor);
 
 }
-
-#endif // CONTIGUOUS_H

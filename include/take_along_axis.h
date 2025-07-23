@@ -1,6 +1,7 @@
-#ifndef PERMUTE_H
-#define PERMUTE_H
+#pragma once
 
+#include "device_tensor.h"
+#include <memory>
 
 namespace lattica_hw_api {
 
@@ -37,5 +38,3 @@ void take_along_axis(
 );
 
 }
-
-#endif // PERMUTE_H

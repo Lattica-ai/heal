@@ -1,8 +1,8 @@
-#include "device_memory_impl.h"
 #include "modmul_axis_sum.h"
+#include "device_tensor_ex_impl.h"
 #include "typing.h"
 #include <stdexcept>
-#include <array>
+
 namespace lattica_hw_api {
 
 template <typename T>
@@ -113,6 +113,7 @@ void modmul_axis_sum(
     // Main computation
     if (axis == -1) {
         // a: [reps, sum_size, k, n], b: [sum_size, k, n], result: [reps, k, n]
+        #pragma omp parallel for collapse(2)
         for (int64_t r = 0; r < reps; ++r) {
             for (int64_t j = 0; j < k; ++j) {
                 for (int64_t l = 0; l < n; ++l) {
@@ -135,6 +136,7 @@ void modmul_axis_sum(
         }
     } else {  // axis == -3
         // a: [reps, n, sum_size, k], b: [n, sum_size, k], result: [reps, n, k]
+        #pragma omp parallel for collapse(2)
         for (int64_t r = 0; r < reps; ++r) {
             for (int64_t l = 0; l < n; ++l) {
                 int64_t l_idx = l;

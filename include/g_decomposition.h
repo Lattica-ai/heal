@@ -1,5 +1,7 @@
-#ifndef G_DECOMPOSITION_H
-#define G_DECOMPOSITION_H
+#pragma once
+
+#include "device_tensor.h"
+#include <memory>
 
 /**
  * @file g_decomposition.h
@@ -31,4 +33,3 @@ namespace lattica_hw_api {
 
 }
 
-#endif // G_DECOMPOSITION_H

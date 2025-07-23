@@ -1,5 +1,7 @@
-#ifndef NTT_H
-#define NTT_H
+#pragma once
+
+#include "device_tensor.h"
+#include <memory>
 
 /**
  * @file ntt.h
@@ -56,5 +58,3 @@ namespace lattica_hw_api {
     );
 
 }
-
-#endif // NTT_H

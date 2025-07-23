@@ -1,6 +1,7 @@
-#include "device_memory_impl.h"
 #include "take_along_axis.h"
+#include "device_tensor_ex_impl.h"
 #include <stdexcept>
+
 namespace lattica_hw_api {
 
 template <typename T>

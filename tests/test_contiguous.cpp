@@ -1,6 +1,6 @@
+#include "contiguous.h"
+#include "device_memory.h"
 #include "gtest/gtest.h"
-#include "lattica_hw_api.h"
-#include <torch/torch.h>
 
 using namespace lattica_hw_api;
 

@@ -1,9 +1,6 @@
-#include "device_memory_impl.h"
-
 #include "axis_modsum.h"
-
+#include "device_tensor_ex_impl.h"
 #include <stdexcept>
-#include <omp.h>
 
 namespace lattica_hw_api {
 

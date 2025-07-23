@@ -1,5 +1,4 @@
-#ifndef DeviceTensorIMPL_H
-#define DeviceTensorIMPL_H
+#pragma once
 
 #include <vector>
 #include <memory>
@@ -22,7 +21,6 @@ public:
                  const std::vector<int64_t>& strides,
                  const void* src_data);
 
-    void reshape(const std::vector<int64_t>& new_dims);
     void print() const;
     void print_metadata() const;
     bool is_contiguous() const;
@@ -35,5 +33,3 @@ public:
     T& at_with_broadcast(const std::vector<int64_t>& full_indices);
     const T& at_with_broadcast(const std::vector<int64_t>& full_indices) const;
 };
-
-#endif // DeviceTensorIMPL_H
