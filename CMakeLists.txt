@@ -26,7 +26,7 @@ set(TORCH_INCLUDE_DIRS "${TORCH_INCLUDE_DIR};${TORCH_INCLUDE_DIR}/torch/csrc/api
 message(STATUS "Resolved TORCH_INCLUDE_DIR: ${TORCH_INCLUDE_DIR}")
 message(STATUS "Resolved TORCH_LIB_DIR: ${TORCH_LIB_DIR}")
 
-include_directories(${TORCH_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR}/example_impl)
+include_directories(${TORCH_INCLUDE_DIRS})
 link_directories(${TORCH_LIB_DIR})
 link_libraries(torch torch_cpu c10)
 

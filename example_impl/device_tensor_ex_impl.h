@@ -21,7 +21,6 @@ public:
                  const std::vector<int64_t>& strides,
                  const void* src_data);
 
-    void reshape(const std::vector<int64_t>& new_dims);
     void print() const;
     void print_metadata() const;
     bool is_contiguous() const;
