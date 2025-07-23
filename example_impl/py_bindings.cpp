@@ -1,11 +1,11 @@
+#include "device_tensor_ex.h"
+#include "memory_management.h"
 #include "modular_arithmetic.h"
+#include "modular_arithmetic_axis_ops.h"
+#include "ntt.h"
 #include "tensor_advanced_ops.h"
 #include "tensor_layout_ops.h"
-#include "memory_management.h"
 #include "tensor_value_assign.h"
-#include "ntt.h"
-#include "modular_arithmetic_axis_ops.h"
-#include "device_tensor_ex.h"
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <torch/extension.h>
@@ -13,91 +13,82 @@
 namespace py = pybind11;
 using namespace lattica_hw_api;
 
+// A helper to get the type-specific suffix for function names
 template <typename T>
-void bind_modop_variants(py::module_& m, const std::string& suffix) {
-    // modmul variants
-    m.def(("modmul_ttt_" + suffix).c_str(), &modmul_ttt<T>,
-          "Elementwise modular multiplication: ([...,k] * [...,k]) % [k]");
-    m.def(("modmul_ttc_" + suffix).c_str(), &modmul_ttc<T>,
-          "Elementwise modular multiplication: ([...,k] * [...,k]) % scalar");
-    m.def(("modmul_tct_" + suffix).c_str(), &modmul_tct<T>,
-          "Elementwise modular multiplication: ([...,k] * scalar) % [k]");
-    m.def(("modmul_tcc_" + suffix).c_str(), &modmul_tcc<T>,
-          "Elementwise modular multiplication: ([...,k] * scalar) % scalar");
+struct TypeSuffix {
+    static constexpr const char* value = "";
+};
+template <> struct TypeSuffix<int8_t> { static constexpr const char* value = "8"; };
+template <> struct TypeSuffix<int32_t> { static constexpr const char* value = "32"; };
+template <> struct TypeSuffix<int64_t> { static constexpr const char* value = "64"; };
 
-    // modsum variants
-    m.def(("modsum_ttt_" + suffix).c_str(), &modsum_ttt<T>,
-          "Elementwise modular addition: ([...,k] + [...,k]) % [k]");
-    m.def(("modsum_ttc_" + suffix).c_str(), &modsum_ttc<T>,
-          "Elementwise modular addition: ([...,k] + [...,k]) % scalar");
-    m.def(("modsum_tct_" + suffix).c_str(), &modsum_tct<T>,
-          "Elementwise modular addition: ([...,k] + scalar) % [k]");
-    m.def(("modsum_tcc_" + suffix).c_str(), &modsum_tcc<T>,
-          "Elementwise modular addition: ([...,k] + scalar) % scalar");
+//================================================================================
+// BINDING HELPERS FOR DIFFERENT OPERATION CATEGORIES
+//================================================================================
 
-    // mod variants
-    m.def(("mod_tt_" + suffix).c_str(),
-          &mod_tt<T>,
-          py::arg("a"), py::arg("b"), py::arg("result"),
-          "Elementwise modular remainder: ([...,k] % [...,k])");
-    m.def(("mod_tc_" + suffix).c_str(),
-          &mod_tc<T>,
-          py::arg("a"), py::arg("b_scalar"), py::arg("result"),
-          "Elementwise modular remainder: ([...,k] % scalar)");
-    m.def(("mod_ct_" + suffix).c_str(),
-          &mod_ct<T>,
-          py::arg("a_scalar"), py::arg("b"), py::arg("result"),
-          "Elementwise modular remainder: (scalar % [...,k])");
-
-    // modneg variants
-    m.def(("modneg_tt_" + suffix).c_str(),
-          &modneg_tt<T>,
-          py::arg("a"), py::arg("p"), py::arg("result"),
-          "Elementwise modular negation: ([...,k] % [...,k])");
-    m.def(("modneg_tc_" + suffix).c_str(),
-          &modneg_tc<T>,
-          py::arg("a"), py::arg("p_scalar"), py::arg("result"),
-          "Elementwise modular negation: ([...,k] % scalar)");
+/**
+ * @brief Binds the DeviceTensor class with its methods.
+ */
+template <typename T>
+void bind_device_tensor(py::module_& m, const std::string& suffix) {
+    using DeviceMem = DeviceTensor<T>;
+    py::class_<DeviceMem, std::shared_ptr<DeviceMem>>(m, ("DeviceTensor" + suffix).c_str())
+        .def("print", &DeviceMem::print)
+        .def("print_metadata", &DeviceMem::print_metadata);
 }
 
-template <typename T, typename U>
-void bind_g_decomposition(py::module_& m, const std::string& suffix) {
-    m.def(("apply_g_decomp_" + suffix).c_str(), &apply_g_decomp<T,U>,
-          py::arg("a"), py::arg("result"), py::arg("power"), py::arg("base_bits"),
-          "G decomposition (base 2^base_bits)");
+/**
+ * @brief Binds memory management functions
+ * (empty, host_to_device, device_to_host, zeros, contiguous).
+ */
+template <typename T>
+void bind_memory_management(py::module_& m, const std::string& suffix) {
+    m.def(("empty_" + suffix).c_str(), &empty<T>, py::arg("dims"),
+          "Allocate a new device tensor on hardware without initializing elements.");
+
+    m.def(("contiguous_" + suffix).c_str(), &contiguous<T>, py::arg("tensor"),
+          "Return a contiguous version of the tensor.");
+
+    m.def(("host_to_device_" + suffix).c_str(), &host_to_device<T>, py::arg("tensor"),
+          "Upload a PyTorch tensor to device memory.");
+
+    m.def(("device_to_host_" + suffix).c_str(), &device_to_host<T>, py::arg("memory"),
+          "Download a device tensor back into a torch::Tensor.");
+
+    if constexpr (std::is_same_v<T, int32_t> || std::is_same_v<T, int64_t>) {
+        m.def(("zeros_" + suffix).c_str(), &zeros<T>, py::arg("dims"),
+            "Allocate a new device tensor on hardware with all elements initialized to zero.");
+    }
 }
 
+/**
+ * @brief Binds all tensor layout and manipulation operations
+ * (reshape, moveaxis, expand, squeeze, unsqueeze, flatten, get_slice).
+ */
 template <typename T>
-void bind_common_memory_ops(py::module_& m, const std::string& suffix) {
-    m.def(("expand_" + suffix).c_str(),
-          &expand<T>,
-          py::arg("tensor"), py::arg("axis"), py::arg("repeats"),
-          "Virtually expands the tensor along the given axis by repeating elements using stride tricks.");
+void bind_tensor_layout_ops(py::module_& m, const std::string& suffix) {
+    m.def(("reshape_" + suffix).c_str(), &reshape<T>, py::arg("tensor"), py::arg("new_shape"),
+          "Reshape a tensor to the specified shape without changing its data.");
 
-    m.def(("moveaxis_" + suffix).c_str(),
-          &moveaxis<T>,
-          py::arg("tensor"), py::arg("axis_src"), py::arg("axis_dst"),
-          "Moves an axis from axis_src to axis_dst.");
+    m.def(("moveaxis_" + suffix).c_str(), &moveaxis<T>, py::arg("tensor"), py::arg("axis_src"), py::arg("axis_dst"),
+          "Move an existing dimension from axis_src to axis_dst in-place.");
 
-    m.def(("reshape_" + suffix).c_str(),
-          &reshape<T>,
-          py::arg("tensor"), py::arg("new_shape"),
-          "Reshapes the tensor to the new shape.");
+    m.def(("expand_" + suffix).c_str(), &expand<T>, py::arg("tensor"), py::arg("axis"), py::arg("repeats"),
+          "Expand a tensor by repeating elements along the specified axis.");
 
     m.def(("get_slice_" + suffix).c_str(),
         [](const std::shared_ptr<DeviceTensor<T>>& tensor, py::iterable sliceList) {
             std::vector<SliceArg> args;
-            args.reserve(std::distance(sliceList.begin(), sliceList.end()));
-
             for (py::handle h : sliceList) {
                 if (py::isinstance<py::int_>(h)) {
                     args.emplace_back(h.cast<int64_t>());
                 } else if (py::isinstance<py::slice>(h)) {
                     py::slice sl = h.cast<py::slice>();
-                    int64_t s  = sl.attr("start").cast<int64_t>();
-                    int64_t e  = sl.attr("stop").cast<int64_t>();
-                    int64_t st = sl.attr("step").cast<int64_t>();
-                    args.emplace_back(Slice(s, e, st));
+                    args.emplace_back(Slice(
+                        sl.attr("start").cast<int64_t>(),
+                        sl.attr("stop").cast<int64_t>(),
+                        sl.attr("step").cast<int64_t>()
+                    ));
                 } else {
                     throw std::invalid_argument("get_slice: sliceList must contain only ints or slices");
                 }
@@ -105,131 +96,153 @@ void bind_common_memory_ops(py::module_& m, const std::string& suffix) {
             return get_slice<T>(tensor, args);
         },
         py::arg("tensor"), py::arg("sliceList"),
-        R"doc(
-            Returns a zero-copy view of `tensor` sliced along each axis.
-            Accepts a Python iterable of ints and slice(start,stop,step),
-            which are mapped into your C++ SliceArg variant.)doc");
+        "Returns a zero-copy view of tensor sliced along each axis.");
+
+    if constexpr (!std::is_same_v<T, int8_t>) {
+        m.def(("squeeze_" + suffix).c_str(), &squeeze<T>, py::arg("tensor"), py::arg("axis"),
+              "Remove a dimension of length 1 at the specified axis.");
+
+        m.def(("unsqueeze_" + suffix).c_str(), &unsqueeze<T>, py::arg("tensor"), py::arg("axis"),
+              "Insert a new axis of length 1 at the specified position in the tensor's shape.");
+
+        m.def(("flatten_" + suffix).c_str(), &flatten<T>, py::arg("tensor"), py::arg("start_axis"), py::arg("end_axis"),
+              "Flatten the tensor between start_axis and end_axis, preserving other dimensions.");
+    }
 }
 
+/**
+ * @brief Binds all element-wise modular arithmetic operations.
+ */
 template <typename T>
-void bind_extra_memory_ops(py::module_& m, const std::string& suffix) {
-    m.def(("squeeze_" + suffix).c_str(),
-          &squeeze<T>,
-          py::arg("tensor"), py::arg("axis"),
-          "Removes a singleton dimension at the specified axis.");
+void bind_modular_arithmetic(py::module_& m, const std::string& suffix) {
+    // Modular Multiplication
+    m.def(("modmul_ttt_" + suffix).c_str(), &modmul_ttt<T>,
+        py::arg("a"), py::arg("b"), py::arg("p"), py::arg("result"),
+        "([...,k] * [...,k]) % [k]");
+    m.def(("modmul_ttc_" + suffix).c_str(), &modmul_ttc<T>,
+        py::arg("a"), py::arg("b"), py::arg("p_scalar"), py::arg("result"),
+        "([...,k] * [...,k]) % scalar");
+    m.def(("modmul_tct_" + suffix).c_str(), &modmul_tct<T>,
+        py::arg("a"), py::arg("b_scalar"), py::arg("p"), py::arg("result"),
+        "([...,k] * scalar) % [k]");
+    m.def(("modmul_tcc_" + suffix).c_str(), &modmul_tcc<T>,
+        py::arg("a"), py::arg("b_scalar"), py::arg("p_scalar"), py::arg("result"),
+        "([...,k] * scalar) % scalar");
 
-    m.def(("unsqueeze_" + suffix).c_str(),
-          &unsqueeze<T>,
-          py::arg("tensor"), py::arg("axis"),
-          "Inserts a singleton dimension at the specified axis.");
+    // Modular Addition
+    m.def(("modsum_ttt_" + suffix).c_str(), &modsum_ttt<T>,
+        py::arg("a"), py::arg("b"), py::arg("p"), py::arg("result"),
+        "([...,k] + [...,k]) % [k]");
+    m.def(("modsum_ttc_" + suffix).c_str(), &modsum_ttc<T>,
+        py::arg("a"), py::arg("b"), py::arg("p_scalar"), py::arg("result"),
+        "([...,k] + [...,k]) % scalar");
+    m.def(("modsum_tct_" + suffix).c_str(), &modsum_tct<T>,
+        py::arg("a"), py::arg("b_scalar"), py::arg("p"), py::arg("result"),
+        "([...,k] + scalar) % [k]");
+    m.def(("modsum_tcc_" + suffix).c_str(), &modsum_tcc<T>,
+        py::arg("a"), py::arg("b_scalar"), py::arg("p_scalar"), py::arg("result"),
+        "([...,k] + scalar) % scalar");
 
-    m.def(("flatten_" + suffix).c_str(),
-          &flatten<T>,
-          py::arg("tensor"), py::arg("start_axis"), py::arg("end_axis"),
-          "Flattens the tensor between start_axis and end_axis, inclusive.");
+    // Modular Remainder
+    m.def(("mod_tt_" + suffix).c_str(), &mod_tt<T>, py::arg("a"), py::arg("b"), py::arg("result"), "[...,k] % [...,k]");
+    m.def(("mod_tc_" + suffix).c_str(), &mod_tc<T>, py::arg("a"), py::arg("b_scalar"), py::arg("result"), "[...,k] % scalar");
+    m.def(("mod_ct_" + suffix).c_str(), &mod_ct<T>, py::arg("a_scalar"), py::arg("b"), py::arg("result"), "scalar % [...,k]");
+
+    // Modular Negation
+    m.def(("modneg_tt_" + suffix).c_str(), &modneg_tt<T>, py::arg("a"), py::arg("p"), py::arg("result"), "(-[...,k]) % [...,k]");
+    m.def(("modneg_tc_" + suffix).c_str(), &modneg_tc<T>, py::arg("a"), py::arg("p_scalar"), py::arg("result"), "(-[...,k]) % scalar");
 }
 
-
+/**
+ * @brief Binds general tensor operations like axis reductions and assignments.
+ */
 template <typename T>
-void bind_device_memory(py::module_& m, const std::string& suffix) {
-    using DeviceMem = DeviceTensor<T>;
+void bind_general_ops(py::module_& m, const std::string& suffix) {
+    m.def(("axis_modsum_" + suffix).c_str(), &axis_modsum<T>,
+        py::arg("a"), py::arg("p"), py::arg("result"), py::arg("axis"),
+        "Axis-wise modular sum");
 
-    py::class_<DeviceMem, std::shared_ptr<DeviceMem>>(m, ("DeviceTensor" + suffix).c_str())
-        .def("print", &DeviceMem::print)
-        .def("print_metadata", &DeviceMem::print_metadata);
+    m.def(("modmul_axis_sum_" + suffix).c_str(), &modmul_axis_sum<T>,
+        py::arg("a"), py::arg("b"), py::arg("p"), py::arg("perm"), py::arg("log2p_list"), py::arg("mu_list"),
+        py::arg("axis"), py::arg("apply_perm"), py::arg("result"), "Element-wise modular multiply and sum over a specified axis");
+
+    m.def(("take_along_axis_" + suffix).c_str(), &take_along_axis<T>,
+        py::arg("tensor"), py::arg("indices"), py::arg("axis"), py::arg("result"),
+        "Take elements from tensor along a specified axis using indices");
+
+    m.def(("set_const_val_" + suffix).c_str(), &set_const_val<T>,
+        py::arg("tensor"), py::arg("value"), "Set all elements to a constant value");
+
+    m.def(("pad_single_axis_" + suffix).c_str(), &pad_single_axis<T>,
+        py::arg("tensor"), py::arg("pad"), py::arg("axis"), py::arg("result"), "Pad a single axis with zeros");
 }
 
+/**
+ * @brief Binds g-decomposition operations.
+ */
+template <typename T, typename U>
+void bind_g_decomposition(py::module_& m) {
+    const std::string suffix = std::string(TypeSuffix<T>::value) + "_" + std::string(TypeSuffix<U>::value);
+    m.def(("apply_g_decomp_" + suffix).c_str(), &apply_g_decomp<T,U>,
+        py::arg("a"), py::arg("result"), py::arg("power"), py::arg("base_bits"),
+        "G decomposition (base 2^base_bits)");
+}
+
+/**
+ * @brief Binds NTT/INTT operations.
+ */
+template <typename T, typename U>
+void bind_ntt(py::module_& m) {
+    const std::string suffix = std::string(TypeSuffix<T>::value) + "_" + std::string(TypeSuffix<U>::value);
+    m.def(("ntt_" + suffix).c_str(), &ntt<T, U>,
+        py::arg("a"), py::arg("p"), py::arg("perm"), py::arg("twiddles"), py::arg("log2p_list"),
+        py::arg("mu_list"), py::arg("axis"), py::arg("skip_perm"), py::arg("result"), "Number Theoretic Transform");
+}
+
+
+//================================================================================
+// MAIN BINDING FUNCTION
+//================================================================================
+
+/**
+ * @brief Master template function to bind all supported operations for a given type.
+ */
 template <typename T>
-void bind_memory_helpers(py::module_& m, const std::string& suffix) {
-    using namespace lattica_hw_api;
-    m.def(("empty_" + suffix).c_str(),
-          &empty<T>,
-          py::arg("dims"));
-    m.def(("host_to_device_" + suffix).c_str(),
-          &host_to_device<T>,
-          py::arg("tensor"));
-    m.def(("device_to_host_" + suffix).c_str(),
-          &device_to_host<T>,
-          py::arg("device_mem"));
+void bind_all_operations_for(py::module_& m) {
+    const std::string suffix = TypeSuffix<T>::value;
+
+    bind_device_tensor<T>(m, suffix);
+    bind_memory_management<T>(m, suffix);
+    bind_tensor_layout_ops<T>(m, suffix);
+
+    // Bind operations that are only available for 32 and 64-bit integers
+    if constexpr (std::is_same_v<T, int32_t> || std::is_same_v<T, int64_t>) {
+        bind_modular_arithmetic<T>(m, suffix);
+        bind_general_ops<T>(m, suffix);
+        m.def(("intt_" + suffix).c_str(), &intt<T>,
+            py::arg("a"), py::arg("p"), py::arg("perm"), py::arg("inv_twiddles"), py::arg("m_inv"),
+            py::arg("log2p_list"), py::arg("mu_list"), py::arg("result"), "Inverse Number Theoretic Transform");
+    }
 }
 
-template <typename T>
-void bind_contiguous(py::module_& m, const std::string& suffix) {
-    m.def(("contiguous_" + suffix).c_str(), &contiguous<T>,
-          py::arg("tensor"), "Return a contiguous version of the tensor.");
-}
 
 PYBIND11_MODULE(lattica_hw, m) {
     m.doc() = "Lattica Hardware API Python bindings";
 
-    // Bind DeviceTensor class
-    bind_device_memory<int8_t>(m, "8");
-    bind_device_memory<int32_t>(m, "32");
-    bind_device_memory<int64_t>(m, "64");
+    // --- Bind operations for each primary data type ---
+    bind_all_operations_for<int8_t>(m);
+    bind_all_operations_for<int32_t>(m);
+    bind_all_operations_for<int64_t>(m);
 
-    // Bind memory ops
-    bind_memory_helpers<int8_t>(m, "8");
-    bind_memory_helpers<int32_t>(m, "32");
-    bind_memory_helpers<int64_t>(m, "64");
-    m.def("zeros_32", &zeros<int32_t>, py::arg("dims"));
-    m.def("zeros_64", &zeros<int64_t>, py::arg("dims"));
+    // --- Bind multi-type operations like G-Decomposition ---
+    bind_g_decomposition<int32_t, int8_t>(m);
+    bind_g_decomposition<int64_t, int8_t>(m);
+    bind_g_decomposition<int32_t, int32_t>(m);
+    bind_g_decomposition<int64_t, int64_t>(m);
 
-    // Bind modular ops
-    bind_modop_variants<int32_t>(m, "32");
-    bind_modop_variants<int64_t>(m, "64");
-
-    // axis_modsum
-    m.def("axis_modsum_32", &axis_modsum<int32_t>, "Axis-wise modular sum (int32)");
-    m.def("axis_modsum_64", &axis_modsum<int64_t>, "Axis-wise modular sum (int64)");
-
-    // modmul_axis_sum
-    m.def("modmul_axis_sum_32", &modmul_axis_sum<int32_t>, "Element-wise modular multiply and sum over the specified axis (int32)");
-    m.def("modmul_axis_sum_64", &modmul_axis_sum<int64_t>, "Element-wise modular multiply and sum over the specified axis (int64)");
-
-    // g_decomposition
-    bind_g_decomposition<int32_t, int8_t>(m, "32_8");
-    bind_g_decomposition<int64_t, int8_t>(m, "64_8");
-    bind_g_decomposition<int32_t, int32_t>(m, "32_32");
-    bind_g_decomposition<int64_t, int64_t>(m, "64_64");
-
-    // For int32 and int64
-    bind_common_memory_ops<int8_t>(m, "8");
-    bind_common_memory_ops<int32_t>(m, "32");
-    bind_extra_memory_ops<int32_t>(m, "32");
-
-    bind_common_memory_ops<int64_t>(m, "64");
-    bind_extra_memory_ops<int64_t>(m, "64");
-
-    // contiguous ops
-    bind_contiguous<int8_t>(m, "8");
-    bind_contiguous<int32_t>(m, "32");
-    bind_contiguous<int64_t>(m, "64");
-
-    // ntt
-    m.def("ntt_8_32", &ntt<int8_t, int32_t>, "NTT (int8)");
-    m.def("ntt_8_64", &ntt<int8_t, int64_t>, "NTT (int8)");
-    m.def("ntt_32_32", &ntt<int32_t, int32_t>, "NTT (int32)");
-    m.def("ntt_64_64", &ntt<int64_t, int64_t>, "NTT (int64)");
-
-    // intt
-    m.def("intt_32", &intt<int32_t>, "INTT (int32)");
-    m.def("intt_64", &intt<int64_t>, "INTT (int64)");
-
-    // take_along_axis
-    m.def("take_along_axis_32", &take_along_axis<int32_t>, py::arg("tensor"), py::arg("indices"), py::arg("axis"), py::arg("result"),
-          "take_along_axis (int32)");
-    m.def("take_along_axis_64", &take_along_axis<int64_t>, py::arg("tensor"), py::arg("indices"), py::arg("axis"), py::arg("result"),
-          "take_along_axis (int64)");
-
-    // set_const_val
-    m.def("set_const_val_32", &set_const_val<int32_t>, py::arg("tensor"), py::arg("value"),
-          "Set all elements of a tensor to a constant value (int32)");
-    m.def("set_const_val_64", &set_const_val<int64_t>, py::arg("tensor"), py::arg("value"),
-          "Set all elements of a tensor to a constant value (int64)");
-
-    // pad_single_axis
-    m.def("pad_single_axis_32", &pad_single_axis<int32_t>, py::arg("tensor"), py::arg("pad"), py::arg("axis"), py::arg("result"),
-          "Pad a single axis of a tensor with zeros (int32)");
-    m.def("pad_single_axis_64", &pad_single_axis<int64_t>, py::arg("tensor"), py::arg("pad"), py::arg("axis"), py::arg("result"),
-          "Pad a single axis of a tensor with zeros (int64)");
+    // --- Bind multi-type operations like NTT ---
+    bind_ntt<int8_t, int32_t>(m);
+    bind_ntt<int8_t, int64_t>(m);
+    bind_ntt<int32_t, int32_t>(m);
+    bind_ntt<int64_t, int64_t>(m);
 }
