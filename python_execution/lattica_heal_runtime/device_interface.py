@@ -73,9 +73,6 @@ class DeviceDispatcher(ABC):
     def apply_g_decomp(self, *args, **kwargs):
         return self.dispatcher.apply_g_decomp(*args, **kwargs)
 
-    def abs(self, *args, **kwargs):
-        return self.dispatcher.abs(*args, **kwargs)
-
     def set_const_val(self, *args, **kwargs):
         return self.dispatcher.set_const_val(*args, **kwargs)
 
@@ -97,9 +94,6 @@ class DeviceDispatcher(ABC):
 
     def get_slice(self, *args, **kwargs):
         return self.dispatcher.get_slice(*args, **kwargs)
-
-    def new_reference(self, *args, **kwargs):
-        return self.dispatcher.new_reference(*args, **kwargs)
 
     def flatten(self, a, *args, **kwargs):
         return self.dispatcher.flatten(a, *args, **kwargs)
