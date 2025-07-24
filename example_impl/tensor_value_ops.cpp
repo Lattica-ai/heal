@@ -16,8 +16,7 @@ void set_const_val(
 
     const auto& dims = a->dims;
     const size_t rank = dims.size();
-    int64_t numel = 1;
-    for (int64_t d : dims) numel *= d;
+    int64_t numel = a->numel();
 
     // Compute strides for row-major order
     std::vector<int64_t> strides(rank, 1);
@@ -81,8 +80,7 @@ void pad_single_axis(
     }
 
     // compute total number of output elements
-    int64_t numel = 1;
-    for (int64_t d : out_dims) numel *= d;
+    int64_t numel = result->numel();
 
     // compute strides for output tensor (row-major)
     std::vector<int64_t> strides(rank, 1);
@@ -138,8 +136,7 @@ void take_along_axis(
     for (int i = rank - 2; i >= 0; --i)
         strides[i] = strides[i + 1] * a->dims[i + 1];
 
-    int64_t total = 1;
-    for (auto d : a->dims) total *= d;
+    int64_t total = a->numel();
 
     /* ---------- flat parallel loop ------------------------------------ */
     #pragma omp parallel for

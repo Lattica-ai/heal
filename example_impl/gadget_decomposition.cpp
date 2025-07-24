@@ -24,9 +24,7 @@ void apply_g_decomp(
         throw std::invalid_argument("Output must have shape a.shape + [power]");
     }
 
-    // Compute total input elements
-    int64_t total = 1;
-    for (auto d : in_shape) total *= d;
+    int64_t total = a->numel();
 
     // Compute strides for index mapping
     std::vector<int64_t> strides(in_shape.size(), 1);

@@ -33,8 +33,7 @@ void axis_modsum(
         throw std::invalid_argument("Last dimension of a must match shape of p");
     }
 
-    int64_t result_numel = 1;
-    for (auto d : result->dims) result_numel *= d;
+    int64_t result_numel = result->numel();
     const int64_t axis_size = in_shape[axis];
 
     // Compute flat-to-multidim strides for result
