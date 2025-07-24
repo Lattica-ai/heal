@@ -15,8 +15,8 @@ void validate_ntt_inputs(
     const std::shared_ptr<DeviceTensor<U>>& twiddles,
     const std::shared_ptr<DeviceTensor<U>>& result,
     int64_t& l, int64_t& m, int64_t& r, int64_t& k,
-    int64_t axis
-) {
+    int64_t axis)
+{
     if (a->dims.size() != 4)
         throw std::invalid_argument("Input tensor 'a' must have shape [l, m, r, k] or [l, r, k, m].");
 
@@ -50,9 +50,8 @@ void apply_permutation(
     const std::shared_ptr<DeviceTensor<T>>& perm,
     std::shared_ptr<DeviceTensor<T>>& result,
     int64_t l, int64_t r, int64_t k, int64_t m,
-    int64_t axis
-) {
-
+    int64_t axis)
+{
     if (axis == -1) {
         for (int64_t i = 0; i < l; ++i) {
             for (int64_t j = 0; j < r; ++j) {
@@ -96,8 +95,8 @@ void ntt(
     const std::shared_ptr<DeviceTensor<U>>& mu_list,
     int64_t axis,
     bool skip_perm,
-    std::shared_ptr<DeviceTensor<U>>& result
-) {
+    std::shared_ptr<DeviceTensor<U>>& result)
+{
     int64_t l, m, r, k;
     validate_ntt_inputs<T, U>(a, p, perm, twiddles, result, l, m, r, k, axis);
 
@@ -184,8 +183,8 @@ void intt(
     const std::shared_ptr<DeviceTensor<T>>& m_inv,
     const std::shared_ptr<DeviceTensor<T>>& log2p_list,
     const std::shared_ptr<DeviceTensor<T>>& mu_list,
-    std::shared_ptr<DeviceTensor<T>>& result
-) {
+    std::shared_ptr<DeviceTensor<T>>& result)
+{
     int64_t l, m, r, k;
     validate_ntt_inputs<T>(a, p, perm, inv_twiddles, result, l, m, r, k, -3);
 
@@ -247,71 +246,46 @@ void intt(
 }
 
 // Explicit instantiations
-// Explicit instantiations with optional Barrett‐reduction parameters
+#define INSTANTIATE_NTT(T1, T2) \
+    template void ntt<T1, T2>( \
+        const std::shared_ptr<DeviceTensor<T1>>& a, \
+        const std::shared_ptr<DeviceTensor<T2>>& p, \
+        const std::shared_ptr<DeviceTensor<T2>>& perm, \
+        const std::shared_ptr<DeviceTensor<T2>>& twiddles, \
+        const std::shared_ptr<DeviceTensor<T2>>& log2p_list, \
+        const std::shared_ptr<DeviceTensor<T2>>& mu_list, \
+        int64_t axis, \
+        bool skip_perm, \
+        std::shared_ptr<DeviceTensor<T2>>& result);
 
-template void ntt<int8_t, int64_t>(
-    const std::shared_ptr<DeviceTensor<int8_t>>& /*a*/,
-    const std::shared_ptr<DeviceTensor<int64_t>>& /*p*/,
-    const std::shared_ptr<DeviceTensor<int64_t>>& /*perm*/,
-    const std::shared_ptr<DeviceTensor<int64_t>>& /*twiddles*/,
-    const std::shared_ptr<DeviceTensor<int64_t>>& /*log2p_list*/,
-    const std::shared_ptr<DeviceTensor<int64_t>>& /*mu_list*/,
-    int64_t /*axis*/,
-    bool /*skip_perm*/,
-    std::shared_ptr<DeviceTensor<int64_t>>& /*result*/);
+#define INSTANTIATE_INTT(T) \
+    template void intt<T>( \
+        const std::shared_ptr<DeviceTensor<T>>& a, \
+        const std::shared_ptr<DeviceTensor<T>>& p, \
+        const std::shared_ptr<DeviceTensor<T>>& perm, \
+        const std::shared_ptr<DeviceTensor<T>>& inv_twiddles, \
+        const std::shared_ptr<DeviceTensor<T>>& m_inv, \
+        const std::shared_ptr<DeviceTensor<T>>& log2p_list, \
+        const std::shared_ptr<DeviceTensor<T>>& mu_list, \
+        std::shared_ptr<DeviceTensor<T>>& result);
 
-template void ntt<int8_t, int32_t>(
-    const std::shared_ptr<DeviceTensor<int8_t>>& /*a*/,
-    const std::shared_ptr<DeviceTensor<int32_t>>& /*p*/,
-    const std::shared_ptr<DeviceTensor<int32_t>>& /*perm*/,
-    const std::shared_ptr<DeviceTensor<int32_t>>& /*twiddles*/,
-    const std::shared_ptr<DeviceTensor<int32_t>>& /*log2p_list*/,
-    const std::shared_ptr<DeviceTensor<int32_t>>& /*mu_list*/,
-    int64_t /*axis*/,
-    bool /*skip_perm*/,
-    std::shared_ptr<DeviceTensor<int32_t>>& /*result*/);
+// int8_t as input
+#define INSTANTIATE_NTT_FOR_INT8 \
+    INSTANTIATE_NTT(int8_t, int32_t) \
+    INSTANTIATE_NTT(int8_t, int64_t)
 
-template void ntt<int32_t, int32_t>(
-    const std::shared_ptr<DeviceTensor<int32_t>>& /*a*/,
-    const std::shared_ptr<DeviceTensor<int32_t>>& /*p*/,
-    const std::shared_ptr<DeviceTensor<int32_t>>& /*perm*/,
-    const std::shared_ptr<DeviceTensor<int32_t>>& /*twiddles*/,
-    const std::shared_ptr<DeviceTensor<int32_t>>& /*log2p_list*/,
-    const std::shared_ptr<DeviceTensor<int32_t>>& /*mu_list*/,
-    int64_t /*axis*/,
-    bool /*skip_perm*/,
-    std::shared_ptr<DeviceTensor<int32_t>>& /*result*/);
+// int32_t as input/result
+#define INSTANTIATE_NTT_INTT_FOR_INT32 \
+    INSTANTIATE_NTT(int32_t, int32_t) \
+    INSTANTIATE_INTT(int32_t)
 
-template void ntt<int64_t, int64_t>(
-    const std::shared_ptr<DeviceTensor<int64_t>>& /*a*/,
-    const std::shared_ptr<DeviceTensor<int64_t>>& /*p*/,
-    const std::shared_ptr<DeviceTensor<int64_t>>& /*perm*/,
-    const std::shared_ptr<DeviceTensor<int64_t>>& /*twiddles*/,
-    const std::shared_ptr<DeviceTensor<int64_t>>& /*log2p_list*/,
-    const std::shared_ptr<DeviceTensor<int64_t>>& /*mu_list*/,
-    int64_t /*axis*/,
-    bool /*skip_perm*/,
-    std::shared_ptr<DeviceTensor<int64_t>>& /*result*/);
+// int64_t as input/result
+#define INSTANTIATE_NTT_INTT_FOR_INT64 \
+    INSTANTIATE_NTT(int64_t, int64_t) \
+    INSTANTIATE_INTT(int64_t)
 
-template void intt<int32_t>(
-    const std::shared_ptr<DeviceTensor<int32_t>>& /*a*/,
-    const std::shared_ptr<DeviceTensor<int32_t>>& /*p*/,
-    const std::shared_ptr<DeviceTensor<int32_t>>& /*perm*/,
-    const std::shared_ptr<DeviceTensor<int32_t>>& /*inv_twiddles*/,
-    const std::shared_ptr<DeviceTensor<int32_t>>& /*m_inv*/,
-    const std::shared_ptr<DeviceTensor<int32_t>>& /*log2p_list*/,
-    const std::shared_ptr<DeviceTensor<int32_t>>& /*mu_list*/,
-    std::shared_ptr<DeviceTensor<int32_t>>& /*result*/);
-
-template void intt<int64_t>(
-    const std::shared_ptr<DeviceTensor<int64_t>>& /*a*/,
-    const std::shared_ptr<DeviceTensor<int64_t>>& /*p*/,
-    const std::shared_ptr<DeviceTensor<int64_t>>& /*perm*/,
-    const std::shared_ptr<DeviceTensor<int64_t>>& /*inv_twiddles*/,
-    const std::shared_ptr<DeviceTensor<int64_t>>& /*m_inv*/,
-    const std::shared_ptr<DeviceTensor<int64_t>>& /*log2p_list*/,
-    const std::shared_ptr<DeviceTensor<int64_t>>& /*mu_list*/,
-    std::shared_ptr<DeviceTensor<int64_t>>& /*result*/);
-
+INSTANTIATE_NTT_FOR_INT8
+INSTANTIATE_NTT_INTT_FOR_INT32
+INSTANTIATE_NTT_INTT_FOR_INT64
 
 } // namespace lattica_hw_api

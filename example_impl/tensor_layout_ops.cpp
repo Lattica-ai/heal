@@ -9,8 +9,8 @@ template <typename T>
 std::shared_ptr<DeviceTensor<T>> expand(
     const std::shared_ptr<DeviceTensor<T>>& a,
     int64_t axis,
-    int64_t repeats
-) {
+    int64_t repeats)
+{
     if (repeats <= 0) {
         throw std::invalid_argument("Repeat count must be positive.");
     }
@@ -40,8 +40,8 @@ std::shared_ptr<DeviceTensor<T>> expand(
 template <typename T>
 std::shared_ptr<DeviceTensor<T>> squeeze(
     const std::shared_ptr<DeviceTensor<T>>& a,
-    int64_t axis
-) {
+    int64_t axis)
+{
     int64_t ndim = static_cast<int64_t>(a->dims.size());
     if (axis < 0) axis += ndim;
     if (axis < 0 || axis >= ndim) {
@@ -63,8 +63,8 @@ std::shared_ptr<DeviceTensor<T>> squeeze(
 template <typename T>
 std::shared_ptr<DeviceTensor<T>> unsqueeze(
     const std::shared_ptr<DeviceTensor<T>>& a,
-    int64_t axis
-) {
+    int64_t axis)
+{
     int64_t ndim = static_cast<int64_t>(a->dims.size());
     if (axis < 0) axis += (ndim + 1);
     if (axis < 0 || axis > ndim) {
@@ -84,8 +84,8 @@ template <typename T>
 std::shared_ptr<DeviceTensor<T>> moveaxis(
     const std::shared_ptr<DeviceTensor<T>>& a,
     int64_t  axis_src,
-    int64_t  axis_dst
-) {
+    int64_t  axis_dst)
+{
     // ── 0. Basic sanity checks ───────────────────────────────────────────────
     if (!a) {
         throw std::invalid_argument("moveaxis: tensor pointer is null.");
@@ -130,8 +130,8 @@ std::shared_ptr<DeviceTensor<T>> moveaxis(
 template<typename T>
 std::shared_ptr<DeviceTensor<T>> get_slice(
     const std::shared_ptr<DeviceTensor<T>>& a,
-    const std::vector<SliceArg>& slices
-) {
+    const std::vector<SliceArg>& slices)
+{
     size_t rank = a->dims.size();
     if (slices.size() != rank) {
         throw std::invalid_argument(
@@ -239,8 +239,8 @@ template <typename T>
 std::shared_ptr<DeviceTensor<T>> flatten(
     const std::shared_ptr<DeviceTensor<T>>& a,
     int64_t start_axis,
-    int64_t end_axis
-) {
+    int64_t end_axis)
+{
     if (!a->is_contiguous()) {
         throw std::runtime_error("flatten: input tensor must be contiguous");
     }
@@ -291,7 +291,8 @@ std::shared_ptr<DeviceTensor<T>> flatten(
 template <typename T>
 std::shared_ptr<DeviceTensor<T>> reshape(
     const std::shared_ptr<DeviceTensor<T>>& a,
-    const std::vector<int64_t>& new_dims) {
+    const std::vector<int64_t>& new_dims)
+{
     int64_t new_total = 1;
     for (int64_t d : new_dims) new_total *= d;
 
@@ -336,21 +337,23 @@ std::shared_ptr<DeviceTensor<T>> reshape(
 }
 
 // Explicit template instantiations
-#define INSTANTIATE_MEMORY_OPS(T) \
+#define FUNCTIONS_WITH_INT8_INSTANCIATION(T) \
+    template std::shared_ptr<DeviceTensor<T>> moveaxis<T>(const std::shared_ptr<DeviceTensor<T>>&, int64_t, int64_t); \
     template std::shared_ptr<DeviceTensor<T>> expand<T>(const std::shared_ptr<DeviceTensor<T>>&, int64_t, int64_t); \
+    template std::shared_ptr<DeviceTensor<T>> reshape<T>(const std::shared_ptr<DeviceTensor<T>>&, const std::vector<int64_t>&); \
+    template std::shared_ptr<DeviceTensor<T>> get_slice<T>(const std::shared_ptr<DeviceTensor<T>>&, const std::vector<SliceArg>&);
+
+#define INSTANTIATE_ALL_FUNCTIONS(T) \
+    FUNCTIONS_WITH_INT8_INSTANCIATION(T) \
     template std::shared_ptr<DeviceTensor<T>> squeeze<T>(const std::shared_ptr<DeviceTensor<T>>&, int64_t); \
     template std::shared_ptr<DeviceTensor<T>> unsqueeze<T>(const std::shared_ptr<DeviceTensor<T>>&, int64_t); \
-    template std::shared_ptr<DeviceTensor<T>> moveaxis<T>(const std::shared_ptr<DeviceTensor<T>>&, int64_t, int64_t); \
-    template std::shared_ptr<DeviceTensor<T>> get_slice<T>(const std::shared_ptr<DeviceTensor<T>>&, const std::vector<SliceArg>&); \
-    template std::shared_ptr<DeviceTensor<T>> flatten<T>(const std::shared_ptr<DeviceTensor<T>>&, int64_t, int64_t); \
-    template std::shared_ptr<DeviceTensor<T>> reshape<T>(const std::shared_ptr<DeviceTensor<T>>&, const std::vector<int64_t>&); \
+    template std::shared_ptr<DeviceTensor<T>> flatten<T>(const std::shared_ptr<DeviceTensor<T>>&, int64_t, int64_t);
 
-INSTANTIATE_MEMORY_OPS(int32_t)
-INSTANTIATE_MEMORY_OPS(int64_t)
+// Instantiate all memory operations for int32_t and int64_t.
+INSTANTIATE_ALL_FUNCTIONS(int32_t)
+INSTANTIATE_ALL_FUNCTIONS(int64_t)
 
-template std::shared_ptr<DeviceTensor<int8_t>> moveaxis<int8_t>(const std::shared_ptr<DeviceTensor<int8_t>>&, int64_t, int64_t); \
-template std::shared_ptr<DeviceTensor<int8_t>> expand<int8_t>(const std::shared_ptr<DeviceTensor<int8_t>>&, int64_t, int64_t); \
-template std::shared_ptr<DeviceTensor<int8_t>> reshape<int8_t>(const std::shared_ptr<DeviceTensor<int8_t>>&, const std::vector<int64_t>&); \
-template std::shared_ptr<DeviceTensor<int8_t>> get_slice<int8_t>(const std::shared_ptr<DeviceTensor<int8_t>>&, const std::vector<SliceArg>&); \
+// Instantiate functions thet needs int8_t
+FUNCTIONS_WITH_INT8_INSTANCIATION(int8_t)
 
 } // namespace lattica_hw_api

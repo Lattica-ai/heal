@@ -98,23 +98,18 @@ torch::Tensor device_to_host(const std::shared_ptr<DeviceTensor<T>>& memory) {
 }
 
 // Explicit instantiations
-template std::shared_ptr<DeviceTensor<int32_t>> zeros<int32_t>(const std::vector<int64_t>&);
-template std::shared_ptr<DeviceTensor<int64_t>> zeros<int64_t>(const std::vector<int64_t>&);
+#define INSTANTIATE_FOR_INT8(T) \
+    template std::shared_ptr<DeviceTensor<T>> empty<T>(const std::vector<int64_t>&); \
+    template std::shared_ptr<DeviceTensor<T>> contiguous<T>(const std::shared_ptr<DeviceTensor<T>>&); \
+    template std::shared_ptr<DeviceTensor<T>> host_to_device<T>(const torch::Tensor&); \
+    template torch::Tensor device_to_host<T>(const std::shared_ptr<DeviceTensor<T>>&); \
 
-template std::shared_ptr<DeviceTensor<int8_t>> empty<int8_t>(const std::vector<int64_t>&);
-template std::shared_ptr<DeviceTensor<int32_t>> empty<int32_t>(const std::vector<int64_t>&);
-template std::shared_ptr<DeviceTensor<int64_t>> empty<int64_t>(const std::vector<int64_t>&);
+#define INSTANTIATE_ALL(T) \
+    INSTANTIATE_FOR_INT8(T) \
+    template std::shared_ptr<DeviceTensor<T>> zeros<T>(const std::vector<int64_t>&);
 
-template std::shared_ptr<DeviceTensor<int8_t>> contiguous<int8_t>(const std::shared_ptr<DeviceTensor<int8_t>>&);
-template std::shared_ptr<DeviceTensor<int32_t>> contiguous<int32_t>(const std::shared_ptr<DeviceTensor<int32_t>>&);
-template std::shared_ptr<DeviceTensor<int64_t>> contiguous<int64_t>(const std::shared_ptr<DeviceTensor<int64_t>>&);
-
-template std::shared_ptr<DeviceTensor<int8_t>> host_to_device<int8_t>(const torch::Tensor&);
-template std::shared_ptr<DeviceTensor<int32_t>> host_to_device<int32_t>(const torch::Tensor&);
-template std::shared_ptr<DeviceTensor<int64_t>> host_to_device<int64_t>(const torch::Tensor&);
-
-template torch::Tensor device_to_host<int8_t>(const std::shared_ptr<DeviceTensor<int8_t>>&);
-template torch::Tensor device_to_host<int32_t>(const std::shared_ptr<DeviceTensor<int32_t>>&);
-template torch::Tensor device_to_host<int64_t>(const std::shared_ptr<DeviceTensor<int64_t>>&);
+INSTANTIATE_FOR_INT8(int8_t)
+INSTANTIATE_ALL(int32_t)
+INSTANTIATE_ALL(int64_t)
 
 } // namespace lattica_hw_api

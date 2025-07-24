@@ -10,8 +10,8 @@ void axis_modsum(
     const std::shared_ptr<DeviceTensor<T>>& a,
     const std::shared_ptr<DeviceTensor<T>>& p,
     int64_t axis,
-    std::shared_ptr<DeviceTensor<T>>& result
-) {
+    std::shared_ptr<DeviceTensor<T>>& result)
+{
     if (p->dims.size() != 1) {
         throw std::invalid_argument("p must be a 1D tensor of shape [k]");
     }
@@ -86,8 +86,8 @@ void validate_modmul_inputs(
     const std::shared_ptr<DeviceTensor<T>>& result, // [reps, n,           p_list_len] or [reps,           p_list_len, n]
     int64_t axis,
     bool apply_perm,
-    int64_t& reps, int64_t& n, int64_t& sum_size, int64_t& k
-) {
+    int64_t& reps, int64_t& n, int64_t& sum_size, int64_t& k)
+{
     if (a->dims.size() != 4)
         throw std::invalid_argument("Tensor a must have rank 4.");
     if (b->dims.size() != 3)
@@ -171,8 +171,8 @@ void modmul_axis_sum(
     const std::shared_ptr<DeviceTensor<T>>& mu_list,
     int64_t axis,
     bool apply_perm,
-    std::shared_ptr<DeviceTensor<T>>& result
-) {
+    std::shared_ptr<DeviceTensor<T>>& result)
+{
     // Validate and extract shape
     int64_t reps, n, sum_size, k;
     validate_modmul_inputs(a, b, p, perm, result, axis, apply_perm, reps, n, sum_size, k);
@@ -233,42 +233,27 @@ void modmul_axis_sum(
     }
 }
 
-template void axis_modsum<int32_t>(
-    const std::shared_ptr<DeviceTensor<int32_t>>& a,
-    const std::shared_ptr<DeviceTensor<int32_t>>& p,
-    int64_t axis,
-    std::shared_ptr<DeviceTensor<int32_t>>& result
-);
+#define INSTANTIATE_ALL(T) \
+    template void axis_modsum<T>( \
+        const std::shared_ptr<DeviceTensor<T>>&, \
+        const std::shared_ptr<DeviceTensor<T>>&, \
+        int64_t, \
+        std::shared_ptr<DeviceTensor<T>>& \
+    ); \
+    template void modmul_axis_sum<T>( \
+        const std::shared_ptr<DeviceTensor<T>>&, \
+        const std::shared_ptr<DeviceTensor<T>>&, \
+        const std::shared_ptr<DeviceTensor<T>>&, \
+        const std::shared_ptr<DeviceTensor<T>>&, \
+        const std::shared_ptr<DeviceTensor<T>>&, \
+        const std::shared_ptr<DeviceTensor<T>>&, \
+        int64_t, \
+        bool, \
+        std::shared_ptr<DeviceTensor<T>>& \
+    );
 
-template void axis_modsum<int64_t>(
-    const std::shared_ptr<DeviceTensor<int64_t>>& a,
-    const std::shared_ptr<DeviceTensor<int64_t>>& p,
-    int64_t axis,
-    std::shared_ptr<DeviceTensor<int64_t>>& result
-);
-
-template void modmul_axis_sum<int32_t>(
-    const std::shared_ptr<DeviceTensor<int32_t>>&,
-    const std::shared_ptr<DeviceTensor<int32_t>>&,
-    const std::shared_ptr<DeviceTensor<int32_t>>&,
-    const std::shared_ptr<DeviceTensor<int32_t>>&,
-    const std::shared_ptr<DeviceTensor<int32_t>>&,
-    const std::shared_ptr<DeviceTensor<int32_t>>&,
-    int64_t,
-    bool,
-    std::shared_ptr<DeviceTensor<int32_t>>&
-);
-
-template void modmul_axis_sum<int64_t>(
-    const std::shared_ptr<DeviceTensor<int64_t>>&,
-    const std::shared_ptr<DeviceTensor<int64_t>>&,
-    const std::shared_ptr<DeviceTensor<int64_t>>&,
-    const std::shared_ptr<DeviceTensor<int64_t>>&,
-    const std::shared_ptr<DeviceTensor<int64_t>>&,
-    const std::shared_ptr<DeviceTensor<int64_t>>&,
-    int64_t,
-    bool,
-    std::shared_ptr<DeviceTensor<int64_t>>&
-);
+// Explicit instantiations
+INSTANTIATE_ALL(int32_t)
+INSTANTIATE_ALL(int64_t)
 
 } // namespace lattica_hw_api

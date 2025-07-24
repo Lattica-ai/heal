@@ -118,6 +118,6 @@ void DeviceTensor<T>::print_metadata() const {
 }
 
 // Explicit template instantiations
-template struct DeviceTensor<int8_t>;
-template struct DeviceTensor<int32_t>;
-template struct DeviceTensor<int64_t>;
+template class DeviceTensor<int8_t>;
+template class DeviceTensor<int32_t>;
+template class DeviceTensor<int64_t>;
