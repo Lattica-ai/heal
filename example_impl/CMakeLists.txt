@@ -2,12 +2,12 @@
 set(SOURCES
     device_tensor_ex.cpp
     memory_management.cpp
-    modular_arithmetic.cpp
-    modular_arithmetic_axis_ops.cpp
-    tensor_advanced_ops.cpp
+    modular_ops.cpp
+    modular_axis_sum_ops.cpp
+    gadget_decomposition.cpp
     ntt.cpp
     tensor_layout_ops.cpp
-    tensor_value_assign.cpp
+    tensor_value_ops.cpp
 )
 
 # Create a static library for the Example Implementation

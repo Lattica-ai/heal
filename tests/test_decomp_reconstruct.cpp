@@ -1,8 +1,8 @@
-#include "tensor_advanced_ops.h"
+#include "gadget_decomposition.h"
 #include "memory_management.h"
 #include "tensor_layout_ops.h"
-#include "modular_arithmetic_axis_ops.h"
-#include "modular_arithmetic.h"
+#include "modular_axis_sum_ops.h"
+#include "modular_ops.h"
 #include "gtest/gtest.h"
 
 using namespace lattica_hw_api;

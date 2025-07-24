@@ -1,10 +1,10 @@
-#include "modular_arithmetic.h"
-#include "tensor_advanced_ops.h"
+#include "modular_ops.h"
+#include "gadget_decomposition.h"
 #include "tensor_layout_ops.h"
 #include "memory_management.h"
-#include "tensor_value_assign.h"
+#include "tensor_value_ops.h"
 #include "ntt.h"
-#include "modular_arithmetic_axis_ops.h"
+#include "modular_axis_sum_ops.h"
 #include "device_tensor_ex.h"
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>

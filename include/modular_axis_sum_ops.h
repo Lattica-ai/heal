@@ -4,7 +4,7 @@
 #include <memory>
 
 /**
- * @file modular_arithmetic_axis_ops.h
+ * @file modular_axis_sum_ops.h
  * @brief Provides axis-wise modular summation operations over tensors.
  *
  * This module implements functions to perform modular summation along a specified axis

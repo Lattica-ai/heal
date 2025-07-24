@@ -19,24 +19,24 @@ include_directories(${GTEST_INCLUDE_DIRS} ${PROJECT_SOURCE_DIR}/include)
 # Define the list of test sources and their corresponding test names
 set(TEST_SOURCES
     test_ntt.cpp
-    test_modular_arithmetic.cpp
-    test_modular_arithmetic_axis_ops.cpp
-    test_tensor_advanced_ops.cpp
+    test_modular_ops.cpp
+    test_modular_axis_sum_ops.cpp
+    test_gadget_decomposition.cpp
     test_decomp_reconstruct.cpp
     test_tensor_layout_ops.cpp
     test_contiguous.cpp
-    test_tensor_value_assign.cpp
+    test_tensor_value_ops.cpp
 )
 
 set(TEST_NAMES
     NTTTests
-    ModularArithmeticTests
-    ModularArithmeticAxisOpsTests
-    TensorAdvancedOpsTests
+    ModularOpsTests
+    ModularAxisSumOpsTests
+    TensorGadgetDecompositionTests
     DecompReconstructTests
     TensorLayoutOpsTests
     ContiguousTests
-    TensorValueAssignTests
+    TensorValueOpsTests
 )
 
 # Loop through the test sources and add executables and tests

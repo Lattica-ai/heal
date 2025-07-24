@@ -1,4 +1,4 @@
-#include "modular_arithmetic.h"
+#include "modular_ops.h"
 #include "device_tensor_ex.h"
 #include "typing.h"
 #include <stdexcept>

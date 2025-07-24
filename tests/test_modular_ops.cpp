@@ -1,4 +1,4 @@
-#include "modular_arithmetic.h"
+#include "modular_ops.h"
 #include "memory_management.h"
 #include "gtest/gtest.h"
 
