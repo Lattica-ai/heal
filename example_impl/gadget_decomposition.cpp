@@ -11,8 +11,8 @@ void apply_g_decomp(
     const std::shared_ptr<DeviceTensor<T>>& a,      // [...], arbitrary shape
     size_t power,                                   // Number of digits
     size_t base_bits,                               // Base bits (i.e. log₂ base)
-    std::shared_ptr<DeviceTensor<U>>& result        // [..., power] (output)
-) {
+    std::shared_ptr<DeviceTensor<U>>& result)       // [..., power] (output)
+{
     const size_t base = 1ULL << base_bits;
 
     // Validate dimensions
@@ -66,32 +66,18 @@ void apply_g_decomp(
 }
 
 
-template void apply_g_decomp<int64_t, int8_t>(
-    const std::shared_ptr<DeviceTensor<int64_t>>& a,
-    size_t power,
-    size_t base_bits,
-    std::shared_ptr<DeviceTensor<int8_t>>& result
-);
+#define INSTANTIATE_APPLY_G_DECOMP(T1, T2) \
+    template void apply_g_decomp<T1, T2>( \
+        const std::shared_ptr<DeviceTensor<T1>>& a, \
+        size_t power, \
+        size_t base_bits, \
+        std::shared_ptr<DeviceTensor<T2>>& result \
+    );
 
-template void apply_g_decomp<int32_t, int8_t>(
-    const std::shared_ptr<DeviceTensor<int32_t>>& a,
-    size_t power,
-    size_t base_bits,
-    std::shared_ptr<DeviceTensor<int8_t>>& result
-);
-
-template void apply_g_decomp<int32_t, int32_t>(
-    const std::shared_ptr<DeviceTensor<int32_t>>& a,
-    size_t power,
-    size_t base_bits,
-    std::shared_ptr<DeviceTensor<int32_t>>& result
-);
-template void apply_g_decomp<int64_t, int64_t>(
-    const std::shared_ptr<DeviceTensor<int64_t>>& a,
-    size_t power,
-    size_t base_bits,
-    std::shared_ptr<DeviceTensor<int64_t>>& result
-);
+INSTANTIATE_APPLY_G_DECOMP(int32_t, int8_t)
+INSTANTIATE_APPLY_G_DECOMP(int64_t, int8_t)
+INSTANTIATE_APPLY_G_DECOMP(int32_t, int32_t)
+INSTANTIATE_APPLY_G_DECOMP(int64_t, int64_t)
 
 } // namespace lattica_hw_api
 

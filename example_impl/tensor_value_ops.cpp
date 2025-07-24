@@ -7,8 +7,8 @@ namespace lattica_hw_api {
 template <typename T>
 void set_const_val(
     const std::shared_ptr<DeviceTensor<T>>& a,
-    T val
-) {
+    T val)
+{
     // must have a valid tensor
     if (!a) {
         throw std::invalid_argument("set_const_val: input tensor is null");
@@ -46,8 +46,8 @@ void pad_single_axis(
     const std::shared_ptr<DeviceTensor<T>>& a,
     int64_t pad,
     int64_t axis,
-    std::shared_ptr<DeviceTensor<T>>& result
-) {
+    std::shared_ptr<DeviceTensor<T>>& result)
+{
     // pad must be non-negative
     if (pad < 0) {
         throw std::invalid_argument("pad_single_axis: pad must be non-negative");
@@ -166,22 +166,12 @@ void take_along_axis(
     }
 }
 
-template void set_const_val<int32_t>(const std::shared_ptr<DeviceTensor<int32_t>>&, int32_t);
-template void set_const_val<int64_t>(const std::shared_ptr<DeviceTensor<int64_t>>&, int64_t);
-template void pad_single_axis<int32_t>(const std::shared_ptr<DeviceTensor<int32_t>>&, int64_t, int64_t, std::shared_ptr<DeviceTensor<int32_t>>&);
-template void pad_single_axis<int64_t>(const std::shared_ptr<DeviceTensor<int64_t>>&, int64_t, int64_t, std::shared_ptr<DeviceTensor<int64_t>>&);
-template void take_along_axis<int32_t>(
-    const std::shared_ptr<DeviceTensor<int32_t>>&,
-    const std::shared_ptr<DeviceTensor<int64_t>>&,
-    int64_t,
-    std::shared_ptr<DeviceTensor<int32_t>>&
-);
+#define INSTANTIATE_ALL(T) \
+    template void set_const_val<T>(const std::shared_ptr<DeviceTensor<T>>&, T); \
+    template void pad_single_axis<T>(const std::shared_ptr<DeviceTensor<T>>&, int64_t, int64_t, std::shared_ptr<DeviceTensor<T>>&); \
+    template void take_along_axis<T>(const std::shared_ptr<DeviceTensor<T>>&, const std::shared_ptr<DeviceTensor<int64_t>>&, int64_t, std::shared_ptr<DeviceTensor<T>>&);
 
-template void take_along_axis<int64_t>(
-    const std::shared_ptr<DeviceTensor<int64_t>>&,
-    const std::shared_ptr<DeviceTensor<int64_t>>&,
-    int64_t,
-    std::shared_ptr<DeviceTensor<int64_t>>&
-);
+INSTANTIATE_ALL(int32_t)
+INSTANTIATE_ALL(int64_t)
 
 } // namespace lattica_hw_api
