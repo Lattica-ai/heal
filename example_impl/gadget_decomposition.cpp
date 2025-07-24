@@ -9,9 +9,9 @@ namespace lattica_hw_api {
 template <typename T, typename U>
 void apply_g_decomp(
     const std::shared_ptr<DeviceTensor<T>>& a,      // [...], arbitrary shape
-    std::shared_ptr<DeviceTensor<U>>& result,       // [..., power] (output)
     size_t power,                                   // Number of digits
-    size_t base_bits                                // Base bits (i.e. log₂ base)
+    size_t base_bits,                               // Base bits (i.e. log₂ base)
+    std::shared_ptr<DeviceTensor<U>>& result        // [..., power] (output)
 ) {
     const size_t base = 1ULL << base_bits;
 
@@ -68,29 +68,29 @@ void apply_g_decomp(
 
 template void apply_g_decomp<int64_t, int8_t>(
     const std::shared_ptr<DeviceTensor<int64_t>>& a,
-    std::shared_ptr<DeviceTensor<int8_t>>& result,
     size_t power,
-    size_t base_bits
+    size_t base_bits,
+    std::shared_ptr<DeviceTensor<int8_t>>& result
 );
 
 template void apply_g_decomp<int32_t, int8_t>(
     const std::shared_ptr<DeviceTensor<int32_t>>& a,
-    std::shared_ptr<DeviceTensor<int8_t>>& result,
     size_t power,
-    size_t base_bits
+    size_t base_bits,
+    std::shared_ptr<DeviceTensor<int8_t>>& result
 );
 
 template void apply_g_decomp<int32_t, int32_t>(
     const std::shared_ptr<DeviceTensor<int32_t>>& a,
-    std::shared_ptr<DeviceTensor<int32_t>>& result,
     size_t power,
-    size_t base_bits
+    size_t base_bits,
+    std::shared_ptr<DeviceTensor<int32_t>>& result
 );
 template void apply_g_decomp<int64_t, int64_t>(
     const std::shared_ptr<DeviceTensor<int64_t>>& a,
-    std::shared_ptr<DeviceTensor<int64_t>>& result,
     size_t power,
-    size_t base_bits
+    size_t base_bits,
+    std::shared_ptr<DeviceTensor<int64_t>>& result
 );
 
 } // namespace lattica_hw_api

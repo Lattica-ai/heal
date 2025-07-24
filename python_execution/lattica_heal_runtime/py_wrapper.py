@@ -214,11 +214,11 @@ class PythonToCppDispatcher(ABC):
         return out
 
     def axis_modsum(self, a, axis, q_list, out):
-        _dispatch(type(a), a, q_list, out, axis, impls=_axis_modsum)
+        _dispatch(type(a), a, q_list, axis, out, impls=_axis_modsum)
         return out
 
     def apply_g_decomp(self, a, g_exp, g_base_bits, out):
-        _dispatch((type(a), type(out)), a, out, g_exp, g_base_bits, impls=_apply_g_decomp)
+        _dispatch((type(a), type(out)), a, g_exp, g_base_bits, out, impls=_apply_g_decomp)
         return out
 
     def reshape(self, device_tensor, new_shape):
@@ -294,7 +294,7 @@ class PythonToCppDispatcher(ABC):
     def set_const_val(self, a, value):
         _dispatch(type(a), a, value, impls=_set_const_val_impls)
         return a
-    
+
     def flatten(self, a, start_dim, end_dim):
         return _dispatch(type(a), a, start_dim, end_dim, impls=_flatten_impls)
 

@@ -15,7 +15,7 @@ TEST(DecompReconstructTests, DecomposeAndReconstruct_Torch) {
     auto a_hw = host_to_device<int32_t>(a_cpu);
     auto a_digits_hw = empty<int32_t>({3, power});
 
-    apply_g_decomp(a_hw, a_digits_hw, power, base_bits);
+    apply_g_decomp(a_hw, power, base_bits, a_digits_hw);
 
     auto basis_hw = host_to_device<int32_t>(
         torch::tensor({1, 2, 4, 8, 16, 32}, torch::dtype(torch::kInt32)));
@@ -32,7 +32,7 @@ TEST(DecompReconstructTests, DecomposeAndReconstruct_Torch) {
     auto a_recon_hw = empty<int32_t>({3, 1});
     auto p1_hw = host_to_device<int32_t>(torch::tensor({1024}, torch::dtype(torch::kInt32)));
 
-    axis_modsum(a_digits_hw, p1_hw, a_recon_hw, 1);
+    axis_modsum(a_digits_hw, p1_hw, 1, a_recon_hw);
     a_recon_hw = reshape(a_recon_hw, {3});
 
     torch::Tensor recon_cpu = device_to_host<int32_t>(a_recon_hw);

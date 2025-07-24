@@ -13,21 +13,21 @@ namespace lattica_hw_api {
  *
  * Expected Input/Output Shapes:
  * - Input tensor `a` can have arbitrary shape: `[...,]`
- * - Output tensor `result` must have shape: `a.shape + [power]`
  * - `power` specifies the number of digits to compute.
  * - `base_bits` specifies the number of bits in the base (i.e., base = 2^base_bits).
+ * - Output tensor `result` must have shape: `a.shape + [power]`
  *
  * Notes:
  * - Each input element is decomposed into `power` base-2^base_bits digits.
  * - Results are stored along a new final axis of size `power`.
  */
 
-template <typename T, typename U>
-void apply_g_decomp(
-    const std::shared_ptr<DeviceTensor<T>>& a,         // [...], arbitrary shape
-    std::shared_ptr<DeviceTensor<U>>& result,          // [..., power] (output)
-    size_t power,                                      // Number of digits
-    size_t base_bits                                   // Base bits
-);
+ template <typename T, typename U>
+ void apply_g_decomp(
+     const std::shared_ptr<DeviceTensor<T>>& a,         // [...], arbitrary shape
+     size_t power,                                      // Number of digits
+     size_t base_bits,                                  // Base bits
+     std::shared_ptr<DeviceTensor<U>>& result           // [..., power] (output)
+ );
 
 } // namespace lattica_hw_api
