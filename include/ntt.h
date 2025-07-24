@@ -4,7 +4,6 @@
 #include <memory>
 
 /**
- * @file ntt.h
  * @brief Provides the implementation of the Number Theoretic Transform (NTT).
  *
  * This module implements the NTT, a specialized discrete Fourier transform

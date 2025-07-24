@@ -23,7 +23,6 @@ void set_const_val(
 
 
 /**
- * @file pad_single_axis.h
  * @brief Appends zero values to the end of a specific axis in a tensor.
  *
  * This module pads a tensor by adding zero elements at the end of the specified axis,

@@ -6,7 +6,6 @@
 #include <vector>
 
 /**
- * @file memory_ops.h
  * @brief Provides virtual and utility memory operations for DeviceTensor tensors.
  *
  * This module defines a collection of lightweight, zero-copy transformations and

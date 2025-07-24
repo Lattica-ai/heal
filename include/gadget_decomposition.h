@@ -6,7 +6,6 @@
 namespace lattica_hw_api {
 
 /**
- * @file gadget_decomposition.h
  * @brief Provides decomposition of tensor elements into digits in a specified base.
  *
  * This module computes the decomposition of elements from an input tensor
