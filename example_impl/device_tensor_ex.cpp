@@ -117,6 +117,16 @@ void DeviceTensor<T>::print_metadata() const {
     std::cout << "]\n\n";
 }
 
+template <typename T>
+int64_t DeviceTensor<T>::numel() const
+{
+    int64_t total = 1;
+    for (auto d : dims) {
+        total *= d;
+    }
+    return total;
+}
+
 // Explicit template instantiations
 template class DeviceTensor<int8_t>;
 template class DeviceTensor<int32_t>;

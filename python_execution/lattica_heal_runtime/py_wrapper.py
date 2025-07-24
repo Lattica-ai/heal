@@ -312,14 +312,14 @@ class PythonToCppDispatcher(ABC):
     def ntt(self, a, axis, perm, perm_pairs, q_list, log2q, mu_list, psi_arr, out, tile, skip_perm):
         if tile:
             if axis == -1:
-                a = self.expand(a, -2, 2)
+                a = self.expand(a, -2, q_list.numel())
             else:
-                a = self.expand(a, -1, 2)
+                a = self.expand(a, -1, q_list.numel())
         _dispatch((type(a), type(out)), a, q_list, perm, psi_arr, log2q, mu_list, axis, skip_perm, out, impls=_ntt)
         return out
 
     def intt(self, a, perm, perm_pairs, q_list, log2q, mu_list, psi_arr, n_inv_list, out, tile):
         if tile:
-            a = self.expand(a, -1, 2)
+            a = self.expand(a, -1, q_list.numel())
         _dispatch(type(a), a, q_list, perm, psi_arr, n_inv_list, log2q, mu_list, out, impls=_intt)
         return out

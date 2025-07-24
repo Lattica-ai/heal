@@ -17,8 +17,7 @@ void elementwise_modred(
     int64_t ndim = out_shape.size();
 
     // Compute total size and strides (same as before)…
-    int64_t total = 1;
-    for (auto d : out_shape) total *= d;
+    int64_t total = result->numel();
     std::vector<int64_t> strides(ndim,1);
     for (int i = ndim-2; i>=0; --i)
         strides[i] = strides[i+1] * out_shape[i+1];
@@ -49,8 +48,7 @@ void elementwise_modop(
     const int64_t ndim = out_shape.size();
 
     // Total number of elements
-    int64_t total = 1;
-    for (auto d : out_shape) total *= d;
+    int64_t total = result->numel();
 
     // Precompute strides for linear → nd coord mapping
     std::vector<int64_t> strides(ndim, 1);

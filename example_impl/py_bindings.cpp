@@ -34,7 +34,8 @@ void bind_device_tensor(py::module_& m, const std::string& suffix) {
     using DeviceMem = DeviceTensor<T>;
     py::class_<DeviceMem, std::shared_ptr<DeviceMem>>(m, ("DeviceTensor" + suffix).c_str())
         .def("print", &DeviceMem::print)
-        .def("print_metadata", &DeviceMem::print_metadata);
+        .def("print_metadata", &DeviceMem::print_metadata)
+        .def("numel", &DeviceMem::numel, "Get the total number of elements in the tensor.");
 }
 
 /**

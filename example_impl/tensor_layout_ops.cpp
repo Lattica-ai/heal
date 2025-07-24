@@ -296,12 +296,7 @@ std::shared_ptr<DeviceTensor<T>> reshape(
     int64_t new_total = 1;
     for (int64_t d : new_dims) new_total *= d;
 
-    int64_t current_total = 1;
-    for (size_t i = 0; i < a->dims.size(); ++i) {
-        if (a->strides[i] != 0) {
-            current_total *= a->dims[i];
-        }
-    }
+    int64_t current_total = a->numel();
 
     if (new_total != current_total) {
         throw std::invalid_argument("Total size of new shape must match number of elements (excluding broadcasted dims).");
