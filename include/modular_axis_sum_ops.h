@@ -6,6 +6,7 @@
 namespace lattica_hw_api {
 
 /**
+ * @file modular_arithmetic_axis_ops.h
  * @brief Provides axis-wise modular summation operations over tensors.
  *
  * This module implements functions to perform modular summation along a specified axis
