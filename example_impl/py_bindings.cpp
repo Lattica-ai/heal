@@ -159,7 +159,7 @@ void bind_modular_ops(py::module_& m, const std::string& suffix) {
 template <typename T>
 void bind_general_ops(py::module_& m, const std::string& suffix) {
     m.def(("axis_modsum_" + suffix).c_str(), &axis_modsum<T>,
-        py::arg("a"), py::arg("p"), py::arg("result"), py::arg("axis"),
+        py::arg("a"), py::arg("p"), py::arg("axis"), py::arg("result"),
         "Axis-wise modular sum");
 
     m.def(("modmul_axis_sum_" + suffix).c_str(), &modmul_axis_sum<T>,
@@ -184,7 +184,7 @@ template <typename T, typename U>
 void bind_g_decomposition(py::module_& m) {
     const std::string suffix = std::string(TypeSuffix<T>::value) + "_" + std::string(TypeSuffix<U>::value);
     m.def(("apply_g_decomp_" + suffix).c_str(), &apply_g_decomp<T,U>,
-        py::arg("a"), py::arg("result"), py::arg("power"), py::arg("base_bits"),
+        py::arg("a"), py::arg("power"), py::arg("base_bits"), py::arg("result"),
         "G decomposition (base 2^base_bits)");
 }
 

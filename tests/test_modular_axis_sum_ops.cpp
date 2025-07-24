@@ -18,7 +18,7 @@ TEST(AxisModSumTests, Basic3DAxis1) {
     auto p_hw = host_to_device<int32_t>(p);
     auto result_hw = empty<int32_t>({2, 4});
 
-    axis_modsum(a_hw, p_hw, result_hw, /*axis=*/1);
+    axis_modsum(a_hw, p_hw, /*axis=*/1, result_hw);
 
     torch::Tensor result = device_to_host<int32_t>(result_hw);
     std::cout << result << std::endl;
@@ -41,7 +41,7 @@ TEST(AxisModSumTests, ReduceFirstAxis) {
     auto p_hw = host_to_device<int32_t>(p);
     auto result_hw = empty<int32_t>({4});
 
-    axis_modsum(a_hw, p_hw, result_hw, /*axis=*/0);
+    axis_modsum(a_hw, p_hw, /*axis=*/0, result_hw);
 
     torch::Tensor result = device_to_host<int32_t>(result_hw);
     ASSERT_TRUE(torch::equal(result, expected)) << "2D axis=0 modsum failed.";
@@ -57,7 +57,7 @@ TEST(AxisModSumTests, HighDimReduction) {
     auto p_hw = host_to_device<int32_t>(p);
     auto result_hw = empty<int32_t>({2, 2, 3});
 
-    axis_modsum(a_hw, p_hw, result_hw, /*axis=*/2);
+    axis_modsum(a_hw, p_hw,  /*axis=*/2, result_hw);
 
     torch::Tensor result = device_to_host<int32_t>(result_hw);
     ASSERT_TRUE(torch::equal(result, expected)) << "High-dim axis=2 modsum failed.";
@@ -70,8 +70,8 @@ TEST(AxisModSumTests, InvalidAxisThrows) {
     auto p_hw = host_to_device<int32_t>(p);
     auto result_hw = empty<int32_t>({2, 2});  // removing axis=2
 
-    EXPECT_THROW(axis_modsum(a_hw, p_hw, result_hw, -1), std::invalid_argument);
-    EXPECT_THROW(axis_modsum(a_hw, p_hw, result_hw, 3), std::invalid_argument);
+    EXPECT_THROW(axis_modsum(a_hw, p_hw, -1, result_hw), std::invalid_argument);
+    EXPECT_THROW(axis_modsum(a_hw, p_hw, 3, result_hw), std::invalid_argument);
 }
 
 TEST(AxisModSumTests, ModulusShapeMismatchThrows) {
@@ -81,7 +81,7 @@ TEST(AxisModSumTests, ModulusShapeMismatchThrows) {
     auto p_hw = host_to_device<int32_t>(p);
     auto result_hw = empty<int32_t>({2, 2});
 
-    EXPECT_THROW(axis_modsum(a_hw, p_hw, result_hw, 2), std::invalid_argument);
+    EXPECT_THROW(axis_modsum(a_hw, p_hw, 2, result_hw), std::invalid_argument);
 }
 
 

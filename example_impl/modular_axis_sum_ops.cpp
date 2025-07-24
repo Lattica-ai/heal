@@ -9,8 +9,8 @@ template <typename T>
 void axis_modsum(
     const std::shared_ptr<DeviceTensor<T>>& a,
     const std::shared_ptr<DeviceTensor<T>>& p,
-    std::shared_ptr<DeviceTensor<T>>& result,
-    int64_t axis
+    int64_t axis,
+    std::shared_ptr<DeviceTensor<T>>& result
 ) {
     if (p->dims.size() != 1) {
         throw std::invalid_argument("p must be a 1D tensor of shape [k]");
@@ -236,15 +236,15 @@ void modmul_axis_sum(
 template void axis_modsum<int32_t>(
     const std::shared_ptr<DeviceTensor<int32_t>>& a,
     const std::shared_ptr<DeviceTensor<int32_t>>& p,
-    std::shared_ptr<DeviceTensor<int32_t>>& result,
-    int64_t axis
+    int64_t axis,
+    std::shared_ptr<DeviceTensor<int32_t>>& result
 );
 
 template void axis_modsum<int64_t>(
     const std::shared_ptr<DeviceTensor<int64_t>>& a,
     const std::shared_ptr<DeviceTensor<int64_t>>& p,
-    std::shared_ptr<DeviceTensor<int64_t>>& result,
-    int64_t axis
+    int64_t axis,
+    std::shared_ptr<DeviceTensor<int64_t>>& result
 );
 
 template void modmul_axis_sum<int32_t>(
