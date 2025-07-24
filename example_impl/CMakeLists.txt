@@ -1,7 +1,7 @@
 # Specify the library source files
 set(SOURCES
     device_tensor_ex.cpp
-    memory_management.cpp
+    device_memory.cpp
     modular_ops.cpp
     modular_axis_sum_ops.cpp
     gadget_decomposition.cpp

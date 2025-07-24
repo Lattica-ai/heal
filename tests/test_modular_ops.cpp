@@ -1,5 +1,5 @@
 #include "modular_ops.h"
-#include "memory_management.h"
+#include "device_memory.h"
 #include "gtest/gtest.h"
 
 using namespace lattica_hw_api;

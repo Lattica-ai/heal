@@ -1,5 +1,5 @@
 #include "gadget_decomposition.h"
-#include "memory_management.h"
+#include "device_memory.h"
 #include "tensor_layout_ops.h"
 #include "modular_axis_sum_ops.h"
 #include "modular_ops.h"

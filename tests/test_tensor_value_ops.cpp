@@ -1,4 +1,4 @@
-#include "memory_management.h"
+#include "device_memory.h"
 #include "tensor_value_ops.h"
 #include "gtest/gtest.h"
 

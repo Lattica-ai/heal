@@ -1,7 +1,7 @@
 #include "modular_ops.h"
 #include "gadget_decomposition.h"
 #include "tensor_layout_ops.h"
-#include "memory_management.h"
+#include "device_memory.h"
 #include "tensor_value_ops.h"
 #include "ntt.h"
 #include "modular_axis_sum_ops.h"

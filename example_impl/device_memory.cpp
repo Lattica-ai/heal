@@ -1,4 +1,4 @@
-#include "memory_management.h"
+#include "device_memory.h"
 #include "device_tensor_ex.h"
 #include <stdexcept>
 
