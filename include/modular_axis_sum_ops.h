@@ -3,8 +3,10 @@
 #include "device_tensor.h"
 #include <memory>
 
+namespace lattica_hw_api {
+
 /**
- * @file modular_axis_sum_ops.h
+ * @file modular_arithmetic_axis_ops.h
  * @brief Provides axis-wise modular summation operations over tensors.
  *
  * This module implements functions to perform modular summation along a specified axis
@@ -21,15 +23,13 @@
  * - If `a` has shape [m, s, k] and `axis = 1`, `result` must have shape [m, k].
  */
 
-namespace lattica_hw_api {
-
-    template <typename T>
-    void axis_modsum(
-        const std::shared_ptr<DeviceTensor<T>>& a,        // input tensor [..., k]
-        const std::shared_ptr<DeviceTensor<T>>& p,        // modulus [k]
-        std::shared_ptr<DeviceTensor<T>>& result,         // output tensor [..., k] with axis removed
-        int64_t axis                                      // axis to reduce
-    );
+template <typename T>
+void axis_modsum(
+    const std::shared_ptr<DeviceTensor<T>>& a,        // input tensor [..., k]
+    const std::shared_ptr<DeviceTensor<T>>& p,        // modulus [k]
+    std::shared_ptr<DeviceTensor<T>>& result,         // output tensor [..., k] with axis removed
+    int64_t axis                                      // axis to reduce
+);
 
 /**
  * @brief Computes a modular axis-wise sum-product between tensors `a` and `b`, **accumulating** into the output tensor.
