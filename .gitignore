@@ -1,32 +1,37 @@
-# Prerequisites
+# === Prerequisites & Dependency files ===
 *.d
 
-# Compiled Object files
+# === Compiled Object Files ===
 *.slo
 *.lo
 *.o
 *.obj
 
-# Precompiled Headers
+# === Precompiled Headers ===
 *.gch
 *.pch
 
-# Compiled Dynamic libraries
+# === Compiled Dynamic Libraries ===
 *.so
 *.dylib
 *.dll
 
-# Fortran module files
-*.mod
-*.smod
-
-# Compiled Static libraries
+# === Compiled Static Libraries ===
 *.lai
 *.la
 *.a
 *.lib
 
-# Executables
+# === Executables ===
 *.exe
 *.out
 *.app
+
+# === Python Virtual Environments & Build Artifacts ===
+.venv/
+build/
+**/*.egg-info/
+__pycache__/
+
+# === IDE & Editor Files ===
+.vscode/
