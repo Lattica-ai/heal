@@ -3,8 +3,10 @@
 #include "device_tensor.h"
 #include <memory>
 
+namespace lattica_hw_api {
+
 /**
- * @file g_decomposition.h
+ * @file gadget_decomposition.h
  * @brief Provides decomposition of tensor elements into digits in a specified base.
  *
  * This module computes the decomposition of elements from an input tensor
@@ -21,15 +23,12 @@
  * - Results are stored along a new final axis of size `power`.
  */
 
-namespace lattica_hw_api {
+template <typename T, typename U>
+void apply_g_decomp(
+    const std::shared_ptr<DeviceTensor<T>>& a,         // [...], arbitrary shape
+    std::shared_ptr<DeviceTensor<U>>& result,          // [..., power] (output)
+    size_t power,                                      // Number of digits
+    size_t base_bits                                   // Base bits
+);
 
-    template <typename T, typename U>
-    void apply_g_decomp(
-        const std::shared_ptr<DeviceTensor<T>>& a,         // [...], arbitrary shape
-        std::shared_ptr<DeviceTensor<U>>& result,          // [..., power] (output)
-        size_t power,                                      // Number of digits
-        size_t base_bits                                   // Base bits
-    );
-
-}
-
+} // namespace lattica_hw_api

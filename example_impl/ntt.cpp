@@ -1,6 +1,6 @@
 #include "ntt.h"
 #include "typing.h"
-#include "device_tensor_ex_impl.h"
+#include "device_tensor_ex.h"
 #include <stdexcept>
 #include <iostream>
 

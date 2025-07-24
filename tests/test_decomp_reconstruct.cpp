@@ -1,8 +1,8 @@
-#include "g_decomposition.h"
+#include "gadget_decomposition.h"
 #include "device_memory.h"
-#include "memory_virtual_ops.h"
-#include "axis_modsum.h"
-#include "modop.h"
+#include "tensor_layout_ops.h"
+#include "modular_axis_sum_ops.h"
+#include "modular_ops.h"
 #include "gtest/gtest.h"
 
 using namespace lattica_hw_api;

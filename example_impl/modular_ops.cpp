@@ -1,5 +1,5 @@
-#include "modop.h"
-#include "device_tensor_ex_impl.h"
+#include "modular_ops.h"
+#include "device_tensor_ex.h"
 #include "typing.h"
 #include <stdexcept>
 #include <iostream>

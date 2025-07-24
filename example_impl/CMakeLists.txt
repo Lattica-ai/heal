@@ -1,16 +1,13 @@
 # Specify the library source files
 set(SOURCES
-    device_tensor_ex_impl.cpp
-    device_memory_impl.cpp
-    modop_impl.cpp
-    axis_modsum_impl.cpp
-    g_decomposition_impl.cpp
-    ntt_impl.cpp
-    take_along_axis_impl.cpp
-    memory_virtual_ops_impl.cpp
-    contiguous_impl.cpp
-    set_const_val_impl.cpp
-    modmul_axis_sum_impl.cpp
+    device_tensor_ex.cpp
+    device_memory.cpp
+    modular_ops.cpp
+    modular_axis_sum_ops.cpp
+    gadget_decomposition.cpp
+    ntt.cpp
+    tensor_layout_ops.cpp
+    tensor_value_ops.cpp
 )
 
 # Create a static library for the Example Implementation

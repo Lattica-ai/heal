@@ -4,7 +4,7 @@
 #include <memory>
 
 /**
- * @file modop.h
+ * @file modular_ops.h
  * @brief Provides elementwise modular operations over tensors in DeviceTensor.
  *
  * This module implements functions for elementwise modular multiplication, modular

@@ -1,6 +1,6 @@
 
-#include "g_decomposition.h"
-#include "device_tensor_ex_impl.h"
+#include "gadget_decomposition.h"
+#include "device_tensor_ex.h"
 #include <stdexcept>
 #include <iostream>
 
@@ -64,6 +64,7 @@ void apply_g_decomp(
         }
     }
 }
+
 
 template void apply_g_decomp<int64_t, int8_t>(
     const std::shared_ptr<DeviceTensor<int64_t>>& a,

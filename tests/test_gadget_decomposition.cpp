@@ -1,4 +1,4 @@
-#include "g_decomposition.h"
+#include "gadget_decomposition.h"
 #include "device_memory.h"
 #include "gtest/gtest.h"
 

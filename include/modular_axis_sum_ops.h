@@ -3,7 +3,33 @@
 #include "device_tensor.h"
 #include <memory>
 
+/**
+ * @file modular_axis_sum_ops.h
+ * @brief Provides axis-wise modular summation operations over tensors.
+ *
+ * This module implements functions to perform modular summation along a specified axis
+ * on tensors stored in device memory. Each summation is performed modulo a per-column
+ * modulus vector `p`, which should match the size of the last dimension.
+ *
+ * Requirements:
+ * - Tensor `a` must have shape `[..., k]`, where `k = p->dims[0]`.
+ * - Tensor `p` must be a 1D tensor of shape `[k]`.
+ * - Tensor `result` must have the same shape as `a` with the `axis` dimension removed.
+ * - The reduction is performed along the given `axis`, and results are reduced modulo `p`.
+ *
+ * Example:
+ * - If `a` has shape [m, s, k] and `axis = 1`, `result` must have shape [m, k].
+ */
+
 namespace lattica_hw_api {
+
+    template <typename T>
+    void axis_modsum(
+        const std::shared_ptr<DeviceTensor<T>>& a,        // input tensor [..., k]
+        const std::shared_ptr<DeviceTensor<T>>& p,        // modulus [k]
+        std::shared_ptr<DeviceTensor<T>>& result,         // output tensor [..., k] with axis removed
+        int64_t axis                                      // axis to reduce
+    );
 
 /**
  * @brief Computes a modular axis-wise sum-product between tensors `a` and `b`, **accumulating** into the output tensor.
@@ -66,17 +92,17 @@ namespace lattica_hw_api {
  * ```
  */
 
-template <typename T>
-void modmul_axis_sum(
-    const std::shared_ptr<DeviceTensor<T>>& a,
-    const std::shared_ptr<DeviceTensor<T>>& b,
-    const std::shared_ptr<DeviceTensor<T>>& p,
-    const std::shared_ptr<DeviceTensor<T>>& perm,
-    const std::shared_ptr<DeviceTensor<T>>& log2p_list,
-    const std::shared_ptr<DeviceTensor<T>>& mu_list,
-    int64_t axis,
-    bool apply_perm,
-    std::shared_ptr<DeviceTensor<T>>& result
-);
+ template <typename T>
+ void modmul_axis_sum(
+     const std::shared_ptr<DeviceTensor<T>>& a,
+     const std::shared_ptr<DeviceTensor<T>>& b,
+     const std::shared_ptr<DeviceTensor<T>>& p,
+     const std::shared_ptr<DeviceTensor<T>>& perm,
+     const std::shared_ptr<DeviceTensor<T>>& log2p_list,
+     const std::shared_ptr<DeviceTensor<T>>& mu_list,
+     int64_t axis,
+     bool apply_perm,
+     std::shared_ptr<DeviceTensor<T>>& result
+ );
 
-} // namespace lattica_hw_api
+}
