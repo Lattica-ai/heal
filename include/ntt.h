@@ -4,7 +4,6 @@
 #include <memory>
 
 /**
- * @file ntt.h
  * @brief Provides the implementation of the Number Theoretic Transform (NTT).
  *
  * This module implements the NTT, a specialized discrete Fourier transform
@@ -32,29 +31,29 @@
 
 namespace lattica_hw_api {
 
-    template <typename T, typename U>
-    void ntt(
-        const std::shared_ptr<DeviceTensor<T>>& a,          // [l, m, r, k] or [l, r, k, m]
-        const std::shared_ptr<DeviceTensor<U>>& p,          // [k]
-        const std::shared_ptr<DeviceTensor<U>>& perm,       // [m]
-        const std::shared_ptr<DeviceTensor<U>>& twiddles,   // [k, m]
-        const std::shared_ptr<DeviceTensor<U>>& log2p_list, // [k]
-        const std::shared_ptr<DeviceTensor<U>>& mu_list,    // [k]
-        int64_t axis,                                       // Axis of m
-        bool skip_perm,                                     // Skip permutation step
-        std::shared_ptr<DeviceTensor<U>>& result            // [l, m, r, k] or [l, r, k, m] (output)
-    );
+template <typename T, typename U>
+void ntt(
+    const std::shared_ptr<DeviceTensor<T>>& a,          // [l, m, r, k] or [l, r, k, m]
+    const std::shared_ptr<DeviceTensor<U>>& p,          // [k]
+    const std::shared_ptr<DeviceTensor<U>>& perm,       // [m]
+    const std::shared_ptr<DeviceTensor<U>>& twiddles,   // [k, m]
+    const std::shared_ptr<DeviceTensor<U>>& log2p_list, // [k]
+    const std::shared_ptr<DeviceTensor<U>>& mu_list,    // [k]
+    int64_t axis,                                       // Axis of m
+    bool skip_perm,                                     // Skip permutation step
+    std::shared_ptr<DeviceTensor<U>>& result            // [l, m, r, k] or [l, r, k, m] (output)
+);
 
-    template <typename T>
-    void intt(
-        const std::shared_ptr<DeviceTensor<T>>& a,             // [l, m, r, k]
-        const std::shared_ptr<DeviceTensor<T>>& p,             // [k]
-        const std::shared_ptr<DeviceTensor<T>>& perm,          // [m]
-        const std::shared_ptr<DeviceTensor<T>>& inv_twiddles,  // [k, m]
-        const std::shared_ptr<DeviceTensor<T>>& m_inv,         // [k]
-        const std::shared_ptr<DeviceTensor<T>>& log2p_list,    // [k]
-        const std::shared_ptr<DeviceTensor<T>>& mu_list,       // [k]
-        std::shared_ptr<DeviceTensor<T>>& result               // [l, m, r, k] (output)
-    );
+template <typename T>
+void intt(
+    const std::shared_ptr<DeviceTensor<T>>& a,             // [l, m, r, k]
+    const std::shared_ptr<DeviceTensor<T>>& p,             // [k]
+    const std::shared_ptr<DeviceTensor<T>>& perm,          // [m]
+    const std::shared_ptr<DeviceTensor<T>>& inv_twiddles,  // [k, m]
+    const std::shared_ptr<DeviceTensor<T>>& m_inv,         // [k]
+    const std::shared_ptr<DeviceTensor<T>>& log2p_list,    // [k]
+    const std::shared_ptr<DeviceTensor<T>>& mu_list,       // [k]
+    std::shared_ptr<DeviceTensor<T>>& result               // [l, m, r, k] (output)
+);
 
-}
+} // namespace lattica_hw_api

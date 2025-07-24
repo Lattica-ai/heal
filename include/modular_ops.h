@@ -4,7 +4,6 @@
 #include <memory>
 
 /**
- * @file modular_ops.h
  * @brief Provides elementwise modular operations over tensors in DeviceTensor.
  *
  * This module implements functions for elementwise modular multiplication, modular
@@ -51,111 +50,112 @@
 
 namespace lattica_hw_api {
 
-    // ---------- Modular Multiplication Variants ----------
+// ---------- Modular Multiplication Variants ----------
 
-    template <typename T>
-    void modmul_ttt(
-        const std::shared_ptr<DeviceTensor<T>>& a,
-        const std::shared_ptr<DeviceTensor<T>>& b,
-        const std::shared_ptr<DeviceTensor<T>>& p,
-        std::shared_ptr<DeviceTensor<T>>& result
-    );
+template <typename T>
+void modmul_ttt(
+    const std::shared_ptr<DeviceTensor<T>>& a,
+    const std::shared_ptr<DeviceTensor<T>>& b,
+    const std::shared_ptr<DeviceTensor<T>>& p,
+    std::shared_ptr<DeviceTensor<T>>& result
+);
 
-    template <typename T>
-    void modmul_ttc(
-        const std::shared_ptr<DeviceTensor<T>>& a,
-        const std::shared_ptr<DeviceTensor<T>>& b,
-        T p_scalar,
-        std::shared_ptr<DeviceTensor<T>>& result
-    );
+template <typename T>
+void modmul_ttc(
+    const std::shared_ptr<DeviceTensor<T>>& a,
+    const std::shared_ptr<DeviceTensor<T>>& b,
+    T p_scalar,
+    std::shared_ptr<DeviceTensor<T>>& result
+);
 
-    template <typename T>
-    void modmul_tct(
-        const std::shared_ptr<DeviceTensor<T>>& a,
-        T b_scalar,
-        const std::shared_ptr<DeviceTensor<T>>& p,
-        std::shared_ptr<DeviceTensor<T>>& result
-    );
+template <typename T>
+void modmul_tct(
+    const std::shared_ptr<DeviceTensor<T>>& a,
+    T b_scalar,
+    const std::shared_ptr<DeviceTensor<T>>& p,
+    std::shared_ptr<DeviceTensor<T>>& result
+);
 
-    template <typename T>
-    void modmul_tcc(
-        const std::shared_ptr<DeviceTensor<T>>& a,
-        T b_scalar,
-        T p_scalar,
-        std::shared_ptr<DeviceTensor<T>>& result
-    );
+template <typename T>
+void modmul_tcc(
+    const std::shared_ptr<DeviceTensor<T>>& a,
+    T b_scalar,
+    T p_scalar,
+    std::shared_ptr<DeviceTensor<T>>& result
+);
 
-    // ---------- Modular Addition Variants ----------
+// ---------- Modular Addition Variants ----------
 
-    template <typename T>
-    void modsum_ttt(
-        const std::shared_ptr<DeviceTensor<T>>& a,
-        const std::shared_ptr<DeviceTensor<T>>& b,
-        const std::shared_ptr<DeviceTensor<T>>& p,
-        std::shared_ptr<DeviceTensor<T>>& result
-    );
+template <typename T>
+void modsum_ttt(
+    const std::shared_ptr<DeviceTensor<T>>& a,
+    const std::shared_ptr<DeviceTensor<T>>& b,
+    const std::shared_ptr<DeviceTensor<T>>& p,
+    std::shared_ptr<DeviceTensor<T>>& result
+);
 
-    template <typename T>
-    void modsum_ttc(
-        const std::shared_ptr<DeviceTensor<T>>& a,
-        const std::shared_ptr<DeviceTensor<T>>& b,
-        T p_scalar,
-        std::shared_ptr<DeviceTensor<T>>& result
-    );
+template <typename T>
+void modsum_ttc(
+    const std::shared_ptr<DeviceTensor<T>>& a,
+    const std::shared_ptr<DeviceTensor<T>>& b,
+    T p_scalar,
+    std::shared_ptr<DeviceTensor<T>>& result
+);
 
-    template <typename T>
-    void modsum_tct(
-        const std::shared_ptr<DeviceTensor<T>>& a,
-        T b_scalar,
-        const std::shared_ptr<DeviceTensor<T>>& p,
-        std::shared_ptr<DeviceTensor<T>>& result
-    );
+template <typename T>
+void modsum_tct(
+    const std::shared_ptr<DeviceTensor<T>>& a,
+    T b_scalar,
+    const std::shared_ptr<DeviceTensor<T>>& p,
+    std::shared_ptr<DeviceTensor<T>>& result
+);
 
-    template <typename T>
-    void modsum_tcc(
-        const std::shared_ptr<DeviceTensor<T>>& a,
-        T b_scalar,
-        T p_scalar,
-        std::shared_ptr<DeviceTensor<T>>& result
-    );
+template <typename T>
+void modsum_tcc(
+    const std::shared_ptr<DeviceTensor<T>>& a,
+    T b_scalar,
+    T p_scalar,
+    std::shared_ptr<DeviceTensor<T>>& result
+);
 
-    // ---------- Modular Remainder (Modulus) Variants ----------
+// ---------- Modular Remainder (Modulus) Variants ----------
 
-    template <typename T>
-    void mod_tt(
-        const std::shared_ptr<DeviceTensor<T>>& a,
-        const std::shared_ptr<DeviceTensor<T>>& b,
-        std::shared_ptr<DeviceTensor<T>>& result
-    );
+template <typename T>
+void mod_tt(
+    const std::shared_ptr<DeviceTensor<T>>& a,
+    const std::shared_ptr<DeviceTensor<T>>& b,
+    std::shared_ptr<DeviceTensor<T>>& result
+);
 
-    template <typename T>
-    void mod_tc(
-        const std::shared_ptr<DeviceTensor<T>>& a,
-        T b_scalar,
-        std::shared_ptr<DeviceTensor<T>>& result
-    );
+template <typename T>
+void mod_tc(
+    const std::shared_ptr<DeviceTensor<T>>& a,
+    T b_scalar,
+    std::shared_ptr<DeviceTensor<T>>& result
+);
 
-    template <typename T>
-    void mod_ct(
-        T a_scalar,
-        const std::shared_ptr<DeviceTensor<T>>& b,
-        std::shared_ptr<DeviceTensor<T>>& result
-    );
+template <typename T>
+void mod_ct(
+    T a_scalar,
+    const std::shared_ptr<DeviceTensor<T>>& b,
+    std::shared_ptr<DeviceTensor<T>>& result
+);
 
-    // ---------- Modular Negation Variants ----------
+// ---------- Modular Negation Variants ----------
 
-    template <typename T>
-    void modneg_tt(
-        const std::shared_ptr<DeviceTensor<T>>& a,
-        const std::shared_ptr<DeviceTensor<T>>& p,
-        std::shared_ptr<DeviceTensor<T>>& result
-    );
+template <typename T>
+void modneg_tt(
+    const std::shared_ptr<DeviceTensor<T>>& a,
+    const std::shared_ptr<DeviceTensor<T>>& p,
+    std::shared_ptr<DeviceTensor<T>>& result
+);
 
-    template <typename T>
-    void modneg_tc(
-        const std::shared_ptr<DeviceTensor<T>>& a,
-        T p_scalar,
-        std::shared_ptr<DeviceTensor<T>>& result
-    );
-}
+template <typename T>
+void modneg_tc(
+    const std::shared_ptr<DeviceTensor<T>>& a,
+    T p_scalar,
+    std::shared_ptr<DeviceTensor<T>>& result
+);
+
+} // namespace lattica_hw_api
 

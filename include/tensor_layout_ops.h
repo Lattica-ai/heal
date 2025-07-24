@@ -6,7 +6,6 @@
 #include <vector>
 
 /**
- * @file memory_ops.h
  * @brief Provides virtual and utility memory operations for DeviceTensor tensors.
  *
  * This module defines a collection of lightweight, zero-copy transformations and
@@ -22,212 +21,213 @@
 
 namespace lattica_hw_api {
 
-    /**
-     * @brief Expands a tensor in-place by virtually repeating elements along the specified axis.
-     *        This is done by modifying the dimension and setting the stride to zero.
-     *        Only scalar `repeats` are supported.
-     *
-     * Example:
-     * Given a tensor of shape [2, 1] and repeat = 3 along axis = 1,
-     * the new shape becomes [2, 3], with repeated elements along axis 1.
-     *
-     * Preconditions:
-     * - The specified axis must be valid and must have size 1 in the input.
-     * - The repeat count must be positive.
-     *
-     * @tparam T The element type.
-     * @param tensor The input tensor to be expanded. Its dims and strides will be modified.
-     * @param axis The axis along which to repeat.
-     * @param repeats The number of times to repeat elements (must be > 0).
-     */
-    template <typename T>
-    std::shared_ptr<DeviceTensor<T>> expand(
-        const std::shared_ptr<DeviceTensor<T>>& tensor,
-        int64_t axis,
-        int64_t repeats
-    );
-
-    /**
-     * @brief Removes a size-1 dimension at the specified axis.
-     *        Modifies the dims and strides in-place.
-     *
-     * Example:
-     * Given a tensor of shape [3, 1, 4], squeeze at axis = 1 → [3, 4]
-     *
-     * Preconditions:
-     * - The specified axis must be valid and must be of size 1.
-     *
-     * @tparam T The element type.
-     * @param tensor The input tensor to squeeze. Modified in-place.
-     * @param axis The axis to remove.
-     * @return A pointer to the modified tensor.
-     */
-    template <typename T>
-    std::shared_ptr<DeviceTensor<T>> squeeze(
-        const std::shared_ptr<DeviceTensor<T>>& tensor,
-        int64_t axis
-    );
-
-    /**
-     * @brief Inserts a new dimension of size 1 at the specified axis.
-     *        Modifies the dims and strides in-place.
-     *
-     * Example:
-     * Given a tensor of shape [3, 4], unsqueeze at axis = 1 → [3, 1, 4]
-     *
-     * Preconditions:
-     * - The axis must be in the range [-ndim-1, ndim]
-     *
-     * @tparam T The element type.
-     * @param tensor The input tensor to unsqueeze. Modified in-place.
-     * @param axis The position to insert the new axis.
-     * @return A pointer to the modified tensor.
-     */
-    template <typename T>
-    std::shared_ptr<DeviceTensor<T>> unsqueeze(
-        const std::shared_ptr<DeviceTensor<T>>& tensor,
-        int64_t axis
-    );
-
-    /**
-     * @brief Flattens a tensor into a contiguous one by collapsing dimensions
-     *        in the range [start_axis, end_axis] into a single dimension.
-     *
-     * Example:
-     * Given a tensor of shape [2, 3, 4, 5]:
-     * - flatten(tensor, 1, 2) → shape [2, 12, 5]
-     * - flatten(tensor, 0, -1) → shape [120]
-     *
-     * Preconditions:
-     * - start_axis and end_axis must be in [-ndim, ndim-1]
-     * - end_axis >= start_axis (after wrapping negatives)
-     *
-     * @tparam T The element type.
-     * @param a The input tensor to flatten. Its dims and strides will be modified.
-     * @param start_axis The first dimension to flatten.
-     * @param end_axis The last dimension to flatten (inclusive).
-     * @return A pointer to the modified tensor.
-     */
-
-     template <typename T>
-     std::shared_ptr<DeviceTensor<T>> flatten(
-         const std::shared_ptr<DeviceTensor<T>>& a,
-         int64_t start_axis,
-         int64_t end_axis
-     );
-
-
-    /**
-     * @brief Moves an existing dimension from axis_src to axis_dst in-place.
-     *        Updates dims and strides metadata so that the tensor appears to have
-     *        the same data but with one axis relocated.
-     *
-     * Example:
-     * Given a tensor of shape [2, 3, 4], moveaxis from 2 to 0 → [4, 2, 3]
-     *
-     * Preconditions:
-     * - axis_src and axis_dst must be in range [-ndim, ndim-1].
-     * - After normalization, both axes must be valid indices in [0, ndim).
-     *
-     * @tparam T The element type.
-     * @param tensor The input tensor whose metadata will be modified.
-     * @param axis_src The index of the axis to move (may be negative).
-     * @param axis_dst The target index for the axis after move (may be negative).
-     * @return A pointer to the modified tensor.
-     */
-    template <typename T>
-    std::shared_ptr<DeviceTensor<T>> moveaxis(
-        const std::shared_ptr<DeviceTensor<T>>& tensor,
-        int64_t axis_src,
-        int64_t axis_dst
-    );
-
-
-    struct Slice {
-        int64_t start;   // inclusive
-        int64_t end;     // exclusive
-        int64_t step;    // >0
-        //
-        // Convenience constructor:
-        Slice(int64_t _start, int64_t _end, int64_t _step = 1)
-          : start(_start), end(_end), step(_step) {}
-    };
-
-    /**
-     * @brief Specifies either a single‐element index or a slice over an axis.
-     *
-     * This variant drives the behavior of get_slice():
-     *  - `int64_t` means “take exactly this index on the axis, collapsing that dimension.”
-     *  - `Slice`   means “take elements from start (inclusive) to end (exclusive),
-     *                 stepping by `step` each time.”
-     *
-     * @see Slice, get_slice()
-     */
-    using SliceArg = std::variant<int64_t /*a single index*/, Slice>;
-
-
-    /**
-     * @brief Returns a zero‐copy view of the input tensor, sliced along each axis.
-     *
-     * In‐place modifies the tensor’s dims, strides, and data pointer (via
-     * a shared_ptr alias) so that no new buffer is allocated. Collapsed
-     * dimensions (where you passed an `int64_t` index) are removed from
-     * the output shape.
-     *
-     * Example:
-     *   // From a [2×3×4] tensor, pick block 1, then rows [0,2), cols [1,4):
-     *   auto view = get_slice<int64_t>(orig,
-     *       { int64_t(1),
-     *         Slice(0,2),     // rows 0 and 1
-     *         Slice(1,4) });  // cols 1,2,3
-     *
-     * Preconditions:
-     *  - `slices.size() == input->dims.size()`
-     *  - For each axis:
-     *      * If `int64_t idx`,     0 ≤ idx < dim_size
-     *      * If `Slice(s,e,st)`,   0 ≤ s < e ≤ dim_size and st > 0
-     *
-     * @tparam T Element type stored in the tensor.
-     * @param input   The tensor to slice; its metadata is updated in‐place.
-     * @param slices  One SliceArg per axis of `input`.
-     * @return A pointer to the modified tensor.
-     */
-    template<typename T>
-    std::shared_ptr<DeviceTensor<T>> get_slice(
-        const std::shared_ptr<DeviceTensor<T>>& input,
-        const std::vector<SliceArg>& slices
+/**
+ * @brief Expands a tensor in-place by virtually repeating elements along the specified axis.
+ *        This is done by modifying the dimension and setting the stride to zero.
+ *        Only scalar `repeats` are supported.
+ *
+ * Example:
+ * Given a tensor of shape [2, 1] and repeat = 3 along axis = 1,
+ * the new shape becomes [2, 3], with repeated elements along axis 1.
+ *
+ * Preconditions:
+ * - The specified axis must be valid and must have size 1 in the input.
+ * - The repeat count must be positive.
+ *
+ * @tparam T The element type.
+ * @param tensor The input tensor to be expanded. Its dims and strides will be modified.
+ * @param axis The axis along which to repeat.
+ * @param repeats The number of times to repeat elements (must be > 0).
+ */
+template <typename T>
+std::shared_ptr<DeviceTensor<T>> expand(
+    const std::shared_ptr<DeviceTensor<T>>& tensor,
+    int64_t axis,
+    int64_t repeats
 );
 
-    /**
-     * @brief Changes the shape of the tensor without copying data.
-     *
-     * Reshapes the tensor to new dimensions, as long as the total number
-     * of elements (ignoring broadcasted dimensions) matches. If the tensor is
-     * broadcasted, the new shape will attempt to preserve
-     * broadcast semantics by setting appropriate strides to zero, or default
-     * to a C-contiguous layout where possible.
-     *
-     * Example:
-     * Given a tensor of shape [2, 3, 4], reshape to [6, 4] → shape [6, 4].
-     * For a broadcasted tensor with shape [1, 3, 4] (stride 0 for axis 0),
-     * reshape will preserve broadcast behavior where possible.
-     *
-     * Preconditions:
-     * - The product of `new_dims` must equal the number of elements in the
-     *   original tensor, **excluding broadcasted (stride=0) dimensions**.
-     * - If any strides are zero (broadcasted), new strides will be set to
-     *   maintain correct broadcast semantics where possible.
-     *
-     * @tparam T The element type.
-     * @param a The input tensor to reshape. Its metadata is not modified.
-     * @param new_dims The target dimensions for the reshaped tensor.
-     * @return A new DeviceTensor pointer with updated shape and strides,
-     *         sharing the original data.
-     * @throws std::invalid_argument if the total number of elements does not match.
-     */
+/**
+ * @brief Removes a size-1 dimension at the specified axis.
+ *        Modifies the dims and strides in-place.
+ *
+ * Example:
+ * Given a tensor of shape [3, 1, 4], squeeze at axis = 1 → [3, 4]
+ *
+ * Preconditions:
+ * - The specified axis must be valid and must be of size 1.
+ *
+ * @tparam T The element type.
+ * @param tensor The input tensor to squeeze. Modified in-place.
+ * @param axis The axis to remove.
+ * @return A pointer to the modified tensor.
+ */
+template <typename T>
+std::shared_ptr<DeviceTensor<T>> squeeze(
+    const std::shared_ptr<DeviceTensor<T>>& tensor,
+    int64_t axis
+);
+
+/**
+ * @brief Inserts a new dimension of size 1 at the specified axis.
+ *        Modifies the dims and strides in-place.
+ *
+ * Example:
+ * Given a tensor of shape [3, 4], unsqueeze at axis = 1 → [3, 1, 4]
+ *
+ * Preconditions:
+ * - The axis must be in the range [-ndim-1, ndim]
+ *
+ * @tparam T The element type.
+ * @param tensor The input tensor to unsqueeze. Modified in-place.
+ * @param axis The position to insert the new axis.
+ * @return A pointer to the modified tensor.
+ */
+template <typename T>
+std::shared_ptr<DeviceTensor<T>> unsqueeze(
+    const std::shared_ptr<DeviceTensor<T>>& tensor,
+    int64_t axis
+);
+
+/**
+ * @brief Flattens a tensor into a contiguous one by collapsing dimensions
+ *        in the range [start_axis, end_axis] into a single dimension.
+ *
+ * Example:
+ * Given a tensor of shape [2, 3, 4, 5]:
+ * - flatten(tensor, 1, 2) → shape [2, 12, 5]
+ * - flatten(tensor, 0, -1) → shape [120]
+ *
+ * Preconditions:
+ * - start_axis and end_axis must be in [-ndim, ndim-1]
+ * - end_axis >= start_axis (after wrapping negatives)
+ *
+ * @tparam T The element type.
+ * @param a The input tensor to flatten. Its dims and strides will be modified.
+ * @param start_axis The first dimension to flatten.
+ * @param end_axis The last dimension to flatten (inclusive).
+ * @return A pointer to the modified tensor.
+ */
+
     template <typename T>
-    std::shared_ptr<DeviceTensor<T>> reshape(
+    std::shared_ptr<DeviceTensor<T>> flatten(
         const std::shared_ptr<DeviceTensor<T>>& a,
-        const std::vector<int64_t>& new_dims
+        int64_t start_axis,
+        int64_t end_axis
+    );
+
+
+/**
+ * @brief Moves an existing dimension from axis_src to axis_dst in-place.
+ *        Updates dims and strides metadata so that the tensor appears to have
+ *        the same data but with one axis relocated.
+ *
+ * Example:
+ * Given a tensor of shape [2, 3, 4], moveaxis from 2 to 0 → [4, 2, 3]
+ *
+ * Preconditions:
+ * - axis_src and axis_dst must be in range [-ndim, ndim-1].
+ * - After normalization, both axes must be valid indices in [0, ndim).
+ *
+ * @tparam T The element type.
+ * @param tensor The input tensor whose metadata will be modified.
+ * @param axis_src The index of the axis to move (may be negative).
+ * @param axis_dst The target index for the axis after move (may be negative).
+ * @return A pointer to the modified tensor.
+ */
+template <typename T>
+std::shared_ptr<DeviceTensor<T>> moveaxis(
+    const std::shared_ptr<DeviceTensor<T>>& tensor,
+    int64_t axis_src,
+    int64_t axis_dst
 );
-}
+
+
+struct Slice {
+    int64_t start;   // inclusive
+    int64_t end;     // exclusive
+    int64_t step;    // >0
+    //
+    // Convenience constructor:
+    Slice(int64_t _start, int64_t _end, int64_t _step = 1)
+        : start(_start), end(_end), step(_step) {}
+};
+
+/**
+ * @brief Specifies either a single‐element index or a slice over an axis.
+ *
+ * This variant drives the behavior of get_slice():
+ *  - `int64_t` means “take exactly this index on the axis, collapsing that dimension.”
+ *  - `Slice`   means “take elements from start (inclusive) to end (exclusive),
+ *                 stepping by `step` each time.”
+ *
+ * @see Slice, get_slice()
+ */
+using SliceArg = std::variant<int64_t /*a single index*/, Slice>;
+
+
+/**
+ * @brief Returns a zero‐copy view of the input tensor, sliced along each axis.
+ *
+ * In‐place modifies the tensor’s dims, strides, and data pointer (via
+ * a shared_ptr alias) so that no new buffer is allocated. Collapsed
+ * dimensions (where you passed an `int64_t` index) are removed from
+ * the output shape.
+ *
+ * Example:
+ *   // From a [2×3×4] tensor, pick block 1, then rows [0,2), cols [1,4):
+ *   auto view = get_slice<int64_t>(orig,
+ *       { int64_t(1),
+ *         Slice(0,2),     // rows 0 and 1
+ *         Slice(1,4) });  // cols 1,2,3
+ *
+ * Preconditions:
+ *  - `slices.size() == input->dims.size()`
+ *  - For each axis:
+ *      * If `int64_t idx`,     0 ≤ idx < dim_size
+ *      * If `Slice(s,e,st)`,   0 ≤ s < e ≤ dim_size and st > 0
+ *
+ * @tparam T Element type stored in the tensor.
+ * @param input   The tensor to slice; its metadata is updated in‐place.
+ * @param slices  One SliceArg per axis of `input`.
+ * @return A pointer to the modified tensor.
+ */
+template<typename T>
+std::shared_ptr<DeviceTensor<T>> get_slice(
+    const std::shared_ptr<DeviceTensor<T>>& input,
+    const std::vector<SliceArg>& slices
+);
+
+/**
+ * @brief Changes the shape of the tensor without copying data.
+ *
+ * Reshapes the tensor to new dimensions, as long as the total number
+ * of elements (ignoring broadcasted dimensions) matches. If the tensor is
+ * broadcasted, the new shape will attempt to preserve
+ * broadcast semantics by setting appropriate strides to zero, or default
+ * to a C-contiguous layout where possible.
+ *
+ * Example:
+ * Given a tensor of shape [2, 3, 4], reshape to [6, 4] → shape [6, 4].
+ * For a broadcasted tensor with shape [1, 3, 4] (stride 0 for axis 0),
+ * reshape will preserve broadcast behavior where possible.
+ *
+ * Preconditions:
+ * - The product of `new_dims` must equal the number of elements in the
+ *   original tensor, **excluding broadcasted (stride=0) dimensions**.
+ * - If any strides are zero (broadcasted), new strides will be set to
+ *   maintain correct broadcast semantics where possible.
+ *
+ * @tparam T The element type.
+ * @param a The input tensor to reshape. Its metadata is not modified.
+ * @param new_dims The target dimensions for the reshaped tensor.
+ * @return A new DeviceTensor pointer with updated shape and strides,
+ *         sharing the original data.
+ * @throws std::invalid_argument if the total number of elements does not match.
+ */
+template <typename T>
+std::shared_ptr<DeviceTensor<T>> reshape(
+    const std::shared_ptr<DeviceTensor<T>>& a,
+    const std::vector<int64_t>& new_dims
+);
+
+} // namespace lattica_hw_api
