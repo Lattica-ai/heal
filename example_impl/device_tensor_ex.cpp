@@ -127,6 +127,31 @@ int64_t DeviceTensor<T>::numel() const
     return total;
 }
 
+template <typename T>
+std::vector<int64_t> DeviceTensor<T>::compute_contiguous_strides(const std::vector<int64_t>& shape)
+{
+    std::vector<int64_t> strides(shape.size(), 1);
+    for (int i = shape.size() - 2; i >= 0; --i)
+        strides[i] = strides[i + 1] * shape[i + 1];
+    return strides;
+}
+
+// Maps a flat index to a coordinate for a given shape and stride
+template <typename T>
+std::vector<int64_t> DeviceTensor<T>::unravel_index(int64_t flat_idx,
+                                                    const std::vector<int64_t>& shape,
+                                                    const std::vector<int64_t>& strides)
+{
+    std::vector<int64_t> coord(shape.size());
+    int64_t remaining = flat_idx;
+    for (size_t i = 0; i < shape.size(); ++i) {
+        coord[i] = remaining / strides[i];
+        remaining %= strides[i];
+    }
+    return coord;
+}
+
+
 // Explicit template instantiations
 template class DeviceTensor<int8_t>;
 template class DeviceTensor<int32_t>;

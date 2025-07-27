@@ -37,20 +37,12 @@ void axis_modsum(
     const int64_t axis_size = in_shape[axis];
 
     // Compute flat-to-multidim strides for result
-    std::vector<int64_t> res_strides(result->dims.size(), 1);
-    for (int64_t i = result->dims.size() - 2; i >= 0; --i) {
-        res_strides[i] = res_strides[i + 1] * result->dims[i + 1];
-    }
+    std::vector<int64_t> res_strides = DeviceTensor<T>::compute_contiguous_strides(result->dims);
 
     #pragma omp parallel for
     for (int64_t flat_idx = 0; flat_idx < result_numel; ++flat_idx) {
         // Convert flat_idx to res_coord
-        std::vector<int64_t> res_coord(result->dims.size());
-        int64_t rem = flat_idx;
-        for (int64_t i = 0; i < (int64_t)res_coord.size(); ++i) {
-            res_coord[i] = rem / res_strides[i];
-            rem %= res_strides[i];
-        }
+        std::vector<int64_t> res_coord = DeviceTensor<T>::unravel_index(flat_idx, result->dims, res_strides);
 
         // Build input coord with axis inserted
         std::vector<int64_t> in_coord;
@@ -72,7 +64,6 @@ void axis_modsum(
 
         result->at(res_coord) = sum;
     }
-
 }
 
 
