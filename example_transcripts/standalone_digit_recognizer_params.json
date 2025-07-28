@@ -1,0 +1,9 @@
+{
+  "transcript_name": "standalone_digit_recognizer",
+  "scheme": "CKKS",
+  "n": 16,
+  "scale_size": 22,
+  "qi_sizes": [62, 62],
+  "err_std": 1,
+  "sk_std": 1
+}
