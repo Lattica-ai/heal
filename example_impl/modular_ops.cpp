@@ -18,18 +18,11 @@ void elementwise_modred(
 
     // Compute total size and strides (same as before)…
     int64_t total = result->numel();
-    std::vector<int64_t> strides(ndim,1);
-    for (int i = ndim-2; i>=0; --i)
-        strides[i] = strides[i+1] * out_shape[i+1];
+    std::vector<int64_t> strides = DeviceTensor<T>::compute_contiguous_strides(out_shape);
 
     #pragma omp parallel for
     for (int64_t idx = 0; idx < total; ++idx) {
-        std::vector<int64_t> coord(ndim);
-        int64_t linear = idx;
-        for (int d = 0; d < ndim; ++d) {
-            coord[d]  = linear / strides[d];
-            linear   %= strides[d];
-        }
+        std::vector<int64_t> coord = DeviceTensor<T>::unravel_index(idx, out_shape, strides);
         T a_val = get_a(coord);
         T b_val = get_b(coord);
         result->at(coord) = combine_op(a_val, b_val);
@@ -51,20 +44,12 @@ void elementwise_modop(
     int64_t total = result->numel();
 
     // Precompute strides for linear → nd coord mapping
-    std::vector<int64_t> strides(ndim, 1);
-    for (int i = ndim - 2; i >= 0; --i) {
-        strides[i] = strides[i + 1] * out_shape[i + 1];
-    }
+    std::vector<int64_t> strides = DeviceTensor<T>::compute_contiguous_strides(out_shape);
 
     #pragma omp parallel for
     for (int64_t idx = 0; idx < total; ++idx) {
         // Compute multi-dimensional coordinate
-        std::vector<int64_t> coord(ndim);
-        int64_t linear = idx;
-        for (int d = 0; d < ndim; ++d) {
-            coord[d] = linear / strides[d];
-            linear %= strides[d];
-        }
+        std::vector<int64_t> coord = DeviceTensor<T>::unravel_index(idx, out_shape, strides);
 
         T a_val = get_a(coord);
         T b_val = get_b(coord);

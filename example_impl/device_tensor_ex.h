@@ -33,4 +33,9 @@ public:
     // Broadcast-aware access
     T& at_with_broadcast(const std::vector<int64_t>& full_indices);
     const T& at_with_broadcast(const std::vector<int64_t>& full_indices) const;
+
+    static std::vector<int64_t> compute_contiguous_strides(const std::vector<int64_t>& shape);
+    static std::vector<int64_t> unravel_index(int64_t flat_idx,
+                                              const std::vector<int64_t>& shape,
+                                              const std::vector<int64_t>& strides);
 };

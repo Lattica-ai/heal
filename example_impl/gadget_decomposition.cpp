@@ -25,23 +25,11 @@ void apply_g_decomp(
     }
 
     int64_t total = a->numel();
-
-    // Compute strides for index mapping
-    std::vector<int64_t> strides(in_shape.size(), 1);
-    for (int i = in_shape.size() - 2; i >= 0; --i) {
-        strides[i] = strides[i + 1] * in_shape[i + 1];
-    }
+    std::vector<int64_t> strides = DeviceTensor<T>::compute_contiguous_strides(in_shape);
 
     #pragma omp parallel for
     for (int64_t flat_idx = 0; flat_idx < total; ++flat_idx) {
-        std::vector<int64_t> coord(in_shape.size());
-        int64_t remaining = flat_idx;
-
-        for (size_t i = 0; i < in_shape.size(); ++i) {
-            coord[i] = remaining / strides[i];
-            remaining %= strides[i];
-        }
-
+        std::vector<int64_t> coord = DeviceTensor<T>::unravel_index(flat_idx, in_shape, strides);
         T value = a->at(coord);
         std::vector<int64_t> out_coord = coord;
         out_coord.push_back(0);

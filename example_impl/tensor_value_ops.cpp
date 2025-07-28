@@ -17,25 +17,12 @@ void set_const_val(
     const auto& dims = a->dims;
     const size_t rank = dims.size();
     int64_t numel = a->numel();
-
-    // Compute strides for row-major order
-    std::vector<int64_t> strides(rank, 1);
-    for (int64_t i = rank - 2; i >= 0; --i) {
-        strides[i] = strides[i + 1] * dims[i + 1];
-    }
-
-    // Buffer for multidimensional index
-    std::vector<int64_t> idx(rank);
+    std::vector<int64_t> strides = DeviceTensor<T>::compute_contiguous_strides(dims);
 
     // Iterate every element by converting linear index → multi-index via strides
     for (int64_t lin = 0; lin < numel; ++lin) {
-        int64_t rem = lin;
-        for (int64_t i = 0; i < (int64_t)rank; ++i) {
-            idx[i] = rem / strides[i];
-            rem %= strides[i];
-        }
-        // set to constant
-        a->at(idx) = val;
+        std::vector<int64_t> coord = DeviceTensor<T>::unravel_index(lin, dims, strides);
+        a->at(coord) = val;
     }
 }
 
@@ -83,19 +70,12 @@ void pad_single_axis(
     int64_t numel = result->numel();
 
     // compute strides for output tensor (row-major)
-    std::vector<int64_t> strides(rank, 1);
-    for (int i = static_cast<int>(rank) - 2; i >= 0; --i)
-        strides[i] = strides[i + 1] * out_dims[i + 1];
+    std::vector<int64_t> strides = DeviceTensor<T>::compute_contiguous_strides(out_dims);
 
     // iterate over every output element
     for (int64_t flat = 0; flat < numel; ++flat) {
         // decode linear index → multi-index using precomputed strides
-        std::vector<int64_t> coord(rank);
-        int64_t rem = flat;
-        for (int64_t i = 0; i < rank; ++i) {
-            coord[i] = rem / strides[i];
-            rem %= strides[i];
-        }
+        std::vector<int64_t> coord = DeviceTensor<T>::unravel_index(flat, out_dims, strides);
 
         if (coord[axis] < in_dims[axis]) {
             // inside original tensor: copy value
@@ -115,7 +95,8 @@ void take_along_axis(
     int64_t axis,
     std::shared_ptr<DeviceTensor<T>>& result)
 {
-    const int64_t rank = a->dims.size();
+    auto& a_dims = a->dims;
+    const int64_t rank = a_dims.size();
 
     // Normalize & validate axis
     if ((axis < -rank) || (axis >= rank))
@@ -126,27 +107,19 @@ void take_along_axis(
     if (indices->dims.size() != rank)
         throw std::invalid_argument("`indices` rank must match `a` rank");
 
-    if (result->dims != a->dims) {
+    if (result->dims != a_dims) {
         throw std::invalid_argument("`result` must have identical shape to `a` "
                                     "(this specialised take_along_axis assumes it).");
     }
 
     /* ---------- strides & total elements ------------------------------ */
-    std::vector<int64_t> strides(rank, 1);
-    for (int i = rank - 2; i >= 0; --i)
-        strides[i] = strides[i + 1] * a->dims[i + 1];
-
+    std::vector<int64_t> strides = DeviceTensor<T>::compute_contiguous_strides(a_dims);
     int64_t total = a->numel();
 
     /* ---------- flat parallel loop ------------------------------------ */
     #pragma omp parallel for
     for (int64_t flat = 0; flat < total; ++flat) {
-        std::vector<int64_t> coord(rank);
-        int64_t rem = flat;
-        for (size_t i = 0; i < rank; ++i) {
-            coord[i] = rem / strides[i];
-            rem %= strides[i];
-        }
+        std::vector<int64_t> coord = DeviceTensor<T>::unravel_index(flat, a_dims, strides);
 
         /* gather index with broadcasting */
         int64_t sel = indices->at_with_broadcast(coord);
