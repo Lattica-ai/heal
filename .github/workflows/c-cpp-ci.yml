@@ -49,7 +49,7 @@ jobs:
           ctest --output-on-failure
         shell: bash
 
-      - name: Run example_run_transcript.py
+      - name: Run run_example_transcript.py
         run: |
           echo "Running Python script..."
-          python example_run_transcript.py
+          python run_example_transcript.py
