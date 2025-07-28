@@ -27,7 +27,7 @@ include/              # API headers: memory, arithmetic, shape, etc.
 python_execution/     # Python runtime for executing HEAL transcripts
 tests/                # Unit tests for each function
 example_transcripts/  # Example JSON-based AI workloads
-example_run_transcript.py  # Entry point to run a test workload
+run_example_transcript.py  # Entry point to run a test workload
 ```
 
 > **Note:** `example_impl/` provides a sample implementation. Hardware vendors should replace this with their own optimized implementation targeting their device.
@@ -101,20 +101,31 @@ This completes building the C++ runtime and Python bindings for HEAL.
 
 ---
 
-## ▶️ Running the Example Pipeline
+## ▶️ Running Example Pipelines
 
-After completing the build steps above, you can run a simulated AI model using HEAL by executing the example script provided.
+After completing the build steps above, you can run several simulated AI models using HEAL through the provided example script.
 
-From the root directory of the HEAL repository, run:
+From the root directory of the HEAL repository, execute:
 
 ```bash
-python example_run_transcript.py
+python run_example_transcript.py
 ```
 
-This will:
-1. Load `standalone_matmul_simple.json`
-2. Call your C++ function implementations through the Python runtime
-3. Print output and runtime logs
+By default, this script:
+
+1. Loads the transcript file `example_transcripts/standalone_digit_recognizer.json`.
+2. Calls your C++ function implementations via the Python runtime.
+3. Prints the outputs and runtime logs.
+
+To run different examples, edit the following line inside `run_example_transcript.py`:
+
+```python
+transcript = load_transcript_from_json('example_transcripts/standalone_digit_recognizer.json')
+```
+
+Replace `'example_transcripts/standalone_digit_recognizer.json'` with the filename of your chosen example transcript.
+
+All available example transcripts, along with their corresponding parameter files (`*_params.json`), are located in the `example_transcripts` folder.
 
 ---
 

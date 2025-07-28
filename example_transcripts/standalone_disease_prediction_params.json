@@ -1,0 +1,9 @@
+{
+  "transcript_name": "standalone_disease_prediction",
+  "scheme": "CKKS",
+  "n": 4096,
+  "scale_size": 22,
+  "qi_sizes": [62],
+  "err_std": 1,
+  "sk_std": 1
+}
