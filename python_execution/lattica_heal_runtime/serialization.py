@@ -1,5 +1,6 @@
 import json
-
+import io
+import base64
 import numpy as np
 import torch
 
@@ -9,23 +10,6 @@ from lattica_heal_runtime.datatypes import (
     ExecutionTranscript, ExecutionTranscriptOpType, DeviceOpArgType
 )
 
-import io
-import base64
-
-def encode_tensor(tensor):
-    buffer = io.BytesIO()
-    if isinstance(tensor, torch.Tensor):
-        torch.save(tensor, buffer)
-        type_tag = "torch"
-    elif isinstance(tensor, np.ndarray):
-        np.save(buffer, tensor)
-        type_tag = "numpy"
-    else:
-        raise TypeError(f"Unsupported tensor type: {type(tensor)}")
-    return {
-        "type": type_tag,
-        "data": base64.b64encode(buffer.getvalue()).decode("utf-8")
-    }
 
 def decode_tensor(obj):
     buffer = io.BytesIO(base64.b64decode(obj["data"]))
@@ -36,55 +20,6 @@ def decode_tensor(obj):
     else:
         raise ValueError(f"Unknown tensor type tag: {obj['type']}")
 
-# JSON Encoder for custom types
-class HEALJSONEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, DeviceOpArgType):
-            return {"__type__": "DeviceOpArgType", "value": obj.name}
-        elif isinstance(obj, ExecutionTranscriptOpType):
-            return {"__type__": "ExecutionTranscriptOpType", "value": obj.name}
-
-        elif isinstance(obj, DeviceTensorPointer):
-            return {
-                "__type__": "DeviceTensorPointer",
-                "dtype": str(obj.dtype),
-                "inf_name": obj.inf_name,
-            }
-        elif isinstance(obj, HostTensor):
-            return {
-                "__type__": "HostTensor",
-                "tensor_base64": encode_tensor(obj.tensor),
-                # "orig_python_path": obj.orig_python_path,
-            }
-        elif isinstance(obj, DeviceOpArg):
-            return {
-                "__type__": "DeviceOpArg",
-                "arg_type": obj.arg_type,
-                "value": obj.value,
-            }
-        elif isinstance(obj, DeviceOp):
-            return {
-                "__type__": "DeviceOp",
-                "name": obj.name,
-                "args": obj.args,
-                "out": obj.out,
-            }
-        elif isinstance(obj, FreeDeviceTensor):
-            return {"__type__": "FreeDeviceTensor", "tensor_name": obj.tensor_name}
-        elif isinstance(obj, ExecutionTranscript):
-            return {"__type__": "ExecutionTranscript", "transcript": obj.transcript}
-        elif isinstance(obj, slice):
-            return {"__type__": "slice", "start": obj.start, "stop": obj.stop, "step": obj.step}
-        elif obj is Ellipsis:
-            return {"__type__": "ellipsis"}
-        if isinstance(obj, torch.dtype):
-            return {"__type__": "dtype", "value": str(obj).split(".")[-1]}
-        elif isinstance(obj, (complex, np.complexfloating)):
-            return {
-                "__type__": "complex",
-                "real": obj.real,
-                "imag": obj.imag
-            }
 
 # JSON Decoder for custom types
 def heal_json_hook(dct):
@@ -135,12 +70,7 @@ def heal_json_hook(dct):
         return complex(dct["real"], dct["imag"])
 
 
-def save_transcript_to_json(transcript, filename):
-    with open(filename, "w") as f:
-        json.dump(transcript, f, cls=HEALJSONEncoder, indent=2)
-
-
-def load_transcript_from_json(filename):
+def load_transcript(filename):
     print(f'Loading transcript from {filename}')
     with open(filename, "r") as f:
         res = json.load(f, object_hook=heal_json_hook)
