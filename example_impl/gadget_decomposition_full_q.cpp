@@ -66,11 +66,8 @@ template <typename T, typename U>
 void apply_g_decomp_relative_to_full_q(
     const std::shared_ptr<DeviceTensor<T>>& a,
     const std::shared_ptr<DeviceTensor<T>>& q_list,
-    const std::shared_ptr<DeviceTensor<T>>& q_inv,
     int g_exp,
     int g_base_bits,
-    int level_size_bits,
-    const std::shared_ptr<DeviceTensor<T>>& level_inv,
     std::shared_ptr<DeviceTensor<U>>& out) {
 
     int reps_l = a->dims[0];
@@ -120,11 +117,8 @@ void apply_g_decomp_relative_to_full_q(
     template void apply_g_decomp_relative_to_full_q<T1, T2>( \
         const std::shared_ptr<DeviceTensor<T1>>& a, \
         const std::shared_ptr<DeviceTensor<T1>>& q_list, \
-        const std::shared_ptr<DeviceTensor<T1>>& q_inv, \
         int g_exp, \
         int g_base_bits, \
-        int level_size_bits, \
-        const std::shared_ptr<DeviceTensor<T1>>& level_inv, \
         std::shared_ptr<DeviceTensor<T2>>& out \
     );
 
