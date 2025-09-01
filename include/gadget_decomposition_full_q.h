@@ -5,7 +5,7 @@
 
 namespace lattica_hw_api {
 
-template <typename T>
+template <typename T, typename U>
 void apply_g_decomp_relative_to_full_q(
     const std::shared_ptr<DeviceTensor<T>>& a,
     const std::shared_ptr<DeviceTensor<T>>& q_list,
@@ -14,7 +14,7 @@ void apply_g_decomp_relative_to_full_q(
     int g_base_bits,
     int level_size_bits,
     const std::shared_ptr<DeviceTensor<T>>& level_inv,
-    std::shared_ptr<DeviceTensor<T>>& out
+    std::shared_ptr<DeviceTensor<U>>& out
 );
 
 } // namespace lattica_hw_api

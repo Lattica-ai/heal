@@ -62,7 +62,7 @@ Num rns_to_integer(const std::vector<T>& residues, const std::vector<T>& moduli)
 }
 
 // Gadget decomposition relative to full q
-template <typename T>
+template <typename T, typename U>
 void apply_g_decomp_relative_to_full_q(
     const std::shared_ptr<DeviceTensor<T>>& a,
     const std::shared_ptr<DeviceTensor<T>>& q_list,
@@ -71,7 +71,7 @@ void apply_g_decomp_relative_to_full_q(
     int g_base_bits,
     int level_size_bits,
     const std::shared_ptr<DeviceTensor<T>>& level_inv,
-    std::shared_ptr<DeviceTensor<T>>& out) {
+    std::shared_ptr<DeviceTensor<U>>& out) {
 
     int reps_l = a->dims[0];
     int reps_r = a->dims[2]; 
@@ -116,19 +116,21 @@ void apply_g_decomp_relative_to_full_q(
 }
 
 
-#define INSTANTIATE_APPLY_G_DECOMP_RELATIVE_TO_FULL_Q(T) \
-    template void apply_g_decomp_relative_to_full_q<T>( \
-        const std::shared_ptr<DeviceTensor<T>>& a, \
-        const std::shared_ptr<DeviceTensor<T>>& q_list, \
-        const std::shared_ptr<DeviceTensor<T>>& q_inv, \
+#define INSTANTIATE_APPLY_G_DECOMP_RELATIVE_TO_FULL_Q(T1, T2) \
+    template void apply_g_decomp_relative_to_full_q<T1, T2>( \
+        const std::shared_ptr<DeviceTensor<T1>>& a, \
+        const std::shared_ptr<DeviceTensor<T1>>& q_list, \
+        const std::shared_ptr<DeviceTensor<T1>>& q_inv, \
         int g_exp, \
         int g_base_bits, \
         int level_size_bits, \
-        const std::shared_ptr<DeviceTensor<T>>& level_inv, \
-        std::shared_ptr<DeviceTensor<T>>& out \
+        const std::shared_ptr<DeviceTensor<T1>>& level_inv, \
+        std::shared_ptr<DeviceTensor<T2>>& out \
     );
 
-INSTANTIATE_APPLY_G_DECOMP_RELATIVE_TO_FULL_Q(int32_t)
-INSTANTIATE_APPLY_G_DECOMP_RELATIVE_TO_FULL_Q(int64_t)
+INSTANTIATE_APPLY_G_DECOMP_RELATIVE_TO_FULL_Q(int32_t, int8_t)
+INSTANTIATE_APPLY_G_DECOMP_RELATIVE_TO_FULL_Q(int32_t, int32_t)
+INSTANTIATE_APPLY_G_DECOMP_RELATIVE_TO_FULL_Q(int64_t, int8_t)
+INSTANTIATE_APPLY_G_DECOMP_RELATIVE_TO_FULL_Q(int64_t, int64_t)
 
 } // namespace lattica_hw_api

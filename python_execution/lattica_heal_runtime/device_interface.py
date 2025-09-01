@@ -73,6 +73,9 @@ class DeviceDispatcher(ABC):
     def apply_g_decomp(self, *args, **kwargs):
         return self.dispatcher.apply_g_decomp(*args, **kwargs)
 
+    def apply_g_decomp_relative_to_full_q(self, *args, **kwargs):
+        return self.dispatcher.apply_g_decomp_relative_to_full_q(*args, **kwargs)
+
     def set_const_val(self, *args, **kwargs):
         return self.dispatcher.set_const_val(*args, **kwargs)
 

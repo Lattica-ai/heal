@@ -153,6 +153,11 @@ _apply_g_decomp = {
     (DeviceTensor64, DeviceTensor64): lhw.apply_g_decomp_64_64,
 }
 
+_apply_g_decomp_relative_to_full_q = {
+    DeviceTensor32: lhw.apply_g_decomp_relative_to_full_q_32,
+    DeviceTensor64: lhw.apply_g_decomp_relative_to_full_q_64,
+}
+
 _ntt = {
     (DeviceTensor8, DeviceTensor32): lhw.ntt_8_32,
     (DeviceTensor8, DeviceTensor64): lhw.ntt_8_64,
@@ -219,6 +224,10 @@ class PythonToCppDispatcher(ABC):
 
     def apply_g_decomp(self, a, g_exp, g_base_bits, out):
         _dispatch((type(a), type(out)), a, g_exp, g_base_bits, out, impls=_apply_g_decomp)
+        return out
+
+    def apply_g_decomp_relative_to_full_q(self, a, q_list, q_inv, g_exp, g_base_bits, level_bits, level_inv, out):
+        _dispatch((type(a), type(out)), a, q_list, q_inv, g_exp, g_base_bits, level_bits, level_inv, out, impls=_apply_g_decomp_relative_to_full_q)
         return out
 
     def reshape(self, device_tensor, new_shape):
