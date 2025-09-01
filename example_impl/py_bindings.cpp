@@ -1,5 +1,6 @@
 #include "modular_ops.h"
 #include "gadget_decomposition.h"
+#include "gadget_decomposition_full_q.h"
 #include "tensor_layout_ops.h"
 #include "device_memory.h"
 #include "tensor_value_ops.h"

@@ -5,6 +5,8 @@ set(SOURCES
     modular_ops.cpp
     modular_axis_sum_ops.cpp
     gadget_decomposition.cpp
+    gadget_decomposition_full_q.cpp
+    num.cpp
     ntt.cpp
     tensor_layout_ops.cpp
     tensor_value_ops.cpp
