@@ -1,8 +1,6 @@
 #include "gadget_decomposition_full_q.h"
 #include "device_tensor_ex.h"
 #include "../include/num.h"
-#include <stdexcept>
-#include <iostream>
 #include <vector>
 
 namespace lattica_hw_api {
@@ -19,16 +17,11 @@ Num modular_inverse_num(const Num& a, const Num& m) {
         return Num(0);
     }
     
-    Num original_m = m;
     Num x0(0), x1(1);
     Num a_copy = a;
     Num m_copy = m;
     
     while (a_copy > Num(1)) {
-        if (m_copy == Num(0)) {
-            throw std::runtime_error("Modular inverse does not exist");
-        }
-        
         Num q = a_copy / m_copy;
         Num temp = m_copy;
         
@@ -42,7 +35,7 @@ Num modular_inverse_num(const Num& a, const Num& m) {
     
     // Make x1 positive
     if (x1 < Num(0)) {
-        x1 = x1 + original_m;
+        x1 = x1 + m;
     }
     
     return x1;
@@ -52,21 +45,20 @@ Num modular_inverse_num(const Num& a, const Num& m) {
 template <typename T>
 Num rns_to_integer(const std::vector<T>& residues, const std::vector<T>& moduli) {
 
-    Num product(1);
+    Num q(1);
     for (size_t i = 0; i < moduli.size(); i++) {
-        product = product * to_num(moduli[i]);
+        q = q * to_num(moduli[i]);
     }
     
     Num result(0);
-    
     for (size_t i = 0; i < residues.size(); i++) {
-        Num M_i = product / to_num(moduli[i]);
+        Num M_i = q / to_num(moduli[i]);
         Num y_i = modular_inverse_num(M_i % to_num(moduli[i]), to_num(moduli[i]));
         
         result = result + to_num(residues[i]) * M_i * y_i;
     }
     
-    return result % product;
+    return result % q;
 }
 
 // Gadget decomposition relative to full q
