@@ -165,7 +165,7 @@ void bind_general_ops(py::module_& m, const std::string& suffix) {
 
     m.def(("modmul_axis_sum_" + suffix).c_str(), &modmul_axis_sum<T>,
         py::arg("a"), py::arg("b"), py::arg("p"), py::arg("perm"), py::arg("log2p_list"), py::arg("mu_list"),
-        py::arg("axis"), py::arg("apply_perm"), py::arg("result"), "Element-wise modular multiply and sum over a specified axis");
+        py::arg("apply_perm"), py::arg("result"), "Element-wise modular multiply and sum over a specified axis");
 
     m.def(("take_along_axis_" + suffix).c_str(), &take_along_axis<T>,
         py::arg("tensor"), py::arg("indices"), py::arg("axis"), py::arg("result"),

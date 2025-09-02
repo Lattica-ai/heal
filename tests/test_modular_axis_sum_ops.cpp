@@ -97,7 +97,7 @@ TEST(AxisModSumTests, ModulusShapeMismatchThrows) {
  * modmul_axis_sum: Basic Functionality
  ***********************************************************************************************/
 
- TEST(ModMulAxisSumTests, BasicNoPerm_AxisMinus1) {
+ TEST(ModMulAxisSumTests, BasicNoPerm) {
     // Shape: [reps, sum_size, k, n] = [2, 3, 2, 4]
     auto a = torch::tensor({
         { // rep 0
@@ -134,9 +134,9 @@ TEST(AxisModSumTests, ModulusShapeMismatchThrows) {
     auto mu_list = nullptr; // not used
     auto result_dev = host_to_device<int64_t>(result);
 
-    // No permutation, axis = -1
+    // No permutation
     modmul_axis_sum<int64_t>(
-        a_dev, b_dev, p_dev, perm_dev, log2p_list, mu_list, -1, false, result_dev);
+        a_dev, b_dev, p_dev, perm_dev, log2p_list, mu_list, false, result_dev);
 
     auto result_cpu = device_to_host<int64_t>(result_dev);
 
@@ -158,7 +158,7 @@ TEST(AxisModSumTests, ModulusShapeMismatchThrows) {
     ASSERT_EQ(result_cpu.sizes(), std::vector<int64_t>({2,2,4}));
 }
 
-TEST(ModMulAxisSumTests, BasicInt32_NoPerm_AxisMinus1) {
+TEST(ModMulAxisSumTests, BasicInt32_NoPerm) {
     // Shape: [1,2,1,3]
     auto a = torch::tensor({{
         { {1, 2, 3} },
@@ -183,7 +183,7 @@ TEST(ModMulAxisSumTests, BasicInt32_NoPerm_AxisMinus1) {
     auto result_dev = host_to_device<int32_t>(result);
 
     modmul_axis_sum<int32_t>(
-        a_dev, b_dev, p_dev, perm_dev, log2p_list, mu_list, -1, false, result_dev);
+        a_dev, b_dev, p_dev, perm_dev, log2p_list, mu_list, false, result_dev);
 
     auto result_cpu = device_to_host<int32_t>(result_dev);
 
@@ -196,46 +196,6 @@ TEST(ModMulAxisSumTests, BasicInt32_NoPerm_AxisMinus1) {
 
     ASSERT_TRUE(torch::equal(result_cpu, expected));
     ASSERT_EQ(result_cpu.sizes(), std::vector<int64_t>({1,1,3}));
-}
-
-TEST(ModMulAxisSumTests, Permutation_AxisMinus3) {
-    // Shape: [reps, n, sum_size, k] = [1, 3, 2, 2]
-    auto a = torch::arange(1, 13, torch::kInt64).reshape({1,3,2,2});
-    auto b = torch::arange(101, 113, torch::kInt64).reshape({3,2,2});
-    auto p = torch::tensor({7,11}, torch::kInt64);
-    auto perm = torch::tensor({2,0,1}, torch::kInt64); // permutes n: 0→2, 1→0, 2→1
-    auto result = torch::zeros({1,3,2}, torch::kInt64);
-
-    auto a_dev = host_to_device<int64_t>(a);
-    auto b_dev = host_to_device<int64_t>(b);
-    auto p_dev = host_to_device<int64_t>(p);
-    auto perm_dev = host_to_device<int64_t>(perm);
-    auto log2p_list = nullptr; // not used
-    auto mu_list = nullptr; // not used
-    auto result_dev = host_to_device<int64_t>(result);
-
-    // Permutation on axis -3
-    modmul_axis_sum<int64_t>(
-        a_dev, b_dev, p_dev, perm_dev, log2p_list, mu_list, -3, true, result_dev);
-
-    auto result_cpu = device_to_host<int64_t>(result_dev);
-
-    // Reference calculation
-    auto expected = torch::empty({1, 3, 2}, torch::kInt64);
-    for (int rep = 0; rep < 1; ++rep)
-    for (int n = 0; n < 3; ++n) {
-        int64_t n_idx = perm[n].item<int64_t>();
-        for (int k = 0; k < 2; ++k) {
-            int64_t sum = 0;
-            for (int i = 0; i < 2; ++i) {
-                sum += a[rep][n][i][k].item<int64_t>() * b[n_idx][i][k].item<int64_t>();
-            }
-            // Write result at permuted location
-            expected[rep][n_idx][k] = sum % p[k].item<int64_t>();
-        }
-    }
-
-    ASSERT_TRUE(torch::equal(result_cpu, expected));
 }
 
 TEST(ModMulAxisSumTests, NonContiguousInputs) {
@@ -263,7 +223,7 @@ TEST(ModMulAxisSumTests, NonContiguousInputs) {
     auto result_dev = host_to_device<int64_t>(result);
 
     modmul_axis_sum<int64_t>(
-        a_dev, b_dev, p_dev, perm_dev, log2p_list, mu_list, -1, false, result_dev);
+        a_dev, b_dev, p_dev, perm_dev, log2p_list, mu_list, false, result_dev);
 
     auto result_cpu = device_to_host<int64_t>(result_dev);
 
@@ -307,7 +267,7 @@ TEST(ModMulAxisSumTests, HandlesInt64OverflowCorrectly) {
     auto result_dev = host_to_device<int64_t>(result);
 
     modmul_axis_sum<int64_t>(
-        a_dev, b_dev, p_dev, perm_dev, log2p_list, mu_list, -1, false, result_dev);
+        a_dev, b_dev, p_dev, perm_dev, log2p_list, mu_list, false, result_dev);
 
     auto result_cpu = device_to_host<int64_t>(result_dev);
 
@@ -338,10 +298,10 @@ TEST(ModMulAxisSumTests, AccumulatesAcrossRepeatedCalls) {
     auto result_dev = host_to_device<int64_t>(result);
 
     // First call
-    modmul_axis_sum<int64_t>(a1_dev, b1_dev, p_dev, perm_dev, log2p_list, mu_list, -1, false, result_dev);
+    modmul_axis_sum<int64_t>(a1_dev, b1_dev, p_dev, perm_dev, log2p_list, mu_list, false, result_dev);
 
     // Second call (accumulates!)
-    modmul_axis_sum<int64_t>(a2_dev, b2_dev, p_dev, perm_dev, log2p_list, mu_list, -1, false, result_dev);
+    modmul_axis_sum<int64_t>(a2_dev, b2_dev, p_dev, perm_dev, log2p_list, mu_list, false, result_dev);
 
     // Fetch result back
     auto result_cpu = device_to_host<int64_t>(result_dev);
@@ -379,29 +339,7 @@ TEST(ModMulAxisSumTests, Throws_BadShape) {
 
     EXPECT_THROW(
         modmul_axis_sum<int64_t>(
-            a_dev, b_dev, p_dev, perm_dev, log2p_list, mu_list, -1, false, result_dev
-        ),
-        std::invalid_argument
-    );
-}
-
-TEST(ModMulAxisSumTests, Throws_BadAxis) {
-    auto a = torch::empty({2,3,2,4}, torch::kInt64);
-    auto b = torch::empty({3,2,4}, torch::kInt64);
-    auto p = torch::ones({2}, torch::kInt64);
-    auto result = torch::zeros({2,2,4}, torch::kInt64);
-
-    auto a_dev = host_to_device<int64_t>(a);
-    auto b_dev = host_to_device<int64_t>(b);
-    auto p_dev = host_to_device<int64_t>(p);
-    auto perm_dev = nullptr;
-    auto log2p_list = nullptr;
-    auto mu_list = nullptr;
-    auto result_dev = host_to_device<int64_t>(result);
-
-    EXPECT_THROW(
-        modmul_axis_sum<int64_t>(
-            a_dev, b_dev, p_dev, perm_dev, log2p_list, mu_list, 4, false, result_dev
+            a_dev, b_dev, p_dev, perm_dev, log2p_list, mu_list, false, result_dev
         ),
         std::invalid_argument
     );
@@ -423,7 +361,7 @@ TEST(ModMulAxisSumTests, Throws_NegativeModulus) {
 
     EXPECT_THROW(
         modmul_axis_sum<int64_t>(
-            a_dev, b_dev, p_dev, perm_dev, log2p_list, mu_list, -1, false, result_dev
+            a_dev, b_dev, p_dev, perm_dev, log2p_list, mu_list, false, result_dev
         ),
         std::invalid_argument
     );
@@ -449,7 +387,7 @@ TEST(ModMulAxisSumTests, Throws_PermWrongShape) {
 
     EXPECT_THROW(
         modmul_axis_sum<int64_t>(
-            a_dev, b_dev, p_dev, perm_dev, log2p_list, mu_list, -1, true, result_dev
+            a_dev, b_dev, p_dev, perm_dev, log2p_list, mu_list, true, result_dev
         ),
         std::invalid_argument
     );
@@ -475,7 +413,7 @@ TEST(ModMulAxisSumTests, Throws_PermOutOfBounds) {
 
     EXPECT_THROW(
         modmul_axis_sum<int64_t>(
-            a_dev, b_dev, p_dev, perm_dev, log2p_list, mu_list, -1, true, result_dev
+            a_dev, b_dev, p_dev, perm_dev, log2p_list, mu_list, true, result_dev
         ),
         std::invalid_argument
     );

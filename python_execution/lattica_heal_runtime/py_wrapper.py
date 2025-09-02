@@ -210,8 +210,8 @@ class PythonToCppDispatcher(ABC):
     def empty(self, shape, dtype):
         return _dispatch(dtype, shape, impls=_empty)
 
-    def modmul_axis_sum(self, a, b, p, log2q_list, mu_list, perm, out, apply_perm, axis):
-        _dispatch(type(a), a, b, p, perm, log2q_list, mu_list, axis, apply_perm, out, impls=_modmul_axis_sum)
+    def modmul_axis_sum(self, a, b, p, log2q_list, mu_list, perm, out, apply_perm):
+        _dispatch(type(a), a, b, p, perm, log2q_list, mu_list, apply_perm, out, impls=_modmul_axis_sum)
         return out
 
     def axis_modsum(self, a, axis, q_list, out):
