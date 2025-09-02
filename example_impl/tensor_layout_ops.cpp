@@ -336,13 +336,13 @@ std::shared_ptr<DeviceTensor<T>> reshape(
     template std::shared_ptr<DeviceTensor<T>> moveaxis<T>(const std::shared_ptr<DeviceTensor<T>>&, int64_t, int64_t); \
     template std::shared_ptr<DeviceTensor<T>> expand<T>(const std::shared_ptr<DeviceTensor<T>>&, int64_t, int64_t); \
     template std::shared_ptr<DeviceTensor<T>> reshape<T>(const std::shared_ptr<DeviceTensor<T>>&, const std::vector<int64_t>&); \
-    template std::shared_ptr<DeviceTensor<T>> get_slice<T>(const std::shared_ptr<DeviceTensor<T>>&, const std::vector<SliceArg>&);
+    template std::shared_ptr<DeviceTensor<T>> get_slice<T>(const std::shared_ptr<DeviceTensor<T>>&, const std::vector<SliceArg>&); \
+    template std::shared_ptr<DeviceTensor<T>> flatten<T>(const std::shared_ptr<DeviceTensor<T>>&, int64_t, int64_t);
 
 #define INSTANTIATE_ALL_FUNCTIONS(T) \
     FUNCTIONS_WITH_INT8_INSTANCIATION(T) \
     template std::shared_ptr<DeviceTensor<T>> squeeze<T>(const std::shared_ptr<DeviceTensor<T>>&, int64_t); \
-    template std::shared_ptr<DeviceTensor<T>> unsqueeze<T>(const std::shared_ptr<DeviceTensor<T>>&, int64_t); \
-    template std::shared_ptr<DeviceTensor<T>> flatten<T>(const std::shared_ptr<DeviceTensor<T>>&, int64_t, int64_t);
+    template std::shared_ptr<DeviceTensor<T>> unsqueeze<T>(const std::shared_ptr<DeviceTensor<T>>&, int64_t);
 
 // Instantiate all memory operations for int32_t and int64_t.
 INSTANTIATE_ALL_FUNCTIONS(int32_t)

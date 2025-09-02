@@ -77,6 +77,9 @@ void bind_tensor_layout_ops(py::module_& m, const std::string& suffix) {
     m.def(("expand_" + suffix).c_str(), &expand<T>, py::arg("tensor"), py::arg("axis"), py::arg("repeats"),
           "Expand a tensor by repeating elements along the specified axis.");
 
+    m.def(("flatten_" + suffix).c_str(), &flatten<T>, py::arg("tensor"), py::arg("start_axis"), py::arg("end_axis"),
+          "Flatten the tensor between start_axis and end_axis, preserving other dimensions.");
+
     m.def(("get_slice_" + suffix).c_str(),
         [](const std::shared_ptr<DeviceTensor<T>>& tensor, py::iterable sliceList) {
             std::vector<SliceArg> args;
@@ -105,9 +108,6 @@ void bind_tensor_layout_ops(py::module_& m, const std::string& suffix) {
 
         m.def(("unsqueeze_" + suffix).c_str(), &unsqueeze<T>, py::arg("tensor"), py::arg("axis"),
               "Insert a new axis of length 1 at the specified position in the tensor's shape.");
-
-        m.def(("flatten_" + suffix).c_str(), &flatten<T>, py::arg("tensor"), py::arg("start_axis"), py::arg("end_axis"),
-              "Flatten the tensor between start_axis and end_axis, preserving other dimensions.");
     }
 }
 

@@ -62,6 +62,7 @@ _set_const_val_impls = {
 }
 
 _flatten_impls = {
+    DeviceTensor8: lhw.flatten_8,
     DeviceTensor32: lhw.flatten_32,
     DeviceTensor64: lhw.flatten_64,
 }
