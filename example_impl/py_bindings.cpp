@@ -1,5 +1,4 @@
 #include "modular_ops.h"
-#include "gadget_decomposition.h"
 #include "gadget_decomposition_full_q.h"
 #include "tensor_layout_ops.h"
 #include "device_memory.h"
@@ -183,14 +182,6 @@ void bind_general_ops(py::module_& m, const std::string& suffix) {
  * @brief Binds g-decomposition operations.
  */
 template <typename T, typename U>
-void bind_g_decomposition(py::module_& m) {
-    const std::string suffix = std::string(TypeSuffix<T>::value) + "_" + std::string(TypeSuffix<U>::value);
-    m.def(("apply_g_decomp_" + suffix).c_str(), &apply_g_decomp<T,U>,
-        py::arg("a"), py::arg("power"), py::arg("base_bits"), py::arg("result"),
-        "G decomposition (base 2^base_bits)");
-}
-
-template <typename T, typename U>
 void bind_g_decomp_relative_to_full_q(py::module_& m) {
     const std::string suffix = std::string(TypeSuffix<T>::value) + "_" + std::string(TypeSuffix<U>::value);
     m.def(("apply_g_decomp_relative_to_full_q_" + suffix).c_str(), &apply_g_decomp_relative_to_full_q<T,U>,
@@ -245,12 +236,6 @@ PYBIND11_MODULE(lattica_hw, m) {
     bind_all_operations_for<int64_t>(m);
 
     // --- Bind multi-type operations like G-Decomposition ---
-    bind_g_decomposition<int32_t, int8_t>(m);
-    bind_g_decomposition<int64_t, int8_t>(m);
-    bind_g_decomposition<int32_t, int32_t>(m);
-    bind_g_decomposition<int64_t, int64_t>(m);
-
-
     bind_g_decomp_relative_to_full_q<int32_t, int8_t>(m);
     bind_g_decomp_relative_to_full_q<int64_t, int8_t>(m);
     bind_g_decomp_relative_to_full_q<int32_t, int32_t>(m);

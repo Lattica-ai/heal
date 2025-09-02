@@ -4,7 +4,6 @@ set(SOURCES
     device_memory.cpp
     modular_ops.cpp
     modular_axis_sum_ops.cpp
-    gadget_decomposition.cpp
     gadget_decomposition_full_q.cpp
     num.cpp
     ntt.cpp

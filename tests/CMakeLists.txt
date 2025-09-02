@@ -21,7 +21,6 @@ set(TEST_SOURCES
     test_ntt.cpp
     test_modular_ops.cpp
     test_modular_axis_sum_ops.cpp
-    test_gadget_decomposition.cpp
     test_gadget_decomposition_full_q.cpp
     test_decomp_reconstruct.cpp
     test_tensor_layout_ops.cpp
