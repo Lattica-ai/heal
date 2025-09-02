@@ -1,5 +1,5 @@
 #include "modular_ops.h"
-#include "gadget_decomposition.h"
+#include "gadget_decomposition_full_q.h"
 #include "tensor_layout_ops.h"
 #include "device_memory.h"
 #include "tensor_value_ops.h"
@@ -77,6 +77,9 @@ void bind_tensor_layout_ops(py::module_& m, const std::string& suffix) {
     m.def(("expand_" + suffix).c_str(), &expand<T>, py::arg("tensor"), py::arg("axis"), py::arg("repeats"),
           "Expand a tensor by repeating elements along the specified axis.");
 
+    m.def(("flatten_" + suffix).c_str(), &flatten<T>, py::arg("tensor"), py::arg("start_axis"), py::arg("end_axis"),
+          "Flatten the tensor between start_axis and end_axis, preserving other dimensions.");
+
     m.def(("get_slice_" + suffix).c_str(),
         [](const std::shared_ptr<DeviceTensor<T>>& tensor, py::iterable sliceList) {
             std::vector<SliceArg> args;
@@ -105,9 +108,6 @@ void bind_tensor_layout_ops(py::module_& m, const std::string& suffix) {
 
         m.def(("unsqueeze_" + suffix).c_str(), &unsqueeze<T>, py::arg("tensor"), py::arg("axis"),
               "Insert a new axis of length 1 at the specified position in the tensor's shape.");
-
-        m.def(("flatten_" + suffix).c_str(), &flatten<T>, py::arg("tensor"), py::arg("start_axis"), py::arg("end_axis"),
-              "Flatten the tensor between start_axis and end_axis, preserving other dimensions.");
     }
 }
 
@@ -165,7 +165,7 @@ void bind_general_ops(py::module_& m, const std::string& suffix) {
 
     m.def(("modmul_axis_sum_" + suffix).c_str(), &modmul_axis_sum<T>,
         py::arg("a"), py::arg("b"), py::arg("p"), py::arg("perm"), py::arg("log2p_list"), py::arg("mu_list"),
-        py::arg("axis"), py::arg("apply_perm"), py::arg("result"), "Element-wise modular multiply and sum over a specified axis");
+        py::arg("apply_perm"), py::arg("result"), "Element-wise modular multiply and sum over a specified axis");
 
     m.def(("take_along_axis_" + suffix).c_str(), &take_along_axis<T>,
         py::arg("tensor"), py::arg("indices"), py::arg("axis"), py::arg("result"),
@@ -182,11 +182,11 @@ void bind_general_ops(py::module_& m, const std::string& suffix) {
  * @brief Binds g-decomposition operations.
  */
 template <typename T, typename U>
-void bind_g_decomposition(py::module_& m) {
+void bind_g_decomp_relative_to_full_q(py::module_& m) {
     const std::string suffix = std::string(TypeSuffix<T>::value) + "_" + std::string(TypeSuffix<U>::value);
-    m.def(("apply_g_decomp_" + suffix).c_str(), &apply_g_decomp<T,U>,
-        py::arg("a"), py::arg("power"), py::arg("base_bits"), py::arg("result"),
-        "G decomposition (base 2^base_bits)");
+    m.def(("apply_g_decomp_relative_to_full_q_" + suffix).c_str(), &apply_g_decomp_relative_to_full_q<T,U>,
+        py::arg("a"), py::arg("q_list"), py::arg("g_exp"), py::arg("g_base_bits"), py::arg("out"),
+        "G decomposition relative to full q (base 2^base_bits)");
 }
 
 /**
@@ -236,10 +236,10 @@ PYBIND11_MODULE(lattica_hw, m) {
     bind_all_operations_for<int64_t>(m);
 
     // --- Bind multi-type operations like G-Decomposition ---
-    bind_g_decomposition<int32_t, int8_t>(m);
-    bind_g_decomposition<int64_t, int8_t>(m);
-    bind_g_decomposition<int32_t, int32_t>(m);
-    bind_g_decomposition<int64_t, int64_t>(m);
+    bind_g_decomp_relative_to_full_q<int32_t, int8_t>(m);
+    bind_g_decomp_relative_to_full_q<int64_t, int8_t>(m);
+    bind_g_decomp_relative_to_full_q<int32_t, int32_t>(m);
+    bind_g_decomp_relative_to_full_q<int64_t, int64_t>(m);
 
     // --- Bind multi-type operations like NTT ---
     bind_ntt<int8_t, int32_t>(m);

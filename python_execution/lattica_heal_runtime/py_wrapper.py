@@ -62,6 +62,7 @@ _set_const_val_impls = {
 }
 
 _flatten_impls = {
+    DeviceTensor8: lhw.flatten_8,
     DeviceTensor32: lhw.flatten_32,
     DeviceTensor64: lhw.flatten_64,
 }
@@ -146,11 +147,11 @@ _axis_modsum = {
     DeviceTensor64: lhw.axis_modsum_64,
 }
 
-_apply_g_decomp = {
-    (DeviceTensor32, DeviceTensor8): lhw.apply_g_decomp_32_8,
-    (DeviceTensor64, DeviceTensor8): lhw.apply_g_decomp_64_8,
-    (DeviceTensor32, DeviceTensor32): lhw.apply_g_decomp_32_32,
-    (DeviceTensor64, DeviceTensor64): lhw.apply_g_decomp_64_64,
+_apply_g_decomp_relative_to_full_q = {
+    (DeviceTensor32, DeviceTensor8): lhw.apply_g_decomp_relative_to_full_q_32_8,
+    (DeviceTensor64, DeviceTensor8): lhw.apply_g_decomp_relative_to_full_q_64_8,
+    (DeviceTensor32, DeviceTensor32): lhw.apply_g_decomp_relative_to_full_q_32_32,
+    (DeviceTensor64, DeviceTensor64): lhw.apply_g_decomp_relative_to_full_q_64_64,
 }
 
 _ntt = {
@@ -209,16 +210,16 @@ class PythonToCppDispatcher(ABC):
     def empty(self, shape, dtype):
         return _dispatch(dtype, shape, impls=_empty)
 
-    def modmul_axis_sum(self, a, b, p, log2q_list, mu_list, perm, out, apply_perm, axis):
-        _dispatch(type(a), a, b, p, perm, log2q_list, mu_list, axis, apply_perm, out, impls=_modmul_axis_sum)
+    def modmul_axis_sum(self, a, b, p, log2q_list, mu_list, perm, out, apply_perm):
+        _dispatch(type(a), a, b, p, perm, log2q_list, mu_list, apply_perm, out, impls=_modmul_axis_sum)
         return out
 
     def axis_modsum(self, a, axis, q_list, out):
         _dispatch(type(a), a, q_list, axis, out, impls=_axis_modsum)
         return out
 
-    def apply_g_decomp(self, a, g_exp, g_base_bits, out):
-        _dispatch((type(a), type(out)), a, g_exp, g_base_bits, out, impls=_apply_g_decomp)
+    def apply_g_decomp_relative_to_full_q(self, a, q_list, q_inv, g_exp, g_base_bits, level_bits, level_inv, out):
+        _dispatch((type(a), type(out)), a, q_list, g_exp, g_base_bits, out, impls=_apply_g_decomp_relative_to_full_q)
         return out
 
     def reshape(self, device_tensor, new_shape):
