@@ -17,6 +17,7 @@ class DeviceOpArgType(Enum):
     TENSOR_TYPE = "tensor_type"
     SLICE = "slice"
     ELLIPSIS = "Ellipsis"
+    LIST = "list"
 
 class DeviceOpArg:
     arg_type: DeviceOpArgType
