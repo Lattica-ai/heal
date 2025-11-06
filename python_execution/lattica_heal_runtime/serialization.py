@@ -1,9 +1,6 @@
-import json
-import io
-import base64
-from unittest import case
-import numpy as np
+import json, io, base64
 import torch
+import numpy as np
 
 from lattica_heal_runtime.datatypes import (
     DeviceTensorPointer, HostTensor,
