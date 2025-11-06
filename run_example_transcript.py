@@ -5,11 +5,10 @@ from lattica_heal_runtime.printify import print_transcript
 from lattica_heal_runtime import runtime
 
 from lattica_heal_runtime.device_interface import DeviceDispatcher
-from lattica_heal_runtime.serialization import load_transcript_from_json
+from lattica_heal_runtime.serialization import load_transcript
 
 # Load the example transcript
-transcript = load_transcript_from_json(
-    'example_transcripts/standalone_digit_recognizer.json')
+transcript = load_transcript('example_transcripts/standalone_digit_recognizer.json')
 
 # Optionally print the transcript
 print_transcript(transcript)
