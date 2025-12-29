@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="lattica_heal_runtime",
-    version="0.1.0",
+    version="0.1.1",
     author="LatticaAI Inc.",
     author_email="support@lattica.ai",
     packages=find_packages(),
